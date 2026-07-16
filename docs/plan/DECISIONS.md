@@ -50,3 +50,15 @@ Record decisions here BEFORE acting on them. Format: what / why / revisit-if.
 **What:** apps/web pins tailwindcss ^3.4 + tailwindcss-animate, matching dreamplay-website-2's shadcn/Radix component library.
 **Why:** Phase 2 ports ~all of website-2's UI; identical Tailwind major means components copy clean without config/class rewrites. Belgium's TW4 usage doesn't transfer — we port its logic, not its styles.
 **Revisit if:** post-migration, upgrade to TW4 as a standalone chore.
+
+## D9 — Port public/ assets into git, minus junk (2026-07-16)
+
+**What:** Copy website-2's `public/` into apps/web/public excluding: `images/factory-pictures/other pictures (no need to use)/` (363MB of raw .MOV/Final Cut files — 15 referenced images total ~7MB stay), Next starter SVGs, and Webflow leftovers in `public/js`/`public/css` if grep shows no references. Net ~175MB committed.
+**Why:** Parity requires the assets; GitHub rejects the >100MB junk files anyway; a full R2/CDN offload is a Phase 8 chore, not a Phase 2 blocker.
+**Revisit if:** repo size becomes painful — move `images/` to R2 (creds + remotePattern already exist).
+
+## D10 — EmailTracker is KEPT, not deleted (2026-07-16)
+
+**What:** `EmailTracker.tsx` + `trackEmailConversion` + the middleware dp_sid/dp_cid cookie capture port as-is (env-driven endpoint). Only AnalyticsTracker/ABTracker/journey-engine die.
+**Why:** EmailTracker is the consumer of the email-attribution chain (sid/cid → subscriber). In Phase 5 its endpoint env var flips from email.dreamplaypianos.com to the in-app route — the component survives.
+**Revisit if:** Phase 5 replaces it with the unified @dreamplay/analytics client (likely; delete then, not now).
