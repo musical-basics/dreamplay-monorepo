@@ -7,6 +7,7 @@ Record decisions here BEFORE acting on them. Format: what / why / revisit-if.
 **What:** One `apps/web` Next.js app hosts the website, analytics dashboard, email admin, and all API routes. Shared logic lives in `packages/*`.
 **Why:** The polyrepo's core failure was fragmentation and cross-repo HTTP coupling. One app = one deploy, one env, in-process calls instead of cross-domain fetches, one place to look. Traffic volume doesn't justify separate deploys.
 **Revisit if:** email job load or admin surface grows enough to want independent deploy cadence — packages are already separated, so splitting an app out later is cheap.
+**Note (2026-07-16, confirmed with Lionel):** existing subdomains (data./analytics.dreamplaypianos.com, email.dreamplaypianos.com, link.musicalbasics.com, link.ultimatepianist.com, shop.) are kept — all attach to the one Vercel project and middleware routes by hostname, same pattern website-2 already uses for shop. One app ≠ one hostname.
 
 ## D2 — One new Supabase project for everything (2026-07-16)
 
@@ -40,6 +41,6 @@ Record decisions here BEFORE acting on them. Format: what / why / revisit-if.
 
 ## D7 — dreamplay-email-2's deployed tracking endpoints get absorbed (2026-07-16)
 
-**What:** Open-pixel, click-redirect, unsubscribe, and resolve-subscriber endpoints (currently the deployed dreamplay-email-2 at email.dreamplaypianos.com, a repo NOT in the working set) are re-implemented in the monorepo email package. At cutover, email.dreamplaypianos.com + link.musicalbasics.com + link.ultimatepianist.com point at the monorepo.
+**What:** Open-pixel, click-redirect, unsubscribe, and resolve-subscriber endpoints (currently the deployed dreamplay-email-2 at email.dreamplaypianos.com, a repo NOT in the working set — Lionel confirmed 2026-07-16 that BOTH email-2 and email-3 are actively in use) are re-implemented in the monorepo email package. At cutover, email.dreamplaypianos.com + link.musicalbasics.com + link.ultimatepianist.com point at the monorepo.
 **Why:** Otherwise the monorepo still depends on an orphaned legacy deploy for unsubscribes — a compliance-critical path.
 **Revisit if:** —
