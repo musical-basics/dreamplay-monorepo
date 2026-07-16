@@ -4,13 +4,26 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./react": "./src/react.tsx",
+    "./server": "./src/server.ts",
+    "./queries": "./src/queries.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests"
   },
+  "dependencies": {
+    "@dreamplay/db": "workspace:*",
+    "zod": "^3.25.0"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0"
+  },
   "devDependencies": {
+    "@types/react": "^19.2.0",
+    "happy-dom": "^18.0.0",
+    "react": "^19.2.0",
     "typescript": "^5.9.0",
     "vitest": "^3.2.0"
   }
