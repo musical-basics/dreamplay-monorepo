@@ -1,0 +1,35 @@
+{
+  "name": "@dreamplay/web",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@dreamplay/ab": "workspace:*",
+    "@dreamplay/analytics": "workspace:*",
+    "@dreamplay/db": "workspace:*",
+    "@dreamplay/email": "workspace:*",
+    "next": "^16.2.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^9",
+    "eslint-config-next": "^16.2.0",
+    "postcss": "^8.5.0",
+    "tailwindcss": "^3.4.19",
+    "tailwindcss-animate": "^1.0.7",
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.0"
+  }
+}
