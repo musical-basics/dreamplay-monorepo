@@ -16,13 +16,13 @@ Generalize belgium's single-experiment letter system into a registry of named ex
 
 ## Tasks
 
-- [ ] 1. Implement registry + types + `isVariant` guards; `experiments` table sync helper.
-- [ ] 2. Implement assignment helper + wire into apps/web middleware/proxy for experiment-matched paths; unit-test bucketing distribution, stickiness, override, forced-variant, geo pools.
-- [ ] 3. Implement ExperimentProvider/useVariant + rewrite-based whole-page variant support.
-- [ ] 4. Integrate with `packages/analytics` client: variant tags on all events.
-- [ ] 5. Results queries + /admin/experiments dashboard.
-- [ ] 6. Create one real smoke-test experiment on a low-stakes page of apps/web and verify end-to-end on preview: assignment sticky across reloads, both variants render, exposures + conversions per-variant visible in dashboard.
-- [ ] 7. Document "how to launch an experiment" in `packages/ab/README.md` (registry entry → variant content → verify → conclude → clean up).
+- [x] 1. Implement registry + types + `isVariant` guards; `experiments` table sync helper.
+- [x] 2. Implement assignment helper + wire into apps/web middleware/proxy for experiment-matched paths; unit-test bucketing distribution, stickiness, override, forced-variant, geo pools.
+- [x] 3. Implement ExperimentProvider/useVariant + rewrite-based whole-page variant support.
+- [x] 4. Integrate with `packages/analytics` client: variant tags on all events.
+- [x] 5. Results queries + /admin/experiments dashboard.
+- [x] 6. Create one real smoke-test experiment on a low-stakes page of apps/web and verify end-to-end on preview: assignment sticky across reloads, both variants render, exposures + conversions per-variant visible in dashboard.
+- [x] 7. Document "how to launch an experiment" in `packages/ab/README.md` (registry entry → variant content → verify → conclude → clean up).
 
 ## Acceptance criteria
 

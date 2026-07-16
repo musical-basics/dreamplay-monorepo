@@ -4,9 +4,9 @@
 
 ## Current position
 
-- **Current phase:** 3/4 — analytics + A/B integration into apps/web (in progress)
-- **Next action:** Finish Phase 3/4 integration (track route, provider, middleware, /admin dashboards, smoke experiment), then Lionel review round
-- **Blocked on:** [HUMAN] items listed below (needed before runtime verification against a live DB)
+- **Current phase:** Phases 0–4 complete (code); AWAITING LIONEL REVIEW + [HUMAN] items
+- **Next action:** Lionel: review + do [HUMAN] items 1–3 below. Then: live acceptance checks (phase-2 task 10, phase-3/4 DB-side criteria), then Phase 5 (email).
+- **Blocked on:** [HUMAN] items below for any live-DB verification; Phase 5 can start without them
 
 ## Phase status
 
@@ -15,8 +15,8 @@
 | 0 — Foundation | **done** | 2026-07-16 |
 | 1 — Supabase | **done (offline)** — remote project creation + db push are [HUMAN] | 2026-07-16 |
 | 2 — Website port | **done** — task 10 (live end-to-end verify) awaits Supabase env | 2026-07-16 |
-| 3 — Analytics | in progress (package done; app integration running) | — |
-| 4 — A/B testing | in progress (package done; app integration running) | — |
+| 3 — Analytics | **done** — pixels + tracker.js serve deferred to Phase 7; live-DB checks await env | 2026-07-16 |
+| 4 — A/B testing | **done** — smoke experiment verified via curl; dashboard DB-side check awaits env | 2026-07-16 |
 | 5 — Email | not started | — |
 | 6 — Data migration | not started | — |
 | 7 — Cutover | not started | — |
@@ -30,6 +30,8 @@
 4. After 1–3: run phase-2 task 10 + phase-3/4 live acceptance checks on the preview URL.
 
 ## Log
+
+- **2026-07-16** — Phases 3+4 integration complete: /api/track live, AnalyticsProvider+Beacon in layout, A/B assignment in middleware (pre-session, SSR-correct first paint), smoke-accessories-hero experiment verified (sticky, ?ab= override, 50/50 over 12 draws), conversions instrumented (begin_checkout/email_signup/cta_click/slide_view), /admin/analytics + /admin/experiments gated by settings.admin_emails. All gates green; preview deployed.
 
 - **2026-07-16** — Phase 2 complete (minus live verify): full website ported by 5 parallel workers (A+E foundation/actions, B marketing, C commerce, D auth/portal, F webhook/scripts). 50 routes build green; forbidden-import sweep clean; Shopify guard hook ported to .claude/. Key adaptations: root / redirects to /premium-offer (journey engine's target); /buy → /shop redirect added; variant-map relocated to src/config/; webhook now also emits deduped `purchase` events; intro-offer slide tracking removed pending Phase 3 re-add via new SDK.
 - **2026-07-16** — Phase 1 offline portion complete: migrations (5 files, 24 tables), hand-authored types, @dreamplay/db clients, 13 tests. Phase 3/4 package cores complete: @dreamplay/analytics + @dreamplay/ab, 75 tests.
