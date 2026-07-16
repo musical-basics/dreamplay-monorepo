@@ -11,7 +11,12 @@
     "test": "vitest run --passWithNoTests"
   },
   "devDependencies": {
+    "@types/node": "^22.20.1",
     "typescript": "^5.9.0",
     "vitest": "^3.2.0"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.12.3",
+    "@supabase/supabase-js": "^2.110.7"
   }
 }
