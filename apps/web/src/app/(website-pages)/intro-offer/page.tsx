@@ -10,6 +10,7 @@ import { LazyVideo } from "@/components/extended-offer/LazyVideo"
 import DonutChart from "@/components/DonutChart"
 import { subscribeToNewsletter, submitContactForm } from "@/actions/email-actions"
 import { HorizontalBuyersGuide } from "@/components/buyers-guide/HorizontalBuyersGuide"
+import { useAnalytics } from "@dreamplay/analytics/react"
 
 const professorQuotes = [
     {
@@ -57,6 +58,28 @@ const founderQuotes = [
 
 const TOTAL_SLIDES = 17
 
+// Human labels per slide index — attached to slide_view analytics events
+// (restored from the legacy website-2 intro-offer slide tracking).
+const SLIDE_LABELS = [
+    "Launch Video",
+    "History & Stats",
+    "Professor Quotes",
+    "DreamPlay One Hero",
+    "LEDs / Learning App",
+    "Expected Shipping",
+    "Manufacturing",
+    "Social Proof",
+    "Official Price",
+    "But Wait",
+    "Pricing",
+    "Money Back Guarantee",
+    "Founder Quotes",
+    "Ready / CTA",
+    "FAQ / Contact",
+    "Buyers Guide",
+    "Footer",
+]
+
 const ScrollIndicator = ({ next, dark, onNav }: { next: number; dark?: boolean; onNav: (index: number) => void }) => (
     <button
         onClick={() => onNav(next)}
@@ -69,6 +92,7 @@ const ScrollIndicator = ({ next, dark, onNav }: { next: number; dark?: boolean; 
 )
 
 export default function IntroOfferPage() {
+    const analytics = useAnalytics()
     const scrollRef = useRef<HTMLDivElement>(null)
     const [currentSlide, setCurrentSlide] = useState(0)
     const [isVideoPlaying, setIsVideoPlaying] = useState(false)
@@ -170,6 +194,55 @@ export default function IntroOfferPage() {
         el.addEventListener("scroll", onScroll, { passive: true })
         return () => el.removeEventListener("scroll", onScroll)
     }, [])
+
+    // ─── Slide-Level Analytics (restored from legacy website-2) ───
+    // Fires slide_view for the slide the visitor just LEFT, carrying how long
+    // they stayed on it; the final slide is flushed on tab hide/close.
+    const slideEnteredAt = useRef(0) // stamped on mount (Date.now() is impure during render)
+    const lastTrackedSlide = useRef(0)
+
+    useEffect(() => {
+        slideEnteredAt.current = Date.now()
+    }, [])
+
+    const sendSlideEvent = useCallback((slideIndex: number, durationSeconds: number) => {
+        if (durationSeconds < 1) return // skip sub-second noise
+        if (durationSeconds > 60 * 60 * 12) return // skip garbage (e.g. unset timer)
+        void analytics.track("slide_view", {
+            slide_index: slideIndex,
+            slide_label: SLIDE_LABELS[slideIndex] || `Slide ${slideIndex + 1}`,
+            duration_seconds: durationSeconds,
+        })
+    }, [analytics])
+
+    useEffect(() => {
+        if (currentSlide === lastTrackedSlide.current) return
+        // Fire event for the PREVIOUS slide with its dwell time
+        const prevSlide = lastTrackedSlide.current
+        const duration = Math.round((Date.now() - slideEnteredAt.current) / 1000)
+        sendSlideEvent(prevSlide, duration)
+
+        // Reset for the new slide
+        lastTrackedSlide.current = currentSlide
+        slideEnteredAt.current = Date.now()
+    }, [currentSlide, sendSlideEvent])
+
+    // Flush the current slide's dwell time on page leave
+    useEffect(() => {
+        const flush = () => {
+            const duration = Math.round((Date.now() - slideEnteredAt.current) / 1000)
+            sendSlideEvent(lastTrackedSlide.current, duration)
+        }
+        const onVisibilityChange = () => {
+            if (document.visibilityState === "hidden") flush()
+        }
+        document.addEventListener("visibilitychange", onVisibilityChange)
+        window.addEventListener("pagehide", flush)
+        return () => {
+            document.removeEventListener("visibilitychange", onVisibilityChange)
+            window.removeEventListener("pagehide", flush)
+        }
+    }, [sendSlideEvent])
 
     const playVideo = () => {
         setIsVideoPlaying(true)
@@ -1034,6 +1107,7 @@ export default function IntroOfferPage() {
                         <h2 className="font-serif text-3xl md:text-5xl text-white mb-8">Ready to take the next step?</h2>
                         <Link
                             href="/customize"
+                            onClick={() => void analytics.track("cta_click", { cta: "intro_offer_ready_order", href: "/customize" })}
                             className="inline-flex items-center gap-3 bg-white px-12 py-6 font-sans text-sm uppercase tracking-widest text-black hover:bg-white/90 transition-colors"
                         >
                             Order Your DreamPlay One <ArrowRight className="w-5 h-5" />

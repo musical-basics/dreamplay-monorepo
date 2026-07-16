@@ -8,6 +8,7 @@ import SurveyPopup from "@/components/SurveyPopup";
 
 import { subscribeToNewsletter } from "@/actions/email-actions";
 import { trackEmailConversion } from "@/components/EmailTracker";
+import { useAnalytics } from "@dreamplay/analytics/react";
 import { WAITLIST_OFFER_BODY, WAITLIST_OFFER_HEADLINE, WAITLIST_OFFER_TAGS, WAITLIST_OFFER_TERMS } from "@/lib/waitlist-offer";
 
 type PopupType = "none" | "shipping" | "pdf" | "discount" | "discount_44" | "accessory_25" | "store_credit_25" | "priority_shipping" | "survey_5off" | "tips";
@@ -33,6 +34,7 @@ const HAND_SIZE_GUIDE_POPUP_ENABLED = true;
 const WAITLIST_CREDIT_POPUP_ENABLED = false;
 
 export default function NewsletterPopup() {
+    const analytics = useAnalytics();
     const [activePopup, setActivePopup] = useState<PopupType>("none");
     const [email, setEmail] = useState("");
     const [isSubmitted, setIsSubmitted] = useState<PopupType>("none");
@@ -216,6 +218,7 @@ export default function NewsletterPopup() {
             if (res.id) localStorage.setItem("dp_subscriber_id", res.id);
 
             setIsSubmitted(currentOffer);
+            void analytics.track('email_signup', { source: 'newsletter_popup', offer: currentOffer, email });
             trackEmailConversion('conversion_t1', window.location.pathname);
             trackPopup('yes', currentOffer === 'shipping' ? 'waitlist_100_credit' : currentOffer === 'discount' ? 'discount_300' : 'hand_size');
 

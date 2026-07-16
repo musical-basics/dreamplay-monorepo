@@ -1,6 +1,11 @@
 import Image from "next/image";
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { ArrowRight } from "lucide-react";
+import { readAbAssignmentsFromCookieString } from "@dreamplay/ab";
+import { ExperimentProvider } from "@dreamplay/ab/react";
+import { experiments } from "@/config/experiments";
+import { AccessoriesHero } from "./AccessoriesHero";
 
 // Mock data for your accessory lineup - using the "Point of View" copy strategy
 const ACCESSORIES = [
@@ -42,18 +47,20 @@ const ACCESSORIES = [
   }
 ];
 
-export default function AccessoriesPage() {
+export default async function AccessoriesPage() {
+  // A/B (smoke-accessories-hero): the middleware stamped the assignment onto
+  // this request's cookies, so reading them here makes the SSR output match
+  // the visitor's variant (no control-flash). Reading cookies() opts this
+  // page into dynamic rendering — intentional while an experiment runs here.
+  const cookieStore = await cookies();
+  const abAssignments = readAbAssignmentsFromCookieString(cookieStore.toString(), experiments);
+
   return (
     <div className="min-h-screen bg-[#050505] text-white pt-24 pb-32">
-      {/* Hero Section */}
-      <section className="max-w-7xl mx-auto px-6 mb-20 text-center">
-        <h1 className="font-serif text-5xl md:text-7xl mb-6 tracking-tight">
-          Complete the <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400">Ecosystem</span>
-        </h1>
-        <p className="text-lg text-gray-400 max-w-2xl mx-auto font-sans">
-          The DreamPlay One Pro takes six months to hand-build. But you can upgrade your studio posture, workflow, and comfort today. 
-        </p>
-      </section>
+      {/* Hero Section (A/B: headline variant) */}
+      <ExperimentProvider assignments={abAssignments}>
+        <AccessoriesHero />
+      </ExperimentProvider>
 
       {/* Products Grid - The "Boring but Profitable" Layout */}
       <section className="max-w-7xl mx-auto px-6">

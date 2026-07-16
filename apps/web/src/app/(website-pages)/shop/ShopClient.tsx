@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { useAnalytics } from "@dreamplay/analytics/react";
 import {
     ArrowRight,
     Check,
@@ -78,6 +79,7 @@ function makeAttributes(product: ShopProduct, variant: ShopVariant) {
 }
 
 export function ShopClient() {
+    const analytics = useAnalytics();
     const [cartItems, setCartItems] = useState<CartItem[]>([]);
     const [cartOpen, setCartOpen] = useState(false);
     const [isCheckingOut, setIsCheckingOut] = useState(false);
@@ -182,6 +184,13 @@ export function ShopClient() {
             if (!response.ok || !payload.checkoutUrl) {
                 throw new Error(payload.error || "Unable to start checkout.");
             }
+
+            // Fire-and-forget (keepalive) — survives the navigation below.
+            void analytics.track("begin_checkout", {
+                checkout_source: "shop",
+                item_count: cartItems.reduce((sum, item) => sum + item.quantity, 0),
+                cart_total: cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0),
+            });
 
             window.location.href = payload.checkoutUrl;
         } catch (error) {

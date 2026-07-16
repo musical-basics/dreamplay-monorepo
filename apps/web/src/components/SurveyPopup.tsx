@@ -4,6 +4,7 @@ import { useState } from "react";
 import { X } from "lucide-react";
 import { subscribeToNewsletter } from "@/actions/email-actions";
 import { trackEmailConversion } from "@/components/EmailTracker";
+import { useAnalytics } from "@dreamplay/analytics/react";
 
 type DreamPlayAnalyticsWindow = Window & {
     dreamplay?: {
@@ -33,6 +34,7 @@ const STRUGGLE_OPTIONS = [
 ];
 
 export default function SurveyPopup({ onClose }: SurveyPopupProps) {
+    const analytics = useAnalytics();
     const [page, setPage] = useState<SurveyPage>("survey");
     const [selectedStruggle, setSelectedStruggle] = useState("");
     const [email, setEmail] = useState("");
@@ -69,6 +71,7 @@ export default function SurveyPopup({ onClose }: SurveyPopupProps) {
             localStorage.setItem("dp_user_email", email);
             if (res.id) localStorage.setItem("dp_subscriber_id", res.id);
 
+            void analytics.track('email_signup', { source: 'survey_popup', email });
             trackEmailConversion("conversion_t1", window.location.pathname);
             trackPopup("yes", "survey_5off");
 

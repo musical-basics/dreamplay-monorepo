@@ -3,11 +3,13 @@
 import { useState } from "react";
 import { subscribeToNewsletter } from "@/actions/email-actions";
 import { trackEmailConversion } from "@/components/EmailTracker";
+import { useAnalytics } from "@dreamplay/analytics/react";
 import { FileText, CheckCircle2, Loader2 } from "lucide-react";
 
 const PDF_URL = "https://www.dropbox.com/scl/fi/9b72rbi4ga0pjterxyoan/DreamPlay-Infographic.pdf?rlkey=mc08i1ahn5tp3thdd0qjnag2d&st=olbh1t9w&dl=1";
 
 export function InlineHandGuide() {
+    const analytics = useAnalytics();
     const [email, setEmail] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
@@ -38,6 +40,7 @@ export function InlineHandGuide() {
             localStorage.setItem("dp_user_email", email);
             if (res.id) localStorage.setItem("dp_subscriber_id", res.id);
 
+            void analytics.track('email_signup', { source: 'inline_hand_guide', email });
             trackEmailConversion('conversion_t1', window.location.pathname);
             setIsSuccess(true);
 

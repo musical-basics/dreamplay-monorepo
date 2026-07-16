@@ -6,6 +6,7 @@ import { Navbar } from "@/components/Navbar";
 import { getCountdownDate } from "@/actions/admin-actions";
 import { subscribeToNewsletter } from "@/actions/email-actions";
 import { trackEmailConversion } from "@/components/EmailTracker";
+import { useAnalytics } from "@dreamplay/analytics/react";
 import { ArrowRight, ArrowLeft, Check, ShieldCheck, X, CheckCircle2, Undo2, Truck } from "lucide-react";
 import { createBrowserClient } from "@dreamplay/db";
 import { VARIANT_MAP } from "@/config/variant-map";
@@ -85,6 +86,7 @@ function TierPaymentInfo({ tier, isSelected }: { tier: ProductTier; isSelected: 
 
 export default function CustomizeClient({ urls, hiddenProducts }: CustomizeClientProps) {
     const searchParams = useSearchParams();
+    const analytics = useAnalytics();
 
     // --- STATE ---
     const [appState, setAppState] = useState({
@@ -618,6 +620,14 @@ export default function CustomizeClient({ urls, hiddenProducts }: CustomizeClien
             }
 
             if (checkoutUrl) {
+                // Fire-and-forget (keepalive) — survives the navigation below.
+                void analytics.track('begin_checkout', {
+                    checkout_source: 'customize',
+                    tier: tierId,
+                    product: appState.product,
+                    size,
+                    color,
+                });
                 trackEmailConversion('conversion_t2', window.location.pathname);
                 window.location.assign(checkoutUrl);
             }

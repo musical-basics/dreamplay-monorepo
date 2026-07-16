@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { subscribeToNewsletter } from "@/actions/email-actions";
 import { trackEmailConversion } from "@/components/EmailTracker";
+import { useAnalytics } from "@dreamplay/analytics/react";
 import { X, CheckCircle2, Loader2, Rocket } from "lucide-react";
 
 interface FoundersBatchCaptureProps {
@@ -11,6 +12,7 @@ interface FoundersBatchCaptureProps {
 }
 
 export function FoundersBatchCapture({ isOpen, onClose }: FoundersBatchCaptureProps) {
+    const analytics = useAnalytics();
     const [email, setEmail] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
@@ -41,6 +43,7 @@ export function FoundersBatchCapture({ isOpen, onClose }: FoundersBatchCapturePr
             localStorage.setItem("dp_user_email", email);
             if (res.id) localStorage.setItem("dp_subscriber_id", res.id);
 
+            void analytics.track('email_signup', { source: 'founders_batch_capture', email });
             trackEmailConversion('conversion_t1', window.location.pathname);
             setIsSuccess(true);
         } catch (err) {

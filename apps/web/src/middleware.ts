@@ -1,5 +1,12 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@dreamplay/db";
+import {
+    applyAssignments,
+    getRewritePath,
+    resolveAssignments,
+    type Assignment,
+} from "@dreamplay/ab";
+import { experiments } from "@/config/experiments";
 
 /**
  * Refresh the Supabase auth session on every request.
@@ -31,23 +38,54 @@ async function updateSession(request: NextRequest) {
 }
 
 export async function middleware(request: NextRequest) {
-    // ========================================================================
-    // REFRESH SUPABASE AUTH SESSION (must run on every request)
-    // ========================================================================
-    const sessionResponse = await updateSession(request);
-
     const url = request.nextUrl;
     const pathname = url.pathname;
+
+    const isApiOrAdmin = pathname.startsWith("/api") || pathname.startsWith("/admin");
+    const isStaticFile = /\.(.*)$/.test(pathname);
+
+    // ========================================================================
+    // A/B ASSIGNMENTS (must resolve BEFORE the session refresh)
+    // resolveAssignments buckets the visitor for every experiment matching
+    // this path (?ab= override → forced → cookie → CSPRNG). Stamping the
+    // resolved values onto the REQUEST cookies here means the server render
+    // of this same request already sees them (no control-flash on first
+    // visit and ?ab= overrides apply immediately); updateSession() forwards
+    // the modified request via NextResponse.next({ request }).
+    // ========================================================================
+    let abAssignments: Assignment[] = [];
+    if (!isApiOrAdmin && !isStaticFile) {
+        abAssignments = resolveAssignments(request, experiments);
+        for (const assignment of abAssignments) {
+            if (assignment.setCookie) {
+                request.cookies.set(assignment.setCookie.name, assignment.setCookie.value);
+            }
+        }
+    }
+
+    // ========================================================================
+    // REFRESH SUPABASE AUTH SESSION (must run on every request)
+    // Guarded: a missing Supabase env (local dev without .env.local) or a
+    // transient auth failure must never 500 the whole site from middleware —
+    // auth-dependent pages handle their own signed-out state.
+    // ========================================================================
+    let sessionResponse: NextResponse;
+    try {
+        sessionResponse = await updateSession(request);
+    } catch {
+        sessionResponse = NextResponse.next({ request });
+    }
+
     const hostname = request.headers.get("host")?.split(":")[0] || "";
     const isShopHost = hostname === "shop.dreamplaypianos.com";
 
     // Skip rewrites for API routes, admin, and auth paths
-    if (pathname.startsWith('/api') || pathname.startsWith('/admin') || pathname.startsWith('/api/auth')) {
+    if (isApiOrAdmin) {
         return sessionResponse;
     }
 
     // Skip static files
-    if (pathname.match(/\.(.*)$/)) {
+    if (isStaticFile) {
         return sessionResponse;
     }
 
@@ -56,13 +94,17 @@ export async function middleware(request: NextRequest) {
         if (pathname === "/") {
             const rewriteUrl = request.nextUrl.clone();
             rewriteUrl.pathname = "/shop";
-            const response = NextResponse.rewrite(rewriteUrl);
+            const response = NextResponse.rewrite(rewriteUrl, { request });
             sessionResponse.cookies.getAll().forEach(c => response.cookies.set(c.name, c.value));
-            return response;
+            return applyAssignments(response, abAssignments);
         }
 
-        return sessionResponse;
+        return applyAssignments(sessionResponse, abAssignments);
     }
+
+    // Whole-page experiment variants: a resolved variant with a `route`
+    // differing from the request path is served via rewrite (URL unchanged).
+    const abRewritePath = getRewritePath(abAssignments);
 
     const searchParams = url.searchParams;
 
@@ -93,7 +135,9 @@ export async function middleware(request: NextRequest) {
         if (isLocal) delete cookieOpts.domain;
 
         // Continue without redirect — keep sid/cid in URL
-        const passthrough = NextResponse.next();
+        const passthrough = abRewritePath
+            ? NextResponse.rewrite(new URL(abRewritePath, request.url), { request })
+            : NextResponse.next({ request });
 
         passthrough.cookies.set("dp_sid", sid, cookieOpts);
         if (cid) passthrough.cookies.set("dp_cid", cid, cookieOpts);
@@ -112,10 +156,16 @@ export async function middleware(request: NextRequest) {
             passthrough.cookies.set(c.name, c.value)
         );
 
-        return passthrough;
+        return applyAssignments(passthrough, abAssignments);
     }
 
-    return sessionResponse;
+    if (abRewritePath) {
+        const response = NextResponse.rewrite(new URL(abRewritePath, request.url), { request });
+        sessionResponse.cookies.getAll().forEach(c => response.cookies.set(c.name, c.value));
+        return applyAssignments(response, abAssignments);
+    }
+
+    return applyAssignments(sessionResponse, abAssignments);
 }
 
 export const config = {

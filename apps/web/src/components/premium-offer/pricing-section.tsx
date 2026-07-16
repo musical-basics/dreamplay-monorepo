@@ -2,6 +2,7 @@
 
 import Image from "next/image"
 import { ArrowRight } from "lucide-react"
+import { useAnalytics } from "@dreamplay/analytics/react"
 
 const allTiers = [
   {
@@ -71,6 +72,7 @@ const allTiers = [
 ]
 
 export function PricingSection({ hiddenProducts = [] }: { hiddenProducts?: string[] }) {
+  const analytics = useAnalytics()
   const tiers = allTiers.filter(t => !hiddenProducts.includes(t.id))
   return (
     <section id="pricing" className="relative overflow-hidden bg-foreground">
@@ -192,6 +194,7 @@ export function PricingSection({ hiddenProducts = [] }: { hiddenProducts?: strin
               {/* CTA */}
               <a
                 href="/customize"
+                onClick={() => void analytics.track("cta_click", { cta: "premium_offer_pricing_reserve", tier: tier.id, href: "/customize" })}
                 className="mt-8 flex items-center justify-center gap-2 border px-6 py-4 text-center font-sans text-xs uppercase tracking-widest border-background/30 text-background/80 hover:border-background hover:bg-background/10 transition-colors"
               >
                 Reserve Now

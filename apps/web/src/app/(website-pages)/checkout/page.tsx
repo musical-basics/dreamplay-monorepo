@@ -8,6 +8,7 @@ import { Navbar } from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { VARIANT_MAP } from "@/config/variant-map";
 import { trackEmailConversion } from "@/components/EmailTracker";
+import { useAnalytics } from "@dreamplay/analytics/react";
 
 const PRODUCT_IMAGES = {
     Black: [
@@ -45,6 +46,7 @@ const PACKAGES = [
 
 function CheckoutContent() {
     const searchParams = useSearchParams();
+    const analytics = useAnalytics();
     const [discountCode, setDiscountCode] = useState<string | null>(null);
 
     // Form State
@@ -78,6 +80,14 @@ function CheckoutContent() {
         setIsCheckingOut(true);
 
         const exactVariantId = VARIANT_MAP[tier]?.[size]?.[color] || "";
+
+        // Fire-and-forget (keepalive) — survives the navigation below.
+        void analytics.track('begin_checkout', {
+            checkout_source: 'pdp',
+            tier,
+            size,
+            color,
+        });
 
         if (exactVariantId && exactVariantId.trim() !== '') {
             let permalink = `/cart/${exactVariantId}:1?note=checkout_source:pdp`;

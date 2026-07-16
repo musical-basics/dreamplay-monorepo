@@ -4,6 +4,7 @@ import { useState } from "react";
 import { createBrowserClient } from "@dreamplay/db";
 import { subscribeToNewsletter } from "@/actions/email-actions";
 import { trackEmailConversion } from "@/components/EmailTracker";
+import { useAnalytics } from "@dreamplay/analytics/react";
 import { X, ChevronRight, Loader2, Mail } from "lucide-react";
 import { WAITLIST_OFFER_BODY, WAITLIST_OFFER_HEADLINE, WAITLIST_OFFER_TAGS, WAITLIST_OFFER_TERMS } from "@/lib/waitlist-offer";
 
@@ -15,6 +16,7 @@ interface RegisterModalProps {
 }
 
 export function RegisterModal({ isOpen, onClose, discountCode, onSuccess }: RegisterModalProps) {
+    const analytics = useAnalytics();
     const [step, setStep] = useState(1);
     const [email, setEmail] = useState("");
     const [name, setName] = useState("");
@@ -88,6 +90,7 @@ export function RegisterModal({ isOpen, onClose, discountCode, onSuccess }: Regi
                 localStorage.setItem("dp_subscriber_id", res.id || authData.user?.id || "");
             }
 
+            void analytics.track('email_signup', { source: 'register_modal', email });
             trackEmailConversion('conversion_t1', window.location.pathname);
             if (onSuccess) {
                 onSuccess();

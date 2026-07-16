@@ -1,8 +1,10 @@
 "use client"
 
 import Image from "next/image"
+import { useAnalytics } from "@dreamplay/analytics/react"
 
 export function CrowdfundingSection() {
+  const analytics = useAnalytics()
   return (
     <section className="relative min-h-screen overflow-hidden">
       <Image
@@ -33,6 +35,7 @@ export function CrowdfundingSection() {
         <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:gap-4">
           <a
             href="/customize"
+            onClick={() => void analytics.track("cta_click", { cta: "premium_offer_hero_preorder", href: "/customize" })}
             className="inline-block bg-white px-8 py-3 text-center text-xs font-sans uppercase tracking-widest text-black transition-colors hover:bg-white/90 md:text-sm"
           >
             Pre-Order Now

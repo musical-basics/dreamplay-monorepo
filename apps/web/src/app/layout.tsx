@@ -3,6 +3,7 @@ import { Inter, Playfair_Display } from "next/font/google";
 import { EmailTracker } from "@/components/EmailTracker";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 import NewsletterPopup from "@/components/NewsletterPopup";
+import { AppProviders } from "@/components/AppProviders";
 import "./globals.css";
 
 const inter = Inter({
@@ -53,10 +54,14 @@ export default async function RootLayout({
         <link href="https://fonts.gstatic.com" rel="preconnect" crossOrigin="anonymous" />
       </head>
       <body>
-        <EmailTracker />
-        {children}
-        <NewsletterPopup />
-        <AnnouncementBanner />
+        {/* AppProviders wraps EVERYTHING in the body so useAnalytics() has
+            context on every page and in the layout-level popups/banners. */}
+        <AppProviders>
+          <EmailTracker />
+          {children}
+          <NewsletterPopup />
+          <AnnouncementBanner />
+        </AppProviders>
       </body>
     </html>
   );

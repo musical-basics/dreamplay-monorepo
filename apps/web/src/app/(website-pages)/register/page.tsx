@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { createBrowserClient } from "@dreamplay/db";
 import { subscribeToNewsletter } from "@/actions/email-actions";
 import { trackEmailConversion } from "@/components/EmailTracker";
+import { useAnalytics } from "@dreamplay/analytics/react";
 import { ChevronRight, Loader2, Mail } from "lucide-react";
 import { WAITLIST_OFFER_BODY, WAITLIST_OFFER_HEADLINE, WAITLIST_OFFER_TAGS, WAITLIST_OFFER_TERMS } from "@/lib/waitlist-offer";
 
@@ -19,6 +20,7 @@ export default function RegisterPage() {
 
 function RegisterContent() {
     const searchParams = useSearchParams();
+    const analytics = useAnalytics();
     const isCrowdfunding = searchParams.get("offer") === "crowdfunding";
 
     const [step, setStep] = useState(1);
@@ -100,6 +102,7 @@ function RegisterContent() {
                 localStorage.setItem("dp_subscriber_id", res.id || authData.user?.id || "");
             }
 
+            void analytics.track('email_signup', { source: 'register_page', email });
             trackEmailConversion('conversion_t1', window.location.pathname);
             setStep(5);
 
