@@ -4,8 +4,6 @@ import { getAdminDb } from '@/lib/db'
 import { DEFAULT_FAQ_ITEMS } from './faq-data'
 import type { FAQItem } from './faq-data'
 
-export type { FAQItem }
-
 export async function getFaqItems(): Promise<FAQItem[]> {
     try {
         const supabase = getAdminDb()

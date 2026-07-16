@@ -28,6 +28,11 @@ const nextConfig: NextConfig = {
         destination: "/intro-offer",
         permanent: true,
       },
+      {
+        source: "/buy",
+        destination: "/shop",
+        permanent: false,
+      },
     ];
   },
   async rewrites() {
