@@ -44,3 +44,9 @@ Record decisions here BEFORE acting on them. Format: what / why / revisit-if.
 **What:** Open-pixel, click-redirect, unsubscribe, and resolve-subscriber endpoints (currently the deployed dreamplay-email-2 at email.dreamplaypianos.com, a repo NOT in the working set — Lionel confirmed 2026-07-16 that BOTH email-2 and email-3 are actively in use) are re-implemented in the monorepo email package. At cutover, email.dreamplaypianos.com + link.musicalbasics.com + link.ultimatepianist.com point at the monorepo.
 **Why:** Otherwise the monorepo still depends on an orphaned legacy deploy for unsubscribes — a compliance-critical path.
 **Revisit if:** —
+
+## D8 — Tailwind 3.4 in apps/web, not Tailwind 4 (2026-07-16)
+
+**What:** apps/web pins tailwindcss ^3.4 + tailwindcss-animate, matching dreamplay-website-2's shadcn/Radix component library.
+**Why:** Phase 2 ports ~all of website-2's UI; identical Tailwind major means components copy clean without config/class rewrites. Belgium's TW4 usage doesn't transfer — we port its logic, not its styles.
+**Revisit if:** post-migration, upgrade to TW4 as a standalone chore.

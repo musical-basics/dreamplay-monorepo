@@ -5,13 +5,13 @@
 
 ## Tasks
 
-- [ ] 1. Scaffold pnpm workspace: `pnpm-workspace.yaml` (`apps/*`, `packages/*`), root `package.json`, Turborepo (`turbo.json` with build/lint/typecheck/test pipelines), root `tsconfig.base.json`, `.gitignore` (node_modules, .next, .env*.local, .turbo, .vercel), `.env.example` (starts empty, grows every phase).
-- [ ] 2. Create `apps/web`: fresh Next.js (latest stable, App Router, TS, Tailwind) named `@dreamplay/web`. Dev port 3000. Boots to a placeholder page.
-- [ ] 3. Create empty package stubs with correct exports/tsconfig: `packages/db` (`@dreamplay/db`), `packages/analytics` (`@dreamplay/analytics`), `packages/ab` (`@dreamplay/ab`), `packages/email` (`@dreamplay/email`). Each has one exported placeholder to prove workspace linking (`apps/web` imports from each and builds).
-- [ ] 4. Tooling: ESLint + Prettier at root, shared config; Vitest wired in each package; `pnpm build && pnpm lint && pnpm typecheck && pnpm test` all green.
-- [ ] 5. GitHub: create private repo `musical-basics/dreamplay-monorepo`, push. **[HUMAN if gh auth missing]**
-- [ ] 6. CI: GitHub Actions workflow running build/lint/typecheck/test on push/PR (the legacy repos had zero CI — this is a fix).
-- [ ] 7. Vercel: create NEW Vercel project `dreamplay-monorepo` linked to the repo, root directory `apps/web`. Do NOT touch the existing `dreamplay-pianos` Vercel project. No custom domains yet (preview URLs only until Phase 7). **[HUMAN: Vercel dashboard or `vercel link` auth]**
+- [x] 1. Scaffold pnpm workspace: `pnpm-workspace.yaml` (`apps/*`, `packages/*`), root `package.json`, Turborepo (`turbo.json` with build/lint/typecheck/test pipelines), root `tsconfig.base.json`, `.gitignore` (node_modules, .next, .env*.local, .turbo, .vercel), `.env.example` (starts empty, grows every phase).
+- [x] 2. Create `apps/web`: fresh Next.js (latest stable, App Router, TS, Tailwind) named `@dreamplay/web`. Dev port 3000. Boots to a placeholder page.
+- [x] 3. Create empty package stubs with correct exports/tsconfig: `packages/db` (`@dreamplay/db`), `packages/analytics` (`@dreamplay/analytics`), `packages/ab` (`@dreamplay/ab`), `packages/email` (`@dreamplay/email`). Each has one exported placeholder to prove workspace linking (`apps/web` imports from each and builds).
+- [x] 4. Tooling: ESLint + Prettier at root, shared config; Vitest wired in each package; `pnpm build && pnpm lint && pnpm typecheck && pnpm test` all green.
+- [x] 5. GitHub: create private repo `musical-basics/dreamplay-monorepo`, push. **[HUMAN if gh auth missing]**
+- [x] 6. CI: GitHub Actions workflow running build/lint/typecheck/test on push/PR (the legacy repos had zero CI — this is a fix).
+- [x] 7. Vercel: create NEW Vercel project `dreamplay-monorepo` linked to the repo, root directory `apps/web`. Do NOT touch the existing `dreamplay-pianos` Vercel project. No custom domains yet (preview URLs only until Phase 7). **[HUMAN: Vercel dashboard or `vercel link` auth]**
 
 ## Acceptance criteria
 
