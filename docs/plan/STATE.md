@@ -4,8 +4,8 @@
 
 ## Current position
 
-- **Current phase:** Phases 0–4 complete + live-verified; Phase 5 (email) in progress
-- **Next action:** Phase 5 build (packages/email + routes + admin UI). Lionel: browse the preview URL for phase-2 task 10 route parity when convenient.
+- **Current phase:** Phases 0–6 COMPLETE. Phase 7 (cutover) prepped and [HUMAN]-gated.
+- **Next action:** Lionel: cutover session per phase-7 (batch: Inngest app + Resend webhook + DNS/domains + Shopify webhook registration + optional password-hash import). Everything up to that line is done.
 - **Blocked on:** nothing
 
 ## Phase status
@@ -17,7 +17,7 @@
 | 2 — Website port | **done** — task 10 (live end-to-end verify) awaits Supabase env | 2026-07-16 |
 | 3 — Analytics | **done** — pixels + tracker.js serve deferred to Phase 7; live-DB checks await env | 2026-07-16 |
 | 4 — A/B testing | **done** — smoke experiment verified via curl; dashboard DB-side check awaits env | 2026-07-16 |
-| 5 — Email | in progress (agent building) | — |
+| 5 — Email | **done** — task 10 (live verification send) is [HUMAN]-gated on Inngest+Resend-webhook keys | 2026-07-18 |
 | 6 — Data migration | **done** — passwords pending choice (reset-once vs hash import); Lionel test-login outstanding | 2026-07-18 |
 | 7 — Cutover | not started | — |
 | 8 — Hardening | not started | — |
@@ -32,6 +32,8 @@
 4. After 1–3: run phase-2 task 10 + phase-3/4 live acceptance checks on the preview URL.
 
 ## Log
+
+- **2026-07-18** — Phase 5 complete: packages/email + Inngest v4 fns + agent API (suppression-aware, ≥50-recipient count confirmation) + tracking endpoints (open/click/resolve-subscriber/unsubscribe, absorbing dp-email-2) + Resend webhook (svix) + /admin/email UI + send-wave CLI. All four legacy incident classes have enforced fixes with reproducing tests (65 new; 153 total green). AGENT_API_KEY + EMAIL_UNSUBSCRIBE_SECRET generated and set in Vercel + .env.local; NEXT_PUBLIC_APP_URL points at preview until cutover. Outstanding external keys: INNGEST_EVENT_KEY/SIGNING_KEY, RESEND_WEBHOOK_SECRET ([HUMAN] dashboards). Rotation schedule state lives in app_settings key rotation-schedule:<id>.
 
 - **2026-07-18** — Phase 6 EXECUTED against live DBs (idempotent scripts in scripts/migrate/, re-runnable for delta sync pre-cutover): 68 auth users, 77 buyers, 22 decisions (user_ids remapped), 78 customers, 32 waitlist, 9,450 subscribers (6,069 cross-workspace dupes merged, most-restrictive status wins), 1,021 suppressions seeded (COMPLIANCE ASSERTION PASSED), 111 tags, 16 merge_tags, 6 rotations, 1,555 campaigns (65 templates + children referenced by sent_history), 61,806 sent_history. analytics_logs + subscriber_events intentionally not ported. Passwords NOT migratable via API — users are email-confirmed/passwordless; import-password-hashes.mjs ready if old DB connection string provided pre-cutover.
 
