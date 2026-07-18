@@ -18,7 +18,7 @@
 | 3 — Analytics | **done** — pixels + tracker.js serve deferred to Phase 7; live-DB checks await env | 2026-07-16 |
 | 4 — A/B testing | **done** — smoke experiment verified via curl; dashboard DB-side check awaits env | 2026-07-16 |
 | 5 — Email | **done** — task 10 (live verification send) is [HUMAN]-gated on Inngest+Resend-webhook keys | 2026-07-18 |
-| 6 — Data migration | **done** — passwords pending choice (reset-once vs hash import); Lionel test-login outstanding | 2026-07-18 |
+| 6 — Data migration | **done incl. password hashes** — Lionel test-login outstanding | 2026-07-18 |
 | 7 — Cutover | not started | — |
 | 8 — Hardening | not started | — |
 
@@ -32,6 +32,8 @@
 4. After 1–3: run phase-2 task 10 + phase-3/4 live acceptance checks on the preview URL.
 
 ## Log
+
+- **2026-07-18** — Password continuity DONE: all 68 auth-user bcrypt hashes imported old→new via import-password-hashes.mjs. Network note for future DB access: this machine/ISP blocks outbound 5432; use the Supavisor pooler `aws-1-us-east-1.pooler.supabase.com:6543` (works for BOTH projects, username postgres.<ref>). OLD_DB_URL/NEW_DB_URL in root .env.local now use that form. Also fixed NEXT_PUBLIC_EMAIL_TRACK_URL (legacy env had localhost:3001) → https://email.dreamplaypianos.com/api/track locally + Vercel.
 
 - **2026-07-18** — Phase 5 complete: packages/email + Inngest v4 fns + agent API (suppression-aware, ≥50-recipient count confirmation) + tracking endpoints (open/click/resolve-subscriber/unsubscribe, absorbing dp-email-2) + Resend webhook (svix) + /admin/email UI + send-wave CLI. All four legacy incident classes have enforced fixes with reproducing tests (65 new; 153 total green). AGENT_API_KEY + EMAIL_UNSUBSCRIBE_SECRET generated and set in Vercel + .env.local; NEXT_PUBLIC_APP_URL points at preview until cutover. Outstanding external keys: INNGEST_EVENT_KEY/SIGNING_KEY, RESEND_WEBHOOK_SECRET ([HUMAN] dashboards). Rotation schedule state lives in app_settings key rotation-schedule:<id>.
 
