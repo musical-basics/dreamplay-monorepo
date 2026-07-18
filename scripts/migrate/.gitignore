@@ -1,0 +1,3 @@
+# Migration artifacts: id maps, per-run summaries, verification reports.
+# Contain emails/user ids — never commit.
+output/
