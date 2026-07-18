@@ -6,8 +6,8 @@
 
 ## Tasks
 
-- [ ] 1. **[HUMAN]** Create new Supabase project (suggested name `dreamplay-monorepo`, region us-west or nearest to majority traffic). Capture URL + anon key + service-role key + access token for CLI into `apps/web/.env.local` and Vercel envs. (CLI alternative: `supabase projects create` if `SUPABASE_ACCESS_TOKEN` is available.)
-- [ ] 2. Init supabase CLI in `packages/db` (`supabase init`), link to project. Local dev via `supabase start` (Docker).
+- [x] 1. **[HUMAN — done 2026-07-18]** Create new Supabase project (suggested name `dreamplay-monorepo`, region us-west or nearest to majority traffic). Capture URL + anon key + service-role key + access token for CLI into `apps/web/.env.local` and Vercel envs. (CLI alternative: `supabase projects create` if `SUPABASE_ACCESS_TOKEN` is available.)
+- [ ] 2. *(optional now — CLI link/Docker still absent; schema is applied and verified remotely)* Init supabase CLI in `packages/db` (`supabase init`), link to project. Local dev via `supabase start` (Docker).
 - [x] 3. Write migrations for the **commerce/buyers domain**:
   - `buyers` (replaces `buyer_emails`): id, email unique (lowercase, citext or checked), notes, source ('shopify_webhook'|'backfill'|'manual'), shopify_order_number, created_at, updated_at.
   - `reservation_decisions`: same shape as legacy (user_id, email, decision enum 'refund_requested'|'keep_reservation'|'upgrade_to_pro', selected_at, order_metadata jsonb, timestamps).
@@ -26,7 +26,7 @@
   - `ip_email_map`, `chat_sessions`, `chat_messages`.
   - Aggregation as SQL functions/views (port get_analytics_summary's intent) — **admin/bot IPs come from a `settings` table, not hardcoded**.
 - [x] 6. Generate TS types (`supabase gen types typescript`) into `packages/db/src/types.ts`; export typed clients: `createBrowserClient`, `createServerClient` (SSR cookies), `createAdminClient` (service role). One implementation, used by everything.
-- [ ] 7. `supabase db push` to the remote project; verify with `supabase migration list`.
+- [x] 7. *(applied via SQL editor by Lionel, 2026-07-18; verified: all 24 tables + RPC live, RLS blocks anon)* `supabase db push` to the remote project; verify with `supabase migration list`.
 - [x] 8. Add all Supabase env var names to `.env.example`; document local-dev workflow in `packages/db/README.md`.
 
 ## Acceptance criteria

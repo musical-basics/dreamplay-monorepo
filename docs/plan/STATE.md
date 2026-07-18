@@ -4,9 +4,9 @@
 
 ## Current position
 
-- **Current phase:** Phases 0–4 complete (code); AWAITING LIONEL REVIEW + [HUMAN] items
-- **Next action:** Lionel: review + do [HUMAN] items 1–3 below. Then: live acceptance checks (phase-2 task 10, phase-3/4 DB-side criteria), then Phase 5 (email).
-- **Blocked on:** [HUMAN] items below for any live-DB verification; Phase 5 can start without them
+- **Current phase:** Phases 0–4 complete + live-verified; Phase 5 (email) in progress
+- **Next action:** Phase 5 build (packages/email + routes + admin UI). Lionel: browse the preview URL for phase-2 task 10 route parity when convenient.
+- **Blocked on:** nothing
 
 ## Phase status
 
@@ -24,12 +24,16 @@
 
 ## Pending [HUMAN] items
 
-1. **Create the Supabase project** (phase-1 task 1) — dashboard or `supabase projects create`; put URL + anon + service-role keys in `apps/web/.env.local` and Vercel project env. Then apply migrations: install supabase CLI, `supabase link`, `supabase db push` from `packages/db` (or paste `packages/db/supabase/migrations/*.sql` into the SQL editor in filename order).
+*(2026-07-18: items 1–3 DONE — project huviqtkjkdkcfneorrmo live, migrations applied+verified, 15 env vars in Vercel, admin_emails seeded. Remaining: item 4 below.)*
+
+1. ~~**Create the Supabase project**~~ DONE — huviqtkjkdkcfneorrmo. Original text: **Create the Supabase project** (phase-1 task 1) — dashboard or `supabase projects create`; put URL + anon + service-role keys in `apps/web/.env.local` and Vercel project env. Then apply migrations: install supabase CLI, `supabase link`, `supabase db push` from `packages/db` (or paste `packages/db/supabase/migrations/*.sql` into the SQL editor in filename order).
 2. **Vercel env vars** — copy the secret values for everything in `.env.example` (Shopify, Resend, AI keys) into the `dreamplay-monorepo` Vercel project.
 3. **Add admin emails** — `settings` table key `admin_emails` (jsonb array) to unlock /admin dashboards.
 4. After 1–3: run phase-2 task 10 + phase-3/4 live acceptance checks on the preview URL.
 
 ## Log
+
+- **2026-07-18** — Supabase project huviqtkjkdkcfneorrmo live (Lionel created + applied migrations). Verified: 24 tables + get_analytics_summary RPC, RLS anon-blocked, service-role CRUD OK. admin_emails seeded (lionel@musicalbasics.com). .env.local reformatted + mirrored to apps/web (legacy secrets merged; 4 Storefront vars missing in legacy too — permalink fallback covers checkout). 15 env vars upserted to Vercel (all envs). LIVE acceptance passed locally: /accessories experiment SSR + sticky cookie, /my-reservation gating redirect, /api/track → events row with ab_variant tag (localhost correctly is_bot-flagged). Preview redeployed with env.
 
 - **2026-07-16** — Phases 3+4 integration complete: /api/track live, AnalyticsProvider+Beacon in layout, A/B assignment in middleware (pre-session, SSR-correct first paint), smoke-accessories-hero experiment verified (sticky, ?ab= override, 50/50 over 12 draws), conversions instrumented (begin_checkout/email_signup/cta_click/slide_view), /admin/analytics + /admin/experiments gated by settings.admin_emails. All gates green; preview deployed.
 
