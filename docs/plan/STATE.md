@@ -17,8 +17,8 @@
 | 2 — Website port | **done** — task 10 (live end-to-end verify) awaits Supabase env | 2026-07-16 |
 | 3 — Analytics | **done** — pixels + tracker.js serve deferred to Phase 7; live-DB checks await env | 2026-07-16 |
 | 4 — A/B testing | **done** — smoke experiment verified via curl; dashboard DB-side check awaits env | 2026-07-16 |
-| 5 — Email | not started | — |
-| 6 — Data migration | not started | — |
+| 5 — Email | in progress (agent building) | — |
+| 6 — Data migration | **done** — passwords pending choice (reset-once vs hash import); Lionel test-login outstanding | 2026-07-18 |
 | 7 — Cutover | not started | — |
 | 8 — Hardening | not started | — |
 
@@ -32,6 +32,8 @@
 4. After 1–3: run phase-2 task 10 + phase-3/4 live acceptance checks on the preview URL.
 
 ## Log
+
+- **2026-07-18** — Phase 6 EXECUTED against live DBs (idempotent scripts in scripts/migrate/, re-runnable for delta sync pre-cutover): 68 auth users, 77 buyers, 22 decisions (user_ids remapped), 78 customers, 32 waitlist, 9,450 subscribers (6,069 cross-workspace dupes merged, most-restrictive status wins), 1,021 suppressions seeded (COMPLIANCE ASSERTION PASSED), 111 tags, 16 merge_tags, 6 rotations, 1,555 campaigns (65 templates + children referenced by sent_history), 61,806 sent_history. analytics_logs + subscriber_events intentionally not ported. Passwords NOT migratable via API — users are email-confirmed/passwordless; import-password-hashes.mjs ready if old DB connection string provided pre-cutover.
 
 - **2026-07-18** — Supabase project huviqtkjkdkcfneorrmo live (Lionel created + applied migrations). Verified: 24 tables + get_analytics_summary RPC, RLS anon-blocked, service-role CRUD OK. admin_emails seeded (lionel@musicalbasics.com). .env.local reformatted + mirrored to apps/web (legacy secrets merged; 4 Storefront vars missing in legacy too — permalink fallback covers checkout). 15 env vars upserted to Vercel (all envs). LIVE acceptance passed locally: /accessories experiment SSR + sticky cookie, /my-reservation gating redirect, /api/track → events row with ab_variant tag (localhost correctly is_bot-flagged). Preview redeployed with env.
 
