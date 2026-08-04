@@ -5,6 +5,7 @@
 ## Current position
 
 - **Current phase:** Phase 7 CUTOVER EXECUTED 2026-07-18 — production domains serve the monorepo. 4 leftovers below.
+- **See [HANDOFF-2026-08-04.md](HANDOFF-2026-08-04.md) for the full estate map, decommission status, and work queue.**
 - **Next action:** Lionel: (1) add TXT _vercel.musicalbasics.com = "vc-domain-verify=link.musicalbasics.com,c3b63117427e9a1f2e06" in Google Cloud DNS; (2) create Resend webhook → www.dreamplaypianos.com/api/webhooks/resend, update RESEND_WEBHOOK_SECRET; (3) register Inngest app (apps/web /api/inngest) → set INNGEST_SIGNING_KEY (scheduled sends inert until then); (4) after ~2 stable weeks: pause old Vercel projects + old Supabase projects (phase-7 task 7). Also: /tracker.js for legacy non-Next sites still pending (phase-3 task 8).
 - **Blocked on:** nothing
 
