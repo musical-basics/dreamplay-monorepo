@@ -147,6 +147,17 @@ if (mode !== "execute") {
   process.exit(0);
 }
 
+// Re-run stability: an email already in the new DB must keep its existing id —
+// the dedup-merge can pick a different legacy row as canonical between runs,
+// and changing the PK on upsert violates the sent_history FK.
+{
+  const existing = await readAllRows(newProject, "subscribers", "id,email");
+  const existingIdByEmail = new Map(existing.map((s) => [s.email.toLowerCase(), s.id]));
+  for (const t of targets) {
+    const keep = existingIdByEmail.get(t.email.toLowerCase());
+    if (keep) t.id = keep;
+  }
+}
 await upsertRows(newProject, "subscribers", targets, { onConflict: "email" });
 const newSubCount = await countRows(newProject, "subscribers");
 console.log(`Done. subscribers new count: ${newSubCount}`);
