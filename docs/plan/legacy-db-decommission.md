@@ -67,3 +67,18 @@ Consolidated the live belgium.musicalbasics.com app entirely onto its dedicated 
 - **Env/deploy**: Vercel `belgium-concert-landing-page` production vars ANALYTICS_SUPABASE_URL, ANALYTICS_SUPABASE_SERVICE_ROLE_KEY, EMAIL_SUPABASE_URL, EMAIL_SUPABASE_SERVICE_KEY all → szl (URL + its secret key; key names left as the code reads them). TICKETS_* and NEXT_PUBLIC_SUPABASE_URL already pointed at szl. Deployed via git push → auto-deploy (dpl `belgium-concert-landing-page-enigb6aka`, READY; previous prod deploy was 53d old).
 - **Live verification**: belgium.musicalbasics.com → 200; POST `/api/track` → `{"success":true}` and the row landed in szl `concert_analytics.analytics_logs` (0 copies in tqhf); `/api/analytics/sid-lookup` resolves a quyq-copied subscriber id from szl → 200 with email; `/api/analytics/stats` 200 with historical szl data; `/api/analytics/ab-stats` 200.
 - tqhf `concert_analytics.*`, `ads.belgium_*`, `concerts.concert_requests` and quyq's belgium campaigns/sends/subscribers are now fully mirrored in szl; this app no longer references either legacy project.
+
+## ✅ google-ads-app (belgium ads sync cron) repointed off tqhf — 2026-08-04
+
+The ~2h writer the belgium migration flagged: Vercel project `google-ads-app` (python), cron `/api/sync/conversions` every 2h. Its `SUPABASE_URL` was a **sensitive-type env var** (unreadable via API — why the original consumer sweep missed it). Reads `concert_analytics.analytics_logs`, writes schema `ads` (belgium_agent_log/campaign_state/daily_performance/ticket_sales).
+- `ads` schema created + seeded in szl from live tqhf (846/3/10/9 rows, 1:1), schema exposed via PostgREST config.
+- Env repointed to szl (recreated as encrypted so it stays auditable), redeployed, cron triggered live: new agent_log row landed in **szl only**; tqhf frozen at 846 (last pre-flip run 18:01Z).
+
+## Remaining before PAUSE (updated 2026-08-04)
+
+1. **media-indexer / asset_indexer** — the ONLY remaining live tqhf consumer: schema `asset_indexer` (assets 967, merch_generations 208, product_image_catalog 136, drafts 3) + storage buckets `assets`(4)/`thumbnails`(959), used by dreamplay-media-indexer(-2) apps and Openclaw/Hermes bots (.env-media.local → tqhf). **[DECISION Lionel]**: recommend its own dedicated Supabase project (media serves multiple businesses; per the no-shared-DBs philosophy) — needs org choice/creation, then schema+data+bucket migration and bot env updates (incl. the VPS).
+2. **Hermes VPS** — verify its live env no longer references tqhf/quyq (local snapshot references exist; actual VPS unreachable from this machine — Lionel to confirm or provide access).
+3. Final `backup-project.mjs` snapshot of both projects (now covers ALL schemas).
+4. PAUSE both projects (reversible), 2-week watch, then delete + rotate shared DB password.
+
+Full-schema backups added 2026-08-04: `*-2026-08-04-full.tar.gz` (captures ads/asset_indexer/concert_analytics/concerts + empty per-business analytics schemas; quyq's v2_ai_schema is an unused LangGraph checkpoint scaffold, 5 meta rows).
