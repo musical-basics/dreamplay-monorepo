@@ -49,7 +49,7 @@ export function StickyHeader() {
               </span>
               <span className="h-1 w-1 rounded-full bg-white/20" aria-hidden="true" />
               <span className="font-sans text-[10px] uppercase tracking-[0.2em] text-white/40">
-                Batch 1: Aug 2026
+                Batch 1: Aug 2027
               </span>
             </div>
           </div>

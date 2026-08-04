@@ -241,7 +241,7 @@ export const DEFAULT_FAQ_ITEMS: FAQItem[] = [
         id: '308',
         category: 'DreamPlay & Ordering',
         question: "When will my DreamPlay One ship?",
-        answer: `<p>Our current target for the Founder's Batch delivery is <strong>October 2026</strong>. We have factored a 2-month buffer into our timeline to account for steel tooling complexities and global ocean freight logistics.</p>`
+        answer: `<p>Our current target for the Founder's Batch delivery is <strong>August 2027</strong>. We have factored a 2-month buffer into our timeline to account for steel tooling complexities and global ocean freight logistics.</p>`
     },
     {
         id: '309',

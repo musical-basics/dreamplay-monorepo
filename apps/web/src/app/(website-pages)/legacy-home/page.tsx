@@ -518,12 +518,12 @@ export default function LegacyHomePage() {
                         <div className="mx-auto flex w-full max-w-[50rem] flex-col items-center gap-8 text-center">
                             <div>
                                 <p className="text-2xl font-bold leading-[1.4] tracking-[-0.02em] text-[#010103]">
-                                    Lock in the $599 Founder&apos;s Price
+                                    Lock in the $999 Founder&apos;s Price
                                 </p>
                                 <div className="mt-4 text-lg font-medium leading-[1.6] text-[#010103]">
-                                    The DreamPlay One will launch at <strong>$899</strong>. Due to
+                                    The DreamPlay One will launch at an MSRP of <strong>$1,499</strong>. Due to
                                     the early stage, we are offering this keyboard at the
-                                    incredible price of $599 (with free shipping). This is the
+                                    incredible price of $999 (with free shipping). This is the
                                     lowest price we will ever offer.
                                 </div>
                             </div>

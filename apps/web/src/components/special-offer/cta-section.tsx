@@ -3,17 +3,10 @@
 import { ArrowRight } from "lucide-react"
 import { useState, useEffect, useRef } from "react"
 import { AbCtaLink } from "@/components/ab/AbCtaLink"
-import { getCountdownDate } from "@/actions/admin-actions"
 
 export function CTASection() {
     const [isVisible, setIsVisible] = useState(false)
     const sectionRef = useRef<HTMLElement>(null)
-    const [timeLeft, setTimeLeft] = useState({
-        days: 0,
-        hours: 0,
-        minutes: 0,
-        seconds: 0,
-    })
 
     useEffect(() => {
         const observer = new IntersectionObserver(
@@ -31,37 +24,6 @@ export function CTASection() {
 
         return () => observer.disconnect()
     }, [])
-
-    const [targetDate, setTargetDate] = useState<number | null>(null)
-
-    useEffect(() => {
-        getCountdownDate().then((dateStr) => {
-            const t = dateStr ? new Date(dateStr).getTime() : new Date("2026-01-19T21:00:00-08:00").getTime()
-            setTargetDate(t)
-        })
-    }, [])
-
-    useEffect(() => {
-        if (!targetDate) return
-
-        const timer = setInterval(() => {
-            const now = new Date()
-            const difference = targetDate - now.getTime()
-
-            if (difference > 0) {
-                setTimeLeft({
-                    days: Math.floor(difference / (1000 * 60 * 60 * 24)),
-                    hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
-                    minutes: Math.floor((difference / 1000 / 60) % 60),
-                    seconds: Math.floor((difference / 1000) % 60),
-                })
-            } else {
-                setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 })
-            }
-        }, 1000)
-
-        return () => clearInterval(timer)
-    }, [targetDate])
 
     return (
         <section
@@ -84,19 +46,6 @@ export function CTASection() {
                         bring a new standard of instrument to life.
                     </p>
 
-                    {/* Countdown */}
-                    <div
-                        className={`flex items-center justify-center gap-4 md:gap-6 mb-10 transition-all duration-700 delay-200 ${isVisible ? "opacity-100 scale-100" : "opacity-0 scale-95"}`}
-                    >
-                        <TimeBlock value={timeLeft.days} label="Days" />
-                        <span className="text-white/40 text-2xl font-light">:</span>
-                        <TimeBlock value={timeLeft.hours} label="Hours" />
-                        <span className="text-white/40 text-2xl font-light">:</span>
-                        <TimeBlock value={timeLeft.minutes} label="Min" />
-                        <span className="text-white/40 text-2xl font-light">:</span>
-                        <TimeBlock value={timeLeft.seconds} label="Sec" />
-                    </div>
-
                     <AbCtaLink
                         cta="special_offer_final"
                         href="/customize"
@@ -114,7 +63,7 @@ export function CTASection() {
                     >
                         <p className="text-white text-sm mb-3 font-medium">DreamPlay Bundle</p>
                         <div className="flex items-baseline justify-center gap-4">
-                            <span className="text-5xl md:text-6xl font-semibold">$1,199</span>
+                            <span className="text-5xl md:text-6xl font-semibold">$1,099</span>
                         </div>
                     </div>
 
@@ -126,16 +75,5 @@ export function CTASection() {
                 </div>
             </div>
         </section>
-    )
-}
-
-function TimeBlock({ value, label }: { value: number; label: string }) {
-    return (
-        <div className="flex flex-col items-center">
-            <span className="text-3xl md:text-4xl font-semibold text-white tabular-nums leading-none">
-                {String(value).padStart(2, "0")}
-            </span>
-            <span className="text-[10px] uppercase tracking-wider text-white/60 mt-1">{label}</span>
-        </div>
     )
 }

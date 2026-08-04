@@ -248,7 +248,7 @@ const FAQ_ITEMS = [
     },
     {
         q: "When will it ship?",
-        a: "Batch 1 ships August 2026. You'll receive monthly backstage photo and video updates showing your piano being built.",
+        a: "Batch 1 ships August 2027. You'll receive monthly backstage photo and video updates showing your piano being built.",
     },
     {
         q: "Can I try both sizes?",
@@ -280,7 +280,7 @@ const TIMELINE_STEPS = [
     {
         step: "3",
         title: "Ship",
-        desc: "Pay the remaining balance only when your piano is boxed and ready to ship (August 2026).",
+        desc: "Pay the remaining balance only when your piano is boxed and ready to ship (August 2027).",
         icon: Package,
     },
 ]
@@ -398,24 +398,16 @@ export function LandingPage1Content() {
 
                         {/* Pricing */}
                         <div className="bg-stone-50 border border-stone-200 rounded-xl p-4 space-y-2">
-                            <div className="flex items-baseline gap-3 flex-wrap">
-                                <span className="text-xl font-black text-stone-400 line-through">
-                                    $99
-                                </span>
-                                <span className="text-sm text-stone-400 line-through">
-                                    Refundable Deposit
-                                </span>
-                            </div>
                             <div className="text-2xl md:text-3xl font-black text-stone-900 leading-tight">
-                                $29 <span className="text-lg md:text-xl font-bold">DUE TODAY TO SECURE YOUR SPOT</span>
+                                $99 <span className="text-lg md:text-xl font-bold">DUE TODAY TO SECURE YOUR SPOT</span>
                             </div>
                             <p className="text-sm text-stone-500">
-                                Locks in{" "}
+                                Fully refundable deposit. Locks in{" "}
                                 <span className="font-bold text-stone-800">
-                                    $699 Founder&apos;s Price
+                                    $999 Founder&apos;s Price
                                 </span>
                                 <span className="line-through text-stone-400 ml-2">
-                                    $1,099 MSRP
+                                    $1,499 MSRP
                                 </span>
                             </p>
                         </div>
@@ -427,7 +419,7 @@ export function LandingPage1Content() {
                                 <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
                             </div>
                             <p className="text-sm text-amber-900 font-medium">
-                                Batch 1 Delivery (August 2026) is{" "}
+                                Batch 1 Delivery (August 2027) is{" "}
                                 <strong>83% Full</strong>. Only{" "}
                                 <strong>42 allocations</strong> remaining.
                             </p>
@@ -973,7 +965,7 @@ export function LandingPage1Content() {
                                 $99
                             </span>
                             <span className="text-stone-400 text-xs">
-                                locks in $699
+                                locks in $999
                             </span>
                         </div>
                     </div>

@@ -2,7 +2,6 @@
 
 import { SpecialOfferHeader } from "@/components/special-offer/header"
 import { HeroSection } from "@/components/special-offer/hero-section"
-import { CountdownTimer } from "@/components/special-offer/countdown-timer"
 import { FeaturesPianoSection } from "@/components/special-offer/features-piano-section"
 import { FeaturesGridSection } from "@/components/special-offer/features-grid-section"
 import { LessonsSection } from "@/components/special-offer/lessons-section"
@@ -41,10 +40,6 @@ export function SpecialOfferPage() {
                 {/* Section: Find Your Fit - STICKY */}
                 <div className="sticky top-0 z-[12] min-h-screen bg-neutral-950 shadow-[0_-10px_40px_rgba(0,0,0,0.4)]" id="find-your-fit">
                     <FindYourFitSection />
-                </div>
-
-                <div className="relative z-[13] bg-white shadow-[0_-20px_50px_rgba(0,0,0,0.3)]">
-                    <CountdownTimer />
                 </div>
 
                 <div className="sticky top-0 z-[15] min-h-screen shadow-[0_-20px_50px_rgba(0,0,0,0.3)]" id="video-1">
