@@ -82,3 +82,11 @@ The ~2h writer the belgium migration flagged: Vercel project `google-ads-app` (p
 4. PAUSE both projects (reversible), 2-week watch, then delete + rotate shared DB password.
 
 Full-schema backups added 2026-08-04: `*-2026-08-04-full.tar.gz` (captures ads/asset_indexer/concert_analytics/concerts + empty per-business analytics schemas; quyq's v2_ai_schema is an unused LangGraph checkpoint scaffold, 5 meta rows).
+
+## ✅ Historical analytics imported into huv — 2026-08-04
+
+Reversing the earlier "fresh start" scope decision at Lionel's request: all 58,499 rows of tqhf `public.analytics_logs` (pre-cutover website analytics) imported into huv `public.events` (0 failed batches), mapped columns + metadata preserved, each row tagged `metadata.legacy_source='tqhf-analytics-logs'` + `legacy_id`; non-IP values (e.g. 'shopify-webhook') moved to `metadata.legacy_ip` with ip_address null. History is now visible in the new dashboard (www.dreamplaypianos.com/admin/analytics) alongside live events. Belgium's concert analytics (10,389 + 1,599 rows) live in szl per its migration — intentionally NOT duplicated into huv.
+
+Clarification recorded: the old dashboard hostname was data.dreamplaypianos.com (moved to the monorepo at the 07-18 cutover; analytics.dreamplaypianos.com never existed). The legacy dashboard app remains reachable at dreamplay-analytics.vercel.app until the old projects are paused.
+
+Schema-hygiene note (Lionel 2026-08-04): future intra-project migrations should use dedicated schemas, not public. Applied to media-indexer (goes to huv as schema `asset_indexer`). Existing exceptions: blog tables + cf_* landed in huv public (apps' PostgREST default; cf_* at least prefixed) — moving them to schemas is a flagged follow-up requiring app config changes, not done mid-decommission.
