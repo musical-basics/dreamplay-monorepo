@@ -50,6 +50,7 @@ export {
     defaultFromAddress,
     type EmailSender,
     type SendEmailPayload,
+    type SendEmailAttachment,
     type SendEmailResult,
 } from "./sender";
 

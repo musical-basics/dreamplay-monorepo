@@ -8,12 +8,20 @@
 
 import { HttpStatusError } from "./retry";
 
+export interface SendEmailAttachment {
+    /** Attachment filename, e.g. "ab-report-2026-08-03.pdf". */
+    filename: string;
+    /** Base64-encoded file contents (Resend's attachment format). */
+    content: string;
+}
+
 export interface SendEmailPayload {
     from: string;
     to: string;
     subject: string;
     html: string;
     headers?: Record<string, string>;
+    attachments?: SendEmailAttachment[];
 }
 
 export interface SendEmailResult {
