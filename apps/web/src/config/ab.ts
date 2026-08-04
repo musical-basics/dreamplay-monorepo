@@ -15,45 +15,76 @@
  * - Preview/share a specific variation: /ab/<key> (stamps the cookie).
  * - Point values for the score sheet live in AB_SCORING below.
  *
- * Groups 1–4 are the four homepage generations from the legacy repos'
- * git history (see docs/reference/ab-testing.md + D11):
- *   1 = original Dec-2025 homepage, 2 = Special Offer sticky-parallax,
- *   3 = Premium Offer family (current + the pre-swap extended layout),
- *   4 = direct-response PDP (landing-page-1).
+ * Group numbering: 1 = the CURRENT site's layout family (1a is always what
+ * the site looks like today), 2–4 = the three significantly-different
+ * historical homepages recovered from dreamplay-website git history,
+ * 5 = new designs. Labels carry the layout's live-homepage date range so the
+ * score sheet is self-explanatory.
  */
 
 import { defineAbFunnel, type ScoringRule } from "@dreamplay/ab";
 
+/**
+ * settings-table key for the admin "testing" toggle (set from /admin/ab-tests,
+ * read by middleware): { enabled: boolean }. When enabled, / and /main
+ * redirect into /ab — ALL site traffic joins the test.
+ */
+export const AB_TESTING_SETTING_KEY = "ab_testing_mode";
+
 export const abFunnel = defineAbFunnel({
-  // The manually-pinned page every dreamplaypianos.com visitor lands on.
-  // NOT part of the A/B test: its traffic is never variant-tagged, even when
-  // its layout matches a variation.
+  // The manually-pinned page every dreamplaypianos.com visitor lands on when
+  // the testing toggle is OFF. NOT part of the A/B test: its traffic is never
+  // variant-tagged, even when its layout matches a variation.
   main: { route: "/premium-offer", cta: "/customize" },
 
   groups: [
     {
       group: "1",
-      name: "Original homepage (Dec 2025)",
+      name: "Current site (premium-offer family)",
       active: true,
       variations: [
-        { key: "1a", label: "Original homepage", route: "/legacy-home", cta: "/customize", active: true },
+        {
+          key: "1a",
+          label: "Current site — premium-offer (live homepage since Mar 10 2026; migrated Jul 18 2026)",
+          route: "/premium-offer",
+          cta: "/customize",
+          active: true,
+        },
+        {
+          key: "1b",
+          label: "Extended offer — pre-swap premium layout (homepage Feb 16 – Mar 10 2026)",
+          route: "/extended-offer",
+          cta: "/customize",
+          active: true,
+        },
       ],
     },
     {
       group: "2",
-      name: "Special Offer (sticky parallax)",
+      name: "Original homepage",
       active: true,
       variations: [
-        { key: "2a", label: "Special offer", route: "/special-offer", cta: "/customize", active: true },
+        {
+          key: "2a",
+          label: "Original site at launch (Dec 17 2025 – Jan 24 2026)",
+          route: "/legacy-home",
+          cta: "/customize",
+          active: true,
+        },
       ],
     },
     {
       group: "3",
-      name: "Premium Offer family",
+      name: "Special Offer (sticky parallax)",
       active: true,
       variations: [
-        { key: "3a", label: "Premium offer (current layout, same as /main)", route: "/premium-offer", cta: "/customize", active: true },
-        { key: "3b", label: "Extended offer (pre-swap premium layout)", route: "/extended-offer", cta: "/customize", active: true },
+        {
+          key: "3a",
+          label: "Special Offer homepage (Jan 24 – Mar 10 2026)",
+          route: "/special-offer",
+          cta: "/customize",
+          active: true,
+        },
       ],
     },
     {
@@ -61,7 +92,27 @@ export const abFunnel = defineAbFunnel({
       name: "Direct-response PDP",
       active: true,
       variations: [
-        { key: "4a", label: "landing-page-1 PDP", route: "/landing-page-1", cta: "/customize", active: true },
+        {
+          key: "4a",
+          label: "landing-page-1 direct-response PDP (Mar 11 2026 homepage A/B)",
+          route: "/landing-page-1",
+          cta: "/customize",
+          active: true,
+        },
+      ],
+    },
+    {
+      group: "5",
+      name: "Simplified premium-offer",
+      active: true,
+      variations: [
+        {
+          key: "5a",
+          label: "Simplified 1a (new Aug 4 2026) — 5 sections, single CTA path",
+          route: "/simple-offer",
+          cta: "/customize",
+          active: true,
+        },
       ],
     },
   ],

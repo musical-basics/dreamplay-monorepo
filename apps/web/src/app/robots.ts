@@ -25,6 +25,7 @@ export default function robots(): MetadataRoute.Robots {
                     '/legacy-home',
                     '/special-offer',
                     '/landing-page-1',
+                    '/simple-offer',
                     '/checkout-pages/',
                     '/vip',
                     '/accessories',

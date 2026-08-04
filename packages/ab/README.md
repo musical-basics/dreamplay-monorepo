@@ -35,6 +35,10 @@ Entry points:
 
 ## Operating the funnel (registry: `apps/web/src/config/ab.ts`)
 
+0. **Testing toggle** (`/admin/ab-tests`, settings key `ab_testing_mode`):
+   ON = `/` and `/main` redirect into `/ab`, funneling ALL site traffic into
+   the test; OFF = only visitors who clicked an `/ab` link are tested.
+   Runtime DB flag — no deploy needed; reaches visitors within ~30s.
 1. **Change what /main serves**: edit `main.route` / `main.cta`. Deploy.
 2. **Add a variation**: add `{ key: "2b", route: "/some-layout", cta: "/customize", active: true }`
    to group 2. The route must be a real page (add one under

@@ -1,11 +1,12 @@
 import Link from "next/link";
+import { revalidatePath } from "next/cache";
 import {
   computeVariationScores,
   rollUpGroups,
   type VariationScore,
 } from "@dreamplay/ab";
 import { fetchAbTaggedEvents, type AnalyticsRange } from "@dreamplay/analytics/queries";
-import { AB_SCORING, abFunnel } from "@/config/ab";
+import { AB_SCORING, AB_TESTING_SETTING_KEY, abFunnel } from "@/config/ab";
 import { getAdminDb } from "@/lib/db";
 
 /**
@@ -25,6 +26,34 @@ function fmt(n: number, digits = 0): string {
   return n.toLocaleString("en-US", { maximumFractionDigits: digits, minimumFractionDigits: digits });
 }
 
+/** The admin "testing" toggle: ON = / and /main funnel ALL traffic into /ab. */
+async function getTestingMode(): Promise<boolean> {
+  const { data } = await getAdminDb()
+    .from("settings")
+    .select("value")
+    .eq("key", AB_TESTING_SETTING_KEY)
+    .maybeSingle();
+  return (data?.value as { enabled?: unknown } | null)?.enabled === true;
+}
+
+async function setTestingModeAction(formData: FormData) {
+  "use server";
+  const enabled = formData.get("enabled") === "true";
+  const { error } = await getAdminDb()
+    .from("settings")
+    .upsert(
+      {
+        key: AB_TESTING_SETTING_KEY,
+        value: { enabled },
+        description:
+          "A/B testing toggle (D11): when enabled, / and /main redirect into /ab so all site traffic joins the test. Set from /admin/ab-tests.",
+      },
+      { onConflict: "key" }
+    );
+  if (error) throw new Error(`Failed to update testing mode: ${error.message}`);
+  revalidatePath("/admin/ab-tests");
+}
+
 export default async function AdminAbTestsPage({
   searchParams,
 }: {
@@ -36,10 +65,16 @@ export default async function AdminAbTestsPage({
     : "7d";
 
   let scores: VariationScore[] = [];
+  let testingMode = false;
   let loadError: string | null = null;
   try {
-    const rows = await fetchAbTaggedEvents(range, { client: getAdminDb() });
+    const client = getAdminDb();
+    const [rows, mode] = await Promise.all([
+      fetchAbTaggedEvents(range, { client }),
+      getTestingMode(),
+    ]);
     scores = computeVariationScores(rows, AB_SCORING);
+    testingMode = mode;
   } catch (error) {
     loadError = error instanceof Error ? error.message : "Failed to load A/B events.";
   }
@@ -84,6 +119,43 @@ export default async function AdminAbTestsPage({
           Could not load A/B results: {loadError}
         </div>
       ) : null}
+
+      {/* Testing toggle */}
+      <section
+        className={`border p-6 mb-8 flex flex-wrap items-center justify-between gap-4 ${
+          testingMode
+            ? "border-emerald-500/40 bg-emerald-500/[0.06]"
+            : "border-white/10 bg-white/[0.03]"
+        }`}
+      >
+        <div>
+          <h2 className="font-serif text-xl">
+            Testing mode:{" "}
+            <span className={testingMode ? "text-emerald-300" : "text-white/50"}>
+              {testingMode ? "ON" : "OFF"}
+            </span>
+          </h2>
+          <p className="font-sans text-xs text-white/40 mt-1 max-w-xl">
+            {testingMode
+              ? "ALL site traffic (/ and /main) is funneled into the /ab test. Turn off to send new visitors back to the pinned /main page."
+              : "Only visitors who click an /ab link are in the test; everyone else gets the pinned /main page. Turn on to funnel all traffic into the test."}{" "}
+            Changes reach visitors within ~30s (middleware cache).
+          </p>
+        </div>
+        <form action={setTestingModeAction}>
+          <input type="hidden" name="enabled" value={testingMode ? "false" : "true"} />
+          <button
+            type="submit"
+            className={`px-5 py-3 font-sans text-xs uppercase tracking-widest border transition-colors cursor-pointer ${
+              testingMode
+                ? "border-white/30 text-white/70 hover:border-white hover:text-white"
+                : "border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/10"
+            }`}
+          >
+            {testingMode ? "Turn testing OFF" : "Turn testing ON"}
+          </button>
+        </form>
+      </section>
 
       {/* Group leaderboard */}
       <section className="border border-white/10 bg-white/[0.03] p-6 mb-8">

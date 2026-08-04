@@ -214,6 +214,25 @@ describe("resolveFunnel", () => {
     expect(resolve("/premium-offer", "2a")).toEqual({ type: "none" });
     expect(resolve("/about", undefined)).toEqual({ type: "none" });
   });
+
+  it("testing mode funnels / and /main into /ab for everyone", () => {
+    const testing = { testingMode: true };
+    expect(resolveFunnel(config, "/", null, undefined, testing)).toEqual({
+      type: "redirect",
+      to: "/ab",
+    });
+    expect(resolveFunnel(config, "/main", null, "2a", testing)).toEqual({
+      type: "redirect",
+      to: "/ab",
+    });
+    // /ab itself and other paths behave identically in testing mode
+    expect(resolveFunnel(config, "/ab", null, "2a", testing)).toEqual({
+      type: "rewrite",
+      to: "/special-offer",
+      variant: "2a",
+    });
+    expect(resolveFunnel(config, "/about", null, undefined, testing)).toEqual({ type: "none" });
+  });
 });
 
 describe("weightedRandomVariation", () => {

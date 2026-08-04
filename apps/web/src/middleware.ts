@@ -1,7 +1,42 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@dreamplay/db";
 import { AB_COOKIE, resolveFunnel, type FunnelResolution } from "@dreamplay/ab";
-import { abFunnel } from "@/config/ab";
+import { AB_TESTING_SETTING_KEY, abFunnel } from "@/config/ab";
+
+/**
+ * The admin "testing" toggle (settings key `ab_testing_mode`, set from
+ * /admin/ab-tests): when enabled, /main and / funnel ALL traffic into /ab.
+ * Read via plain REST (edge-safe) and cached per isolate for 30s — a toggle
+ * flip reaches every visitor within ~30s. Fails closed (normal /main
+ * behavior) if the DB is unreachable.
+ */
+const TESTING_MODE_CACHE_MS = 30_000;
+let testingModeCache: { value: boolean; expires: number } | null = null;
+
+async function getAbTestingMode(): Promise<boolean> {
+    const now = Date.now();
+    if (testingModeCache && testingModeCache.expires > now) return testingModeCache.value;
+
+    let enabled = false;
+    try {
+        const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+        if (url && key) {
+            const res = await fetch(
+                `${url}/rest/v1/settings?key=eq.${AB_TESTING_SETTING_KEY}&select=value`,
+                { headers: { apikey: key, authorization: `Bearer ${key}` } }
+            );
+            if (res.ok) {
+                const rows = (await res.json()) as Array<{ value?: { enabled?: unknown } }>;
+                enabled = rows?.[0]?.value?.enabled === true;
+            }
+        }
+    } catch {
+        // Unreachable DB must never break routing — fall back to disabled.
+    }
+    testingModeCache = { value: enabled, expires: now + TESTING_MODE_CACHE_MS };
+    return enabled;
+}
 
 /**
  * Refresh the Supabase auth session on every request.
@@ -55,11 +90,15 @@ export async function middleware(request: NextRequest) {
     // ========================================================================
     let funnel: FunnelResolution = { type: "none" };
     if (!isApiOrAdmin && !isStaticFile && !isShopHost) {
+        // The toggle only changes / and /main — skip the settings read elsewhere.
+        const testingMode =
+            pathname === "/" || pathname === "/main" ? await getAbTestingMode() : false;
         funnel = resolveFunnel(
             abFunnel,
             pathname,
             url.searchParams,
-            request.cookies.get(AB_COOKIE)?.value
+            request.cookies.get(AB_COOKIE)?.value,
+            { testingMode }
         );
 
         if (funnel.type === "redirect") {

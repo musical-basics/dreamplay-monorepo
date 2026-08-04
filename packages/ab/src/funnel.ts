@@ -220,14 +220,24 @@ function funnelCookie(value: string): FunnelCookie {
   };
 }
 
+export interface ResolveFunnelOptions {
+  /**
+   * The admin "testing" toggle: when true, /main (and /) redirect into /ab so
+   * ALL site traffic is funneled through the A/B test. When false (default),
+   * only visitors who clicked an /ab link are in the test.
+   */
+  testingMode?: boolean;
+}
+
 /**
  * Pure funnel router. Given the request path, the `?v=` search override and
  * the raw dp_ab cookie, decide what the middleware should do:
  *
  * - `/`      → redirect to `/ab` when the visitor carries a known variation
  *              cookie (they joined the funnel once — they stay in it), else
- *              to `/main`.
+ *              to `/main`. With `testingMode` on, ALWAYS `/ab`.
  * - `/main`  → rewrite to the manually-pinned layout. No cookie, no tag.
+ *              With `testingMode` on, redirect to `/ab` instead.
  * - `/ab`    → sticky cookie if still active, else CSPRNG-assign among
  *              active variations; rewrite to the variation's route.
  * - `/ab/<key>` (or `/ab?v=<key>`) → forced preview/share link: stamp that
@@ -238,15 +248,19 @@ export function resolveFunnel(
   config: AbFunnelConfig,
   pathname: string,
   search: URLSearchParams | null,
-  rawCookie: string | null | undefined
+  rawCookie: string | null | undefined,
+  opts: ResolveFunnelOptions = {}
 ): FunnelResolution {
   const known = findVariation(config, rawCookie);
 
   if (pathname === "/") {
-    return { type: "redirect", to: known ? "/ab" : "/main" };
+    return { type: "redirect", to: opts.testingMode || known ? "/ab" : "/main" };
   }
 
   if (pathname === "/main") {
+    if (opts.testingMode) {
+      return { type: "redirect", to: "/ab" };
+    }
     return { type: "rewrite", to: config.main.route };
   }
 

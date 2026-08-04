@@ -34,11 +34,19 @@ to tag analytics events — this is deliberate and load-bearing).
 
 | Request | Behavior |
 |---|---|
-| `/` | 307 redirect → `/ab` if the `dp_ab` cookie holds a **known** variation (active or not), else → `/main`. Query string preserved. |
-| `/main` | Middleware **rewrite** (URL unchanged) to the manually-pinned layout route (`main.route`). No cookie is set, no variant tag ever. |
+| `/` | 307 redirect → `/ab` if the `dp_ab` cookie holds a **known** variation (active or not), else → `/main`. Query string preserved. **Testing mode on: always → `/ab`.** |
+| `/main` | Middleware **rewrite** (URL unchanged) to the manually-pinned layout route (`main.route`). No cookie is set, no variant tag ever. **Testing mode on: 307 → `/ab` instead.** |
 | `/ab` | Resolve variation, then rewrite (URL unchanged) to its route: ① cookie valid **and still active** → serve it (sticky, no restamp); ② cookie missing/inactive/deactivated → CSPRNG-pick a new one from the **active** pool (weighted), stamp cookie; ③ zero active variations → serve the main layout, untagged. |
 | `/ab/<key>` or `/ab?v=<key>` | **Forced preview/share link**: serve exactly that variation (works for inactive ones too) and stamp the cookie. Unknown key → redirect to `/ab` (normal assignment). |
 | anything else | Untouched. |
+
+**The testing toggle.** A runtime admin switch (settings-table key
+`ab_testing_mode` = `{"enabled": bool}`, flipped from the score sheet page)
+funnels **all** site traffic into the test: `/` and `/main` both redirect to
+`/ab`. It lives in the DB (not code) because it must flip without a deploy;
+middleware reads it via a plain REST fetch cached per edge isolate for ~30s
+and **fails closed** (normal /main behavior) if the DB is unreachable. The
+fetch only happens for `/` and `/main` requests — no cost on other paths.
 
 Why **rewrite instead of redirect** for `/main` and `/ab`: the browser URL
 stays `/main` or `/ab`, so (a) client-side analytics records `path=/main` vs
@@ -93,8 +101,13 @@ match `/^(\d+)([a-z])$/` and the digits equal the parent group id; keys unique
 across all groups; weights positive; routes are internal paths and **never**
 `/`, `/ab`, or `/main` (rewrite-loop guard); CTAs are internal paths.
 
-Conventions: `<n>a` is the base version of each layout family. Never reuse a
-retired key (its historical data would pollute the new test).
+Conventions: `<n>a` is the base version of each layout family; **group 1 is
+the current live site** (1a = "what the site looks like today"), higher
+numbers are historical or new candidate layouts. Give every variation a
+`label` that says what it is and when it was the live site (e.g. "Original
+site at launch (Dec 17 2025 – Jan 24 2026)") — the score sheet renders labels,
+and future operators must not have to git-archaeology what "3a" was. Never
+reuse a retired key (its historical data would pollute the new test).
 
 ## 4. Assignment rules
 
@@ -254,7 +267,8 @@ enter the funnel mid-session) and exposes `useAbVariation()` / `useAbCta()`.
 | Shared CTA component | `apps/web/src/components/ab/AbCtaLink.tsx` |
 | Order-note markers helper | `apps/web/src/lib/ab-checkout.ts` |
 | Webhook purchase attribution | `apps/web/src/app/api/webhooks/shopify/orders/route.ts` |
-| Score sheet | `apps/web/src/app/admin/ab-tests/page.tsx` |
+| Score sheet + testing toggle UI | `apps/web/src/app/admin/ab-tests/page.tsx` |
+| Simplified 5a layout | `apps/web/src/app/(website-pages)/simple-offer/page.tsx` + `apps/web/src/components/simple-offer/` |
 | Tagged-events fetch (paginated) | `packages/analytics/src/queries.ts` (`fetchAbTaggedEvents`) |
 | Click counting | `packages/analytics/src/client.ts` (`trackClicks`) |
 | Operator runbook | `packages/ab/README.md` |
