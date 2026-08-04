@@ -9,6 +9,12 @@ import { getAdminDb } from "@/lib/db";
  * The confirm button runs a server action that performs the unsubscribe
  * (suppressions + subscribers.status + email_events). One-click mail-client
  * unsubscribes POST to /api/email/unsubscribe instead (RFC 8058 header URL).
+ *
+ * Legacy compatibility: emails sent by dreamplay-email-3 (pre-cutover) link
+ * to /unsubscribe?s=<subscriberId>&c=<campaignId>&w=<workspace> with NO
+ * signature — those links must keep unsubscribing after the tracking hosts
+ * move here. An unsigned link is accepted only in that exact legacy shape
+ * (w present, t absent). Same trust level as the legacy system had.
  */
 
 export const metadata = {
@@ -41,9 +47,13 @@ export default async function UnsubscribePage({ searchParams }: { searchParams: 
     const subscriberId = firstParam(params.s);
     const campaignId = firstParam(params.c);
     const token = firstParam(params.t);
+    const workspace = firstParam(params.w);
     const done = firstParam(params.done) === "1";
 
-    const validLink = UUID_RE.test(subscriberId) && verifyUnsubscribeToken(token, subscriberId, campaignId);
+    const isLegacyLink = !token && workspace.length > 0;
+    const validLink =
+        UUID_RE.test(subscriberId) &&
+        (isLegacyLink || verifyUnsubscribeToken(token, subscriberId, campaignId));
 
     if (!validLink) {
         return (
@@ -72,7 +82,8 @@ export default async function UnsubscribePage({ searchParams }: { searchParams: 
     async function confirmUnsubscribe() {
         "use server";
         // Re-verify inside the action: the form values are attacker-controlled.
-        if (!UUID_RE.test(subscriberId) || !verifyUnsubscribeToken(token, subscriberId, campaignId)) {
+        const legacyOk = !token && workspace.length > 0;
+        if (!UUID_RE.test(subscriberId) || (!legacyOk && !verifyUnsubscribeToken(token, subscriberId, campaignId))) {
             return;
         }
         await processUnsubscribe(getAdminDb(), {
@@ -81,7 +92,7 @@ export default async function UnsubscribePage({ searchParams }: { searchParams: 
             source: "page",
         });
         redirect(
-            `/unsubscribe?s=${encodeURIComponent(subscriberId)}&c=${encodeURIComponent(campaignId)}&t=${encodeURIComponent(token)}&done=1`
+            `/unsubscribe?s=${encodeURIComponent(subscriberId)}&c=${encodeURIComponent(campaignId)}${legacyOk ? `&w=${encodeURIComponent(workspace)}` : `&t=${encodeURIComponent(token)}`}&done=1`
         );
     }
 

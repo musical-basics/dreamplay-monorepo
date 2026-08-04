@@ -37,6 +37,21 @@ const nextConfig: NextConfig = {
   },
   async rewrites() {
     return [
+      // Legacy email tracking paths (emails sent by dreamplay-email-3 point at
+      // /api/track/* on the tracking hosts; params c/s/u match the new routes).
+      {
+        source: "/api/track/open",
+        destination: "/api/email/open",
+      },
+      {
+        source: "/api/track/click",
+        destination: "/api/email/click",
+      },
+      // Legacy subscriber resolution used by old sites' tracker snippets.
+      {
+        source: "/api/resolve-subscriber",
+        destination: "/api/email/resolve-subscriber",
+      },
       {
         source: "/buy-product",
         destination: "/checkout-pages/buy-product",
