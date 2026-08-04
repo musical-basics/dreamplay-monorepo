@@ -256,7 +256,7 @@ const FAQ_ITEMS = [
     },
     {
         q: "Is my deposit refundable?",
-        a: "Yes. Your $99 deposit is 100% refundable at any time, no questions asked. Funds are held securely in escrow until your piano is ready to ship.",
+        a: "Yes. Your $499 deposit is 100% refundable at any time, no questions asked. Funds are held securely in escrow until your piano is ready to ship.",
     },
     {
         q: "What about the 90-Day Home Trial?",
@@ -268,7 +268,7 @@ const TIMELINE_STEPS = [
     {
         step: "1",
         title: "Reserve",
-        desc: "Lock in your discounted Founder's price today with a fully refundable $99 deposit.",
+        desc: "Lock in your discounted Founder's price today with a fully refundable 50% deposit ($499).",
         icon: LockKeyhole,
     },
     {
@@ -280,7 +280,7 @@ const TIMELINE_STEPS = [
     {
         step: "3",
         title: "Ship",
-        desc: "Pay the remaining balance only when your piano is boxed and ready to ship (August 2027).",
+        desc: "Pay the remaining $500 (+ shipping/taxes) only when your piano is boxed and ready to ship (August 2027).",
         icon: Package,
     },
 ]
@@ -399,10 +399,10 @@ export function LandingPage1Content() {
                         {/* Pricing */}
                         <div className="bg-stone-50 border border-stone-200 rounded-xl p-4 space-y-2">
                             <div className="text-2xl md:text-3xl font-black text-stone-900 leading-tight">
-                                $99 <span className="text-lg md:text-xl font-bold">DUE TODAY TO SECURE YOUR SPOT</span>
+                                $499 <span className="text-lg md:text-xl font-bold">DUE TODAY TO SECURE YOUR SPOT</span>
                             </div>
                             <p className="text-sm text-stone-500">
-                                Fully refundable deposit. Locks in{" "}
+                                50% now, 50% at delivery. Fully refundable. Locks in{" "}
                                 <span className="font-bold text-stone-800">
                                     $999 Founder&apos;s Price
                                 </span>
@@ -882,7 +882,7 @@ export function LandingPage1Content() {
                                 <ArrowRight className="w-5 h-5" />
                             </AbCtaLink>
                             <p className="text-stone-400 text-xs mt-4">
-                                $99 fully refundable deposit • No risk
+                                $499 fully refundable 50% deposit • No risk
                             </p>
                         </div>
                     </div>
@@ -962,15 +962,15 @@ export function LandingPage1Content() {
                         </h4>
                         <div className="flex items-center gap-2 text-sm">
                             <span className="font-black text-stone-900">
-                                $99
+                                $499
                             </span>
                             <span className="text-stone-400 text-xs">
-                                locks in $999
+                                50% now · locks in $999
                             </span>
                         </div>
                     </div>
                     <div className="sm:hidden text-sm font-bold text-stone-900">
-                        DreamPlay Deposit: $99
+                        DreamPlay Deposit: $499
                     </div>
                     <AbCtaLink
                         cta="landing_page_1_sticky"
