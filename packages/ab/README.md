@@ -48,7 +48,12 @@ Entry points:
    variation are reassigned on their next `/` or `/ab` hit; history stays on
    the score sheet.
 4. **Preview / share**: `/ab/<key>` forces that variation (works for inactive
-   ones too) and stamps the cookie. `/ab?v=<key>` is equivalent.
+   ones too) and stamps the cookie. `/ab?v=<key>` is equivalent, and the bare
+   shorthand `/<key>` (e.g. dreamplaypianos.com/5a) redirects to `/ab/<key>`
+   for registry keys.
+4b. **Key changed meaning?** (remap/redesign) Set `since: "<UTC deploy time>"`
+   on the variation — the score sheet and daily PDF ignore its rows recorded
+   before that instant, so stale data can't blend in.
 5. **Tune scoring**: point values live in `AB_SCORING` next to the registry.
 6. **Read results**: `/admin/ab-tests` — per-variation points per rule, total,
    avg per session, and group roll-ups. Purchases are attributed via the

@@ -38,6 +38,7 @@ to tag analytics events — this is deliberate and load-bearing).
 | `/main` | Middleware **rewrite** (URL unchanged) to the manually-pinned layout route (`main.route`). No cookie is set, no variant tag ever. **Testing mode on: 307 → `/ab` instead.** |
 | `/ab` | Resolve variation, then rewrite (URL unchanged) to its route: ① cookie valid **and still active** → serve it (sticky, no restamp); ② cookie missing/inactive/deactivated → CSPRNG-pick a new one from the **active** pool (weighted), stamp cookie; ③ zero active variations → serve the main layout, untagged. |
 | `/ab/<key>` or `/ab?v=<key>` | **Forced preview/share link**: serve exactly that variation (works for inactive ones too) and stamp the cookie. Unknown key → redirect to `/ab` (normal assignment). |
+| `/<key>` (e.g. `/5a`) | Shorthand for the above: 307 → `/ab/<key>`. Only for keys that exist in the registry (the `\d+[a-z]` pattern is checked against it), so real routes can never be shadowed. |
 | anything else | Untouched. |
 
 **The testing toggle.** A runtime admin switch (settings-table key
@@ -88,6 +89,7 @@ build time so a bad registry breaks the build instead of mis-routing traffic:
           cta: "/customize",         // where this variation's CTAs point
           active: true,              // false = deactivate just this variation
           weight: 1,                 // optional; assignment weight among active
+          since: "2026-08-04T07:25:00Z", // optional "data since" cutoff — see below
         },
       ],
     },
@@ -107,7 +109,12 @@ numbers are historical or new candidate layouts. Give every variation a
 `label` that says what it is and when it was the live site (e.g. "Original
 site at launch (Dec 17 2025 – Jan 24 2026)") — the score sheet renders labels,
 and future operators must not have to git-archaeology what "3a" was. Never
-reuse a retired key (its historical data would pollute the new test).
+reuse a retired key (its historical data would pollute the new test) — and if a key
+ever DOES change meaning (a remap/redesign), set its `since` to the exact
+UTC deploy time: the score engine drops that variant's rows recorded before
+the cutoff (rows fetched with `created_at`; sessionless rows are kept), so
+stale data can't blend into the new test. Both the score sheet and the daily
+PDF report apply the same cutoffs via `variationSinceMap(config)`.
 
 ## 4. Assignment rules
 

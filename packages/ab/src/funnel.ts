@@ -24,6 +24,12 @@ export interface AbVariation {
   active: boolean;
   /** Relative assignment weight among active variations. Default 1. */
   weight?: number;
+  /**
+   * ISO timestamp; the score sheet ignores this variation's tagged events
+   * recorded before it. Set when a key changes meaning (remap/redesign) so
+   * stale data can't blend into the new test.
+   */
+  since?: string;
 }
 
 export interface AbGroup {
@@ -101,6 +107,9 @@ export function defineAbFunnel<const T extends AbFunnelConfig>(config: T): T {
       }
       if (variation.weight !== undefined && (!Number.isFinite(variation.weight) || variation.weight <= 0)) {
         throw new Error(`ab funnel: variation "${variation.key}" weight must be a positive number`);
+      }
+      if (variation.since !== undefined && Number.isNaN(Date.parse(variation.since))) {
+        throw new Error(`ab funnel: variation "${variation.key}" since must be an ISO date`);
       }
     }
   }
@@ -262,6 +271,13 @@ export function resolveFunnel(
       return { type: "redirect", to: "/ab" };
     }
     return { type: "rewrite", to: config.main.route };
+  }
+
+  // Shorthand preview: /<key> (e.g. /5a) → the canonical /ab/<key>. Only for
+  // keys that exist in the registry, so real routes can never be shadowed.
+  const shorthand = /^\/(\d+[a-z])$/.exec(pathname)?.[1];
+  if (shorthand !== undefined && findVariation(config, shorthand)) {
+    return { type: "redirect", to: `/ab/${shorthand}` };
   }
 
   const isAbRoot = pathname === "/ab";

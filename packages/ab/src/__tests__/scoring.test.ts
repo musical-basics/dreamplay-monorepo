@@ -87,6 +87,31 @@ describe("computeVariationScores", () => {
   });
 });
 
+describe("since cutoffs", () => {
+  it("drops rows recorded before a variant's cutoff; other variants unaffected", () => {
+    const rows = [
+      { ...row("1a", "s1", "email_signup"), created_at: "2026-08-01T00:00:00Z" }, // pre-cutoff (old meaning of 1a)
+      { ...row("1a", "s2", "purchase"), created_at: "2026-08-05T00:00:00Z" },
+      { ...row("2a", "s3", "email_signup"), created_at: "2026-08-01T00:00:00Z" }, // no cutoff for 2a
+    ];
+    const scores = computeVariationScores(rows, rules, {
+      sinceByVariant: { "1a": "2026-08-04T07:25:00Z" },
+    });
+    const oneA = scores.find((s) => s.variant === "1a")!;
+    expect(oneA.sessions).toBe(1);
+    expect(oneA.rules["email"]!.points).toBe(0);
+    expect(oneA.rules["purchase"]!.points).toBe(100);
+    expect(scores.find((s) => s.variant === "2a")!.sessions).toBe(1);
+  });
+
+  it("keeps rows without created_at (cutoff cannot apply)", () => {
+    const scores = computeVariationScores([row("1a", "s1", "purchase")], rules, {
+      sinceByVariant: { "1a": "2026-08-04T07:25:00Z" },
+    });
+    expect(scores[0]!.rules["purchase"]!.points).toBe(100);
+  });
+});
+
 describe("rollUpGroups", () => {
   it("aggregates variations into their layout group", () => {
     const rows = [

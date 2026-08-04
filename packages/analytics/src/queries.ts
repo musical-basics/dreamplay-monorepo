@@ -68,6 +68,8 @@ export interface AbEventRow {
   session_id: string | null;
   duration_seconds: number | string | null;
   metadata: Json;
+  /** Needed by the score engine's per-variation `since` cutoffs. */
+  created_at: string;
 }
 
 export interface AbEventsOptions extends QueryOptions {
@@ -96,12 +98,47 @@ export async function fetchAbTaggedEvents(
   while (rows.length < maxRows) {
     const { data, error } = await client
       .from("events")
-      .select("event_name, path, session_id, duration_seconds, metadata")
+      .select("event_name, path, session_id, duration_seconds, metadata, created_at")
       .gte("created_at", startIso)
       .not("metadata->>ab_variant", "is", null)
       .order("id", { ascending: true })
       .range(offset, offset + pageSize - 1);
     if (error) throw new Error(`fetchAbTaggedEvents failed: ${error.message}`);
+    const page = data ?? [];
+    rows.push(...page);
+    if (page.length < pageSize) break;
+    offset += pageSize;
+  }
+  return rows;
+}
+
+/**
+ * Same as fetchAbTaggedEvents but over an explicit [startIso, endIso) window
+ * instead of a "now minus preset" range — for reports pinned to a calendar
+ * day/week in a specific timezone (e.g. the daily A/B PDF report), where the
+ * preset ranges (which are always relative to `now`) don't apply.
+ */
+export async function fetchAbTaggedEventsBetween(
+  startIso: string,
+  endIso: string,
+  opts: AbEventsOptions = {}
+): Promise<AbEventRow[]> {
+  const client = resolveClient(opts);
+  const pageSize = opts.pageSize ?? 1000;
+  const maxRows = opts.maxRows ?? 100_000;
+
+  const rows: AbEventRow[] = [];
+  let offset = 0;
+  while (rows.length < maxRows) {
+    const { data, error } = await client
+      .from("events")
+      .select("event_name, path, session_id, duration_seconds, metadata, created_at")
+      .gte("created_at", startIso)
+      .lt("created_at", endIso)
+      .not("metadata->>ab_variant", "is", null)
+      .order("id", { ascending: true })
+      .range(offset, offset + pageSize - 1);
+    if (error) throw new Error(`fetchAbTaggedEventsBetween failed: ${error.message}`);
     const page = data ?? [];
     rows.push(...page);
     if (page.length < pageSize) break;

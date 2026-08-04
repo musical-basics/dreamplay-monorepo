@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import {
   computeVariationScores,
   rollUpGroups,
+  variationSinceMap,
   type VariationScore,
 } from "@dreamplay/ab";
 import { fetchAbTaggedEvents, type AnalyticsRange } from "@dreamplay/analytics/queries";
@@ -73,7 +74,9 @@ export default async function AdminAbTestsPage({
       fetchAbTaggedEvents(range, { client }),
       getTestingMode(),
     ]);
-    scores = computeVariationScores(rows, AB_SCORING);
+    scores = computeVariationScores(rows, AB_SCORING, {
+      sinceByVariant: variationSinceMap(abFunnel),
+    });
     testingMode = mode;
   } catch (error) {
     loadError = error instanceof Error ? error.message : "Failed to load A/B events.";
@@ -231,6 +234,16 @@ export default async function AdminAbTestsPage({
                       ) : null}
                       <div className="text-white/35 text-xs">
                         {variation.label ?? group.name} · {variation.route} → {variation.cta}
+                        {variation.since ? (
+                          <>
+                            {" · data since "}
+                            {new Date(variation.since).toLocaleDateString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            })}
+                          </>
+                        ) : null}
                       </div>
                     </td>
                     <td className="py-2 text-right text-white/60">{fmt(score?.sessions ?? 0)}</td>

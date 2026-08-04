@@ -40,6 +40,8 @@ export {
 export {
   computeVariationScores,
   rollUpGroups,
+  variationSinceMap,
+  type ComputeScoresOptions,
   type ScoringEventRow,
   type ScoringRule,
   type RuleScore,

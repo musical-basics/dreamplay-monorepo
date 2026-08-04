@@ -45,6 +45,7 @@ export const abFunnel = defineAbFunnel({
       variations: [
         {
           key: "1a",
+          since: "2026-08-04T07:25:00Z",
           label: "Current site — premium-offer (live homepage since Mar 10 2026; migrated Jul 18 2026)",
           route: "/premium-offer",
           cta: "/customize",
@@ -52,6 +53,7 @@ export const abFunnel = defineAbFunnel({
         },
         {
           key: "1b",
+          since: "2026-08-04T07:25:00Z",
           label: "Extended offer — pre-swap premium layout (homepage Feb 16 – Mar 10 2026)",
           route: "/extended-offer",
           cta: "/customize",
@@ -66,6 +68,7 @@ export const abFunnel = defineAbFunnel({
       variations: [
         {
           key: "2a",
+          since: "2026-08-04T07:25:00Z",
           label: "Original site at launch (Dec 17 2025 – Jan 24 2026)",
           route: "/legacy-home",
           cta: "/customize",
@@ -80,6 +83,7 @@ export const abFunnel = defineAbFunnel({
       variations: [
         {
           key: "3a",
+          since: "2026-08-04T07:25:00Z",
           label: "Special Offer homepage (Jan 24 – Mar 10 2026)",
           route: "/special-offer",
           cta: "/customize",
@@ -94,6 +98,7 @@ export const abFunnel = defineAbFunnel({
       variations: [
         {
           key: "4a",
+          since: "2026-08-04T07:25:00Z",
           label: "landing-page-1 direct-response PDP (Mar 11 2026 homepage A/B)",
           route: "/landing-page-1",
           cta: "/customize",
@@ -108,6 +113,7 @@ export const abFunnel = defineAbFunnel({
       variations: [
         {
           key: "5a",
+          since: "2026-08-04T07:25:00Z",
           label: "Simplified 1a (new Aug 4 2026) — 5 sections, single CTA path",
           route: "/simple-offer",
           cta: "/customize",

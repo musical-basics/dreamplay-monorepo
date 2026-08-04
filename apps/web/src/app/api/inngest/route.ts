@@ -1,6 +1,7 @@
 import { serve } from "inngest/next";
 import { inngest } from "@/inngest/client";
 import { emailFunctions } from "@/inngest/functions";
+import { reportFunctions } from "@/inngest/report-functions";
 
 /**
  * Inngest serve endpoint. maxDuration must cover a full send loop: at the
@@ -14,5 +15,5 @@ export const dynamic = "force-dynamic";
 
 export const { GET, POST, PUT } = serve({
     client: inngest,
-    functions: emailFunctions,
+    functions: [...emailFunctions, ...reportFunctions],
 });

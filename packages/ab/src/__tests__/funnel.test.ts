@@ -192,6 +192,14 @@ describe("resolveFunnel", () => {
     expect(resolve("/ab/9z")).toEqual({ type: "redirect", to: "/ab" });
   });
 
+  it("supports /<key> shorthand for registry keys only", () => {
+    expect(resolve("/2a")).toEqual({ type: "redirect", to: "/ab/2a" });
+    expect(resolve("/1b", "2a")).toEqual({ type: "redirect", to: "/ab/1b" });
+    // Unknown keys and non-key paths fall through to normal routing (404 etc.)
+    expect(resolve("/9z")).toEqual({ type: "none" });
+    expect(resolve("/2abc")).toEqual({ type: "none" });
+  });
+
   it("falls back to the main layout when nothing is active", () => {
     const allOff = defineAbFunnel({
       main: { route: "/premium-offer", cta: "/customize" },

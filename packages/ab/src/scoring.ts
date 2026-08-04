@@ -11,7 +11,7 @@
  * variation the leaderboard.
  */
 
-import { variationGroup } from "./funnel";
+import { variationGroup, type AbFunnelConfig } from "./funnel";
 
 /**
  * Minimal projection of an `events` row needed for scoring. `metadata` is
@@ -24,6 +24,29 @@ export interface ScoringEventRow {
   session_id?: string | null;
   duration_seconds?: number | string | null;
   metadata?: unknown;
+  /** Needed only when per-variation `since` cutoffs are in play. */
+  created_at?: string | null;
+}
+
+export interface ComputeScoresOptions {
+  /**
+   * Per-variant "data since" cutoffs (ISO timestamps): rows for a variant
+   * recorded before its cutoff are ignored. Built from the registry's
+   * `variation.since` fields via variationSinceMap() — used when a key
+   * changes meaning so stale data can't blend into the new test.
+   */
+  sinceByVariant?: Record<string, string>;
+}
+
+/** Extract `{ variant: sinceIso }` for every variation that declares one. */
+export function variationSinceMap(config: AbFunnelConfig): Record<string, string> {
+  const map: Record<string, string> = {};
+  for (const group of config.groups) {
+    for (const variation of group.variations) {
+      if (variation.since) map[variation.key] = variation.since;
+    }
+  }
+  return map;
 }
 
 function metadataOf(row: ScoringEventRow): Record<string, unknown> {
@@ -92,7 +115,9 @@ export interface RuleScore {
 
 export interface VariationScore {
   variant: string;
-  group: string | undefined;
+  // Optional (not `string | undefined`) so the type survives a JSON
+  // round-trip intact — Inngest step results are serialized between steps.
+  group?: string | undefined;
   /** Distinct sessions that produced any tagged event. */
   sessions: number;
   totalPoints: number;
@@ -126,8 +151,16 @@ function toNumber(value: unknown): number {
  */
 export function computeVariationScores(
   rows: Iterable<ScoringEventRow>,
-  rules: readonly ScoringRule[]
+  rules: readonly ScoringRule[],
+  opts: ComputeScoresOptions = {}
 ): VariationScore[] {
+  // Pre-parse cutoffs once; invalid dates are ignored.
+  const sinceMs = new Map<string, number>();
+  for (const [variant, iso] of Object.entries(opts.sinceByVariant ?? {})) {
+    const ms = Date.parse(iso);
+    if (!Number.isNaN(ms)) sinceMs.set(variant, ms);
+  }
+
   // variant → session → per-rule accumulator (+ presence marker)
   const perVariant = new Map<string, Map<string, Map<string, number>>>();
 
@@ -137,6 +170,11 @@ export function computeVariationScores(
     const variant = typeof meta["ab_variant"] === "string" ? (meta["ab_variant"] as string) : undefined;
     if (!variant) continue;
     if (meta["is_bot"] === true || meta["is_admin"] === true) continue;
+    const cutoff = sinceMs.get(variant);
+    if (cutoff !== undefined && row.created_at) {
+      const at = Date.parse(row.created_at);
+      if (!Number.isNaN(at) && at < cutoff) continue; // pre-remap data for this key
+    }
 
     const sessionKey = row.session_id || `__anon_${anonymous++}`;
     let sessions = perVariant.get(variant);
