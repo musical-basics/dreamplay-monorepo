@@ -76,8 +76,8 @@ The ~2h writer the belgium migration flagged: Vercel project `google-ads-app` (p
 
 ## Remaining before PAUSE (updated 2026-08-04)
 
-1. **media-indexer / asset_indexer** — the ONLY remaining live tqhf consumer: schema `asset_indexer` (assets 967, merch_generations 208, product_image_catalog 136, drafts 3) + storage buckets `assets`(4)/`thumbnails`(959), used by dreamplay-media-indexer(-2) apps and Openclaw/Hermes bots (.env-media.local → tqhf). **[DECISION Lionel]**: recommend its own dedicated Supabase project (media serves multiple businesses; per the no-shared-DBs philosophy) — needs org choice/creation, then schema+data+bucket migration and bot env updates (incl. the VPS).
-2. **Hermes VPS** — verify its live env no longer references tqhf/quyq (local snapshot references exist; actual VPS unreachable from this machine — Lionel to confirm or provide access).
+1. ~~**media-indexer / asset_indexer**~~ — ✅ **migrated to huv 2026-08-04** (Lionel's decision: into huv, in its own dedicated schema `asset_indexer`, NOT public — see section below). Local + Vercel consumers repointed; only the Hermes VPS env remains unverified.
+2. **Hermes VPS** — verify its live env no longer references tqhf/quyq (local snapshot references exist; actual VPS unreachable from this machine — Lionel to confirm or provide access). If the VPS calls the deployed media-indexer app's API (dreamplay-media-indexer.vercel.app) it now transparently gets huv data; only a direct tqhf URL/key in the VPS env would still need changing.
 3. Final `backup-project.mjs` snapshot of both projects (now covers ALL schemas).
 4. PAUSE both projects (reversible), 2-week watch, then delete + rotate shared DB password.
 
@@ -90,3 +90,18 @@ Reversing the earlier "fresh start" scope decision at Lionel's request: all 58,4
 Clarification recorded: the old dashboard hostname was data.dreamplaypianos.com (moved to the monorepo at the 07-18 cutover; analytics.dreamplaypianos.com never existed). The legacy dashboard app remains reachable at dreamplay-analytics.vercel.app until the old projects are paused.
 
 Schema-hygiene note (Lionel 2026-08-04): future intra-project migrations should use dedicated schemas, not public. Applied to media-indexer (goes to huv as schema `asset_indexer`). Existing exceptions: blog tables + cf_* landed in huv public (apps' PostgREST default; cf_* at least prefixed) — moving them to schemas is a flagged follow-up requiring app config changes, not done mid-decommission.
+
+## ✅ media-indexer / asset_indexer migrated to huv — 2026-08-04
+
+The last live tqhf consumer. Per Lionel's schema-hygiene rule it went into huv as its own dedicated schema **`asset_indexer`** (not public).
+
+- **Schema/DDL**: full DDL extracted live from tqhf (`pg_attribute`/`pg_constraint`/`pg_indexes` — the full backup's schema.json lacked non-public constraints/indexes) and recreated 1:1 in huv: 4 tables (`assets`, `merch_generations`, `product_image_catalog`, `drafts`) with all PKs, unique constraints (`assets."filePath"`, `merch_generations.file_path`, `product_image_catalog.storage_path`), 9 secondary indexes on `assets`, column defaults (incl. `updated_at` epoch-ms default), and `product_image_catalog_id_seq` (setval 272, owned by column). No FKs exist in this schema. Grants: service_role only — both apps and all scripts read/write exclusively with the service key (`SUPABASE_SERVICE_KEY`), no anon access granted. `asset_indexer` appended to huv's PostgREST exposed schemas (`public,graphql_public,composer,asset_indexer`).
+- **Data**: all rows copied via batched `json_populate_recordset` over the management-API query endpoint, ON CONFLICT DO NOTHING. Count-verified tqhf=huv: assets **967/967**, merch_generations **208/208**, product_image_catalog **136/136**, drafts **3/3**. `assets."thumbPath"` embedded tqhf storage URLs in 959 rows — rewritten to the huv host in huv (0 tqhf refs remain; all other columns incl. drafts.data, merch ref_image_paths, pic.public_url scanned clean — pic URLs are R2, untouched).
+- **Storage**: buckets `assets` + `thumbnails` created in huv (public=true, matching tqhf), all objects copied at identical paths with mimetypes preserved: **4 + 959 = 963/963, 0 failures**; byte-level SHA-256 spot-check of a thumbnail matches; public-URL fetch from huv returns 200 with correct size.
+- **Consumers repointed** (URL/anon/service key → huv):
+  - Vercel `dreamplay-media-indexer`: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_KEY` PATCHed (all were encrypted type, updated in place), redeployed (dpl_BKc7ycmPLcyv8bHqXZyuATeoVqGz READY, alias dreamplay-media-indexer.vercel.app). No deployment protection: root 200, and `/api/assets?limit=1` returns live data with stats.total=967 from huv.
+  - Local `/Users/lionelyu/Documents/DreamPlay Repos/dreamplay-media-indexer-2/.env.production.local` — 3 vars replaced, 0 tqhf refs remain. (A sibling `dreamplay-media-indexer` repo dir does not exist on this machine — nothing to update there.)
+  - `/Users/lionelyu/Documents/New Version/Openclaw-Bots/.env-media.local` — same 3 vars replaced, 0 tqhf refs remain.
+- **Verification**: huv PostgREST with `Accept-Profile: asset_indexer` returns rows (`/rest/v1/assets` 200, count=exact → 967); deployed app serves asset queries from huv; storage objects fetchable from huv.
+- **⚠ Left for Lionel**: the Hermes VPS env (unreachable from this machine). If it only calls the deployed app's API it's already fine; if it holds a direct tqhf URL/service key it must be repointed to huv (schema `asset_indexer`, service key).
+- tqhf was left read-only/untouched throughout; huv changes were purely additive.
