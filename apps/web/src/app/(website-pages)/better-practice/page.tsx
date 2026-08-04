@@ -187,7 +187,7 @@ export default function BetterPracticePage() {
                     </div>
                 </section>
 
-                {/* ═══ THE CROSS-TRAINING EFFECT (Hubert Ness) ═══ */}
+                {/* ═══ THE CROSS-TRAINING EFFECT (Hubert Nuss) ═══ */}
                 <section className="border-t border-white/10 bg-[#0a0a0f] py-24 text-white md:py-32">
                     <div className="container mx-auto max-w-4xl px-6 text-center">
                         <AnimatedSection>
@@ -199,10 +199,10 @@ export default function BetterPracticePage() {
                             <div className="relative border border-white/10 bg-[#050505] p-10 text-left shadow-2xl md:p-16 md:text-center">
                                 <div className="absolute left-0 top-0 h-1 w-full bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
                                 <blockquote className="mb-8 font-serif text-2xl leading-relaxed text-white/90 md:text-3xl">
-                                    &quot;Another surprising effect for me was that playing this [DS6.0] also has a positive effect when you go back to the normal keyboard.&quot;
+                                    &quot;Another surprising effect for me was that playing this [SIRIUS 6.0] also has a positive effect when you go back to the normal keyboard.&quot;
                                 </blockquote>
                                 <div className="font-sans">
-                                    <p className="text-sm font-bold uppercase tracking-wider text-white">Hubert Ness</p>
+                                    <p className="text-sm font-bold uppercase tracking-wider text-white">Hubert Nuss</p>
                                     <p className="mt-1 text-xs text-white/50">Professor of Jazz Piano, HMDK University of Stuttgart</p>
                                 </div>
                             </div>

@@ -112,7 +112,7 @@ export const DEFAULT_FAQ_ITEMS: FAQItem[] = [
         question: "If I practice on a narrow keyboard, will I lose my ability to play a standard piano?",
         answer: `<p><strong>It's a natural fear, but the clinical data suggests the exact opposite:</strong> playing on narrower keys often improves your technique on standard ones.</p>
         <p>When you practice on a size that fits your hand, you learn to play with less tension. Your brain neurologically maps the correct, tension-free muscular sensations. When you return to a standard piano, that relaxed muscle memory translates with you.</p>
-        <p>Hubert Ness, Professor of Jazz Piano at HMDK Stuttgart, noted: <em>"Another surprising effect for me was that playing this [DS6.0] also has a positive effect when you go back to the normal keyboard."</em></p>`
+        <p>Hubert Nuss, Professor of Jazz Piano at HMDK Stuttgart, noted: <em>"Another surprising effect for me was that playing this [SIRIUS 6.0] also has a positive effect when you go back to the normal keyboard."</em></p>`
     },
     {
         id: '202',
