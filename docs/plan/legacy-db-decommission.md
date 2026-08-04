@@ -38,3 +38,15 @@ dreamplay-assets, dreamplay-knowledge, google-ads-app, stitch-app, dreamplay-saa
 3. Re-run `backup-project.mjs` for a final snapshot of both projects.
 4. **PAUSE** both Supabase projects (reversible) — watch 2 weeks for breakage.
 5. Delete projects after Lionel's final sign-off. Rotate the shared DB password (`sorenkier23` is reused across projects) and revoke old service keys by deletion.
+
+## ✅ vaulted.so (content-production-system) repointed off quyq — 2026-08-04
+
+Migrated to its own dedicated Supabase project `vxzfdekumhrudpykrmfo`.
+
+- **Table attribution (by code evidence)**: the app reads/writes ONLY `public.projects` and `public.assets` (`lib/actions.ts`, `hooks/useProjects.ts`, `hooks/useAssets.ts`, `app/projects/[id]/page.tsx`, `ingest_worker.py`), plus Storage bucket `project-assets`. No auth usage (quyq auth.users had 0 rows anyway). It does NOT reference posts/post_versions/blog_themes (those are dreamplay-blog's), nor media_assets/asset_tags/asset_tag_links/asset_categories/asset_usage_logs, research_*, citation_logs, or ai_* — all left untouched in quyq.
+  - Note: dreamplay-media-indexer-2 uses its own `asset_indexer` schema (`src/lib/db.ts` sets `db.schema='asset_indexer'`) — quyq's `public.assets` was unambiguously vaulted.so's (columns project_id/filename/file_type/wasabi_url/size_bytes match its code). quyq's `public.media_assets`/`asset_*` tables belong to an older media-indexer generation; still unowned by any live repo checked — verify before deleting.
+- **What moved**: 5 projects rows + 4 assets rows (live PostgREST copy, matched the 2026-08-04 snapshot) + 3 unique storage objects (~1.2 MB) from quyq bucket `project-assets` → same-path bucket in vxz. `assets.wasabi_url` values rewritten quyq→vxz host. quyq untouched (reads only); vxz was empty beforehand (no public tables) — additive only.
+- **Schema in vxz**: projects/assets DDL from schema.json incl. PK, FK (assets.project_id → projects ON DELETE CASCADE), defaults; RLS ENABLED with anon/authenticated SELECT-only policies (app reads via anon client, writes only via service-role server actions — an improvement over quyq where RLS was off).
+- **Env/deploy**: Vercel project `content-production-system` env vars NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY / SUPABASE_SERVICE_KEY replaced with vxz values in production+preview+development; local repo `.env.local` updated; no code changes needed. Redeployed via `vercel redeploy` (build dpl_FUH7F7y2NvLPNVLRVoqpXLrQS8Zc), aliased to www.vaulted.so.
+- **Live verification**: vaulted.so → HTTP 200; served JS bundle contains only the vxz URL (zero quyq references); anon REST read returns the 5 projects; write path exercised live via the `updateProjectStatus` server action (no-op status re-assert) → `{"success":true}`.
+- quyq's `projects`/`assets` rows + `project-assets` bucket can be dropped whenever quyq is decommissioned; vaulted.so no longer depends on them.
