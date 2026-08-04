@@ -9,6 +9,7 @@ import Footer from "@/components/Footer";
 import { VARIANT_MAP } from "@/config/variant-map";
 import { trackEmailConversion } from "@/components/EmailTracker";
 import { useAnalytics } from "@dreamplay/analytics/react";
+import { abCheckoutNoteParts } from "@/lib/ab-checkout";
 
 const PRODUCT_IMAGES = {
     Black: [
@@ -76,6 +77,15 @@ function CheckoutContent() {
 
     const activePackage = displayPackages.find(p => p.id === tier)!;
 
+    // "Info entered" scoring event (D11): first real option interaction this
+    // session — the visitor is actively configuring the product.
+    const [infoEnteredSent, setInfoEnteredSent] = useState(false);
+    const markInfoEntered = () => {
+        if (infoEnteredSent) return;
+        setInfoEnteredSent(true);
+        void analytics.track('checkout_info_entered', { source: 'pdp' });
+    };
+
     const handleCheckout = () => {
         setIsCheckingOut(true);
 
@@ -89,15 +99,19 @@ function CheckoutContent() {
             color,
         });
 
+        // Variant + session survive into the Shopify order note so the orders
+        // webhook can attribute the purchase (D11).
+        const note = ['checkout_source:pdp', ...abCheckoutNoteParts(analytics.getSessionId())].join(' | ');
+
         if (exactVariantId && exactVariantId.trim() !== '') {
-            let permalink = `/cart/${exactVariantId}:1?note=checkout_source:pdp`;
+            let permalink = `/cart/${exactVariantId}:1?note=${encodeURIComponent(note)}`;
             if (discountCode) permalink += `&discount=${discountCode}`;
 
             const checkoutUrl = `https://dreamplay-pianos.myshopify.com/cart/clear?return_to=${encodeURIComponent(permalink)}`;
             trackEmailConversion('conversion_t2', window.location.pathname);
             window.location.href = checkoutUrl;
         } else {
-            let fallbackUrl = `https://dreamplay-pianos.myshopify.com/cart/add?id=52209394549050&quantity=1&return_to=/checkout&properties[Size]=${size}&properties[Finish]=${color}&note=checkout_source:pdp`;
+            let fallbackUrl = `https://dreamplay-pianos.myshopify.com/cart/add?id=52209394549050&quantity=1&return_to=/checkout&properties[Size]=${size}&properties[Finish]=${color}&note=${encodeURIComponent(note)}`;
             if (discountCode) fallbackUrl += `&discount=${discountCode}`;
             window.location.href = fallbackUrl;
         }
@@ -195,7 +209,7 @@ function CheckoutContent() {
                                     {(["DS6.0", "DS5.5"] as const).map((s) => (
                                         <button
                                             key={s}
-                                            onClick={() => setSize(s)}
+                                            onClick={() => { markInfoEntered(); setSize(s); }}
                                             className={`py-3 px-4 border-2 text-left transition-all ${size === s ? "border-neutral-900 bg-neutral-900 shadow-sm" : "border-neutral-300 bg-white hover:border-neutral-400"
                                                 }`}
                                         >
@@ -213,7 +227,7 @@ function CheckoutContent() {
                                     {(["Black", "White"] as const).map((c) => (
                                         <button
                                             key={c}
-                                            onClick={() => setColor(c)}
+                                            onClick={() => { markInfoEntered(); setColor(c); }}
                                             className={`flex items-center gap-2 py-2.5 px-5 border-2 transition-all ${color === c ? "border-neutral-900 bg-neutral-900 shadow-sm" : "border-neutral-300 bg-white hover:border-neutral-400"
                                                 }`}
                                         >
@@ -247,7 +261,7 @@ function CheckoutContent() {
                                                     name="package"
                                                     value={option.id}
                                                     checked={isSelected}
-                                                    onChange={(e) => setTier(e.target.value as "full" | "solo")}
+                                                    onChange={(e) => { markInfoEntered(); setTier(e.target.value as "full" | "solo"); }}
                                                     className="sr-only"
                                                 />
 

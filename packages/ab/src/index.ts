@@ -1,50 +1,48 @@
 /**
- * @dreamplay/ab — first-class A/B experimentation (Phase 4), the belgium
- * proxy pattern generalized to a typed multi-experiment registry.
+ * @dreamplay/ab — the A/B funnel (Decision D11): layout groups × variations
+ * behind /ab, a manually-pinned /main outside the test, and a point-based
+ * score engine.
  *
  * Entry points:
- *   "."          — registry + assignment + cookie readers (this file)
- *   "./react"    — <ExperimentProvider/>, useVariant(), <Variant/>
- *   "./sync"     — syncExperimentsToDb() (server-side, admin client)
+ *   "."       — funnel registry, router, cookie readers, scoring (this file;
+ *               everything here is edge-safe)
+ *   "./react" — <AbFunnelProvider/>, useAbVariation(), useAbCta()
  *
- * See README.md for the "how to launch an experiment" runbook.
+ * See README.md for the runbook.
  */
 
 export {
-  defineExperiments,
-  isVariantOf,
-  experimentMatchesPath,
-  activeVariants,
-  abCookieName,
-  type Experiment,
-  type ExperimentStatus,
-  type Variant,
-  type PathMatcher,
-  type GeoPool,
-  type GeoPoolsConfig,
-} from "./experiments";
-
-export {
-  resolveAssignments,
-  applyAssignments,
-  getRewritePath,
-  assignmentsToMap,
-  weightedRandomVariant,
+  defineAbFunnel,
+  resolveFunnel,
+  findVariation,
+  activeVariations,
+  isVariationActive,
+  variationGroup,
+  weightedRandomVariation,
+  applyCtaBase,
+  AB_COOKIE,
   AB_COOKIE_MAX_AGE,
-  type Assignment,
-  type AssignmentCookie,
-  type AssignmentSource,
-  type ResolveOptions,
-  type RequestLike,
-  type ResponseLike,
-  type CookiesLike,
-  type HeadersLike,
-  type ResponseCookiesLike,
-} from "./assign";
+  type AbFunnelConfig,
+  type AbGroup,
+  type AbVariation,
+  type AbMainConfig,
+  type FoundVariation,
+  type FunnelCookie,
+  type FunnelResolution,
+} from "./funnel";
 
 export {
-  readAbAssignmentsFromCookieString,
+  FUNNEL_ASSIGNMENT_KEY,
+  readAbVariantFromCookieString,
   createGetAbAssignments,
-  abAssignmentsToMetadata,
-  hasAssignment,
 } from "./cookies";
+
+export {
+  computeVariationScores,
+  rollUpGroups,
+  type ScoringEventRow,
+  type ScoringRule,
+  type RuleScore,
+  type VariationScore,
+  type GroupScore,
+} from "./scoring";

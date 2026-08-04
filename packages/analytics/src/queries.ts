@@ -58,93 +58,56 @@ export async function getSummary(range: AnalyticsRange, opts: SummaryOptions = {
 }
 
 // ---------------------------------------------------------------------------
-// Per-variant experiment results
+// A/B funnel rows (Decision D11)
 // ---------------------------------------------------------------------------
 
-export interface VariantResult {
-  variant: string;
-  /** Distinct sessions that saw the experiment (any tagged event). */
-  exposures: number;
-  /** Distinct exposed sessions that fired a conversion event. */
-  conversions: number;
-  /** conversions / exposures (0 when no exposures). */
-  conversionRate: number;
-  /** Raw tagged event count (debugging/sanity). */
-  events: number;
+/** Narrow projection of variant-tagged events for the score engine. */
+export interface AbEventRow {
+  event_name: string;
+  path: string | null;
+  session_id: string | null;
+  duration_seconds: number | string | null;
+  metadata: Json;
 }
 
-export interface VariantResultsOptions extends QueryOptions {
-  /** Event names that count as a conversion. */
-  conversionEvents?: readonly string[];
+export interface AbEventsOptions extends QueryOptions {
   pageSize?: number;
+  /** Safety valve against unbounded reads. Default 100k rows. */
+  maxRows?: number;
 }
-
-const DEFAULT_CONVERSION_EVENTS = ["purchase", "begin_checkout", "subscribe", "conversion"];
 
 /**
- * Exposures / conversions / rates per variant for one experiment, read from
- * event metadata (`ab_experiments.<key>`, falling back to `ab_variant` for
- * single-experiment rows). Sessions are the unit: a session counts as one
- * exposure and at most one conversion.
+ * Every event carrying `metadata.ab_variant` in the range (exposures and
+ * conversions alike — /main and untagged site traffic never appear here).
+ * Feed the result to @dreamplay/ab's computeVariationScores; filtering of
+ * bot/admin rows happens there.
  */
-export async function getVariantResults(
-  experimentKey: string,
+export async function fetchAbTaggedEvents(
   range: AnalyticsRange,
-  opts: VariantResultsOptions = {}
-): Promise<VariantResult[]> {
+  opts: AbEventsOptions = {}
+): Promise<AbEventRow[]> {
   const client = resolveClient(opts);
-  const conversionEvents = new Set(opts.conversionEvents ?? DEFAULT_CONVERSION_EVENTS);
   const pageSize = opts.pageSize ?? 1000;
+  const maxRows = opts.maxRows ?? 100_000;
   const startIso = rangeStartIso(range);
 
-  interface Bucket {
-    exposureSessions: Set<string>;
-    conversionSessions: Set<string>;
-    events: number;
-  }
-  const buckets = new Map<string, Bucket>();
-
+  const rows: AbEventRow[] = [];
   let offset = 0;
-  for (;;) {
+  while (rows.length < maxRows) {
     const { data, error } = await client
       .from("events")
-      .select("event_name, session_id, metadata")
+      .select("event_name, path, session_id, duration_seconds, metadata")
       .gte("created_at", startIso)
-      .not(`metadata->ab_experiments->>${experimentKey}`, "is", null)
+      .not("metadata->>ab_variant", "is", null)
       .order("id", { ascending: true })
       .range(offset, offset + pageSize - 1);
-    if (error) throw new Error(`getVariantResults failed: ${error.message}`);
-    const rows = data ?? [];
-
-    for (const row of rows) {
-      const meta = (row.metadata ?? {}) as Record<string, Json | undefined>;
-      const experimentsMap = meta.ab_experiments as Record<string, Json | undefined> | undefined;
-      const variantRaw = experimentsMap?.[experimentKey] ?? meta.ab_variant;
-      if (typeof variantRaw !== "string" || variantRaw.length === 0) continue;
-      let bucket = buckets.get(variantRaw);
-      if (!bucket) {
-        bucket = { exposureSessions: new Set(), conversionSessions: new Set(), events: 0 };
-        buckets.set(variantRaw, bucket);
-      }
-      bucket.events += 1;
-      const session = row.session_id ?? `no-session:${bucket.events}`;
-      bucket.exposureSessions.add(session);
-      if (conversionEvents.has(row.event_name)) bucket.conversionSessions.add(session);
-    }
-
-    if (rows.length < pageSize) break;
+    if (error) throw new Error(`fetchAbTaggedEvents failed: ${error.message}`);
+    const page = data ?? [];
+    rows.push(...page);
+    if (page.length < pageSize) break;
     offset += pageSize;
   }
-
-  return [...buckets.entries()]
-    .map(([variant, b]) => ({
-      variant,
-      exposures: b.exposureSessions.size,
-      conversions: b.conversionSessions.size,
-      conversionRate: b.exposureSessions.size === 0 ? 0 : b.conversionSessions.size / b.exposureSessions.size,
-      events: b.events,
-    }))
-    .sort((a, b) => a.variant.localeCompare(b.variant));
+  return rows;
 }
 
 // ---------------------------------------------------------------------------

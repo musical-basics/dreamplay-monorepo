@@ -1,12 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@dreamplay/db";
-import {
-    applyAssignments,
-    getRewritePath,
-    resolveAssignments,
-    type Assignment,
-} from "@dreamplay/ab";
-import { experiments } from "@/config/experiments";
+import { AB_COOKIE, resolveFunnel, type FunnelResolution } from "@dreamplay/ab";
+import { abFunnel } from "@/config/ab";
 
 /**
  * Refresh the Supabase auth session on every request.
@@ -44,24 +39,47 @@ export async function middleware(request: NextRequest) {
     const isApiOrAdmin = pathname.startsWith("/api") || pathname.startsWith("/admin");
     const isStaticFile = /\.(.*)$/.test(pathname);
 
+    const hostname = request.headers.get("host")?.split(":")[0] || "";
+    const isShopHost = hostname === "shop.dreamplaypianos.com";
+
     // ========================================================================
-    // A/B ASSIGNMENTS (must resolve BEFORE the session refresh)
-    // resolveAssignments buckets the visitor for every experiment matching
-    // this path (?ab= override → forced → cookie → CSPRNG). Stamping the
-    // resolved values onto the REQUEST cookies here means the server render
-    // of this same request already sees them (no control-flash on first
-    // visit and ?ab= overrides apply immediately); updateSession() forwards
-    // the modified request via NextResponse.next({ request }).
+    // A/B FUNNEL ROUTING (Decision D11; must resolve BEFORE session refresh)
+    //   /      → redirect to /ab (funnel members) or /main (everyone else)
+    //   /main  → rewrite to the manually-pinned layout (never tagged/scored)
+    //   /ab    → sticky dp_ab cookie or CSPRNG assignment → rewrite to the
+    //            variation's layout route; /ab/<key> forces a variation.
+    // Stamping the resolved cookie onto the REQUEST here means the server
+    // render of this same request already sees it (no flash on first visit);
+    // updateSession() forwards the mutated request via
+    // NextResponse.next({ request }).
     // ========================================================================
-    let abAssignments: Assignment[] = [];
-    if (!isApiOrAdmin && !isStaticFile) {
-        abAssignments = resolveAssignments(request, experiments);
-        for (const assignment of abAssignments) {
-            if (assignment.setCookie) {
-                request.cookies.set(assignment.setCookie.name, assignment.setCookie.value);
-            }
+    let funnel: FunnelResolution = { type: "none" };
+    if (!isApiOrAdmin && !isStaticFile && !isShopHost) {
+        funnel = resolveFunnel(
+            abFunnel,
+            pathname,
+            url.searchParams,
+            request.cookies.get(AB_COOKIE)?.value
+        );
+
+        if (funnel.type === "redirect") {
+            const redirectUrl = url.clone();
+            redirectUrl.pathname = funnel.to;
+            // 307 keeps the query string (sid/cid/utm survive to /main | /ab).
+            return NextResponse.redirect(redirectUrl);
+        }
+        if (funnel.type === "rewrite" && funnel.setCookie) {
+            request.cookies.set(funnel.setCookie.name, funnel.setCookie.value);
         }
     }
+
+    const applyFunnelCookie = <T extends NextResponse>(response: T): T => {
+        if (funnel.type === "rewrite" && funnel.setCookie) {
+            const { name, value, ...options } = funnel.setCookie;
+            response.cookies.set(name, value, options);
+        }
+        return response;
+    };
 
     // ========================================================================
     // REFRESH SUPABASE AUTH SESSION (must run on every request)
@@ -75,9 +93,6 @@ export async function middleware(request: NextRequest) {
     } catch {
         sessionResponse = NextResponse.next({ request });
     }
-
-    const hostname = request.headers.get("host")?.split(":")[0] || "";
-    const isShopHost = hostname === "shop.dreamplaypianos.com";
 
     // Skip rewrites for API routes, admin, and auth paths
     if (isApiOrAdmin) {
@@ -96,15 +111,16 @@ export async function middleware(request: NextRequest) {
             rewriteUrl.pathname = "/shop";
             const response = NextResponse.rewrite(rewriteUrl, { request });
             sessionResponse.cookies.getAll().forEach(c => response.cookies.set(c.name, c.value));
-            return applyAssignments(response, abAssignments);
+            return response;
         }
 
-        return applyAssignments(sessionResponse, abAssignments);
+        return sessionResponse;
     }
 
-    // Whole-page experiment variants: a resolved variant with a `route`
-    // differing from the request path is served via rewrite (URL unchanged).
-    const abRewritePath = getRewritePath(abAssignments);
+    // /main and /ab are virtual: the resolved layout is served via rewrite,
+    // URL unchanged, so analytics `path` cleanly separates the two funnels.
+    const funnelRewritePath =
+        funnel.type === "rewrite" && funnel.to !== pathname ? funnel.to : undefined;
 
     const searchParams = url.searchParams;
 
@@ -135,9 +151,14 @@ export async function middleware(request: NextRequest) {
         if (isLocal) delete cookieOpts.domain;
 
         // Continue without redirect — keep sid/cid in URL
-        const passthrough = abRewritePath
-            ? NextResponse.rewrite(new URL(abRewritePath, request.url), { request })
-            : NextResponse.next({ request });
+        let passthrough: NextResponse;
+        if (funnelRewritePath) {
+            const rewriteUrl = url.clone();
+            rewriteUrl.pathname = funnelRewritePath;
+            passthrough = NextResponse.rewrite(rewriteUrl, { request });
+        } else {
+            passthrough = NextResponse.next({ request });
+        }
 
         passthrough.cookies.set("dp_sid", sid, cookieOpts);
         if (cid) passthrough.cookies.set("dp_cid", cid, cookieOpts);
@@ -156,16 +177,18 @@ export async function middleware(request: NextRequest) {
             passthrough.cookies.set(c.name, c.value)
         );
 
-        return applyAssignments(passthrough, abAssignments);
+        return applyFunnelCookie(passthrough);
     }
 
-    if (abRewritePath) {
-        const response = NextResponse.rewrite(new URL(abRewritePath, request.url), { request });
+    if (funnelRewritePath) {
+        const rewriteUrl = url.clone();
+        rewriteUrl.pathname = funnelRewritePath;
+        const response = NextResponse.rewrite(rewriteUrl, { request });
         sessionResponse.cookies.getAll().forEach(c => response.cookies.set(c.name, c.value));
-        return applyAssignments(response, abAssignments);
+        return applyFunnelCookie(response);
     }
 
-    return applyAssignments(sessionResponse, abAssignments);
+    return applyFunnelCookie(sessionResponse);
 }
 
 export const config = {

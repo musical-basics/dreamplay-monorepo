@@ -118,6 +118,36 @@ describe("POST /api/webhooks/shopify/orders", () => {
         });
     });
 
+    it("attributes the purchase to the A/B variant + session planted in the order note (D11)", async () => {
+        const order = {
+            id: 111222333,
+            email: "buyer@example.com",
+            note: "checkout_source:pdp | ab_variant:2b | dp_session:123e4567-e89b-42d3-a456-426614174000",
+        };
+        const body = JSON.stringify(order);
+        const res = await POST(makeRequest(body, sign(body)));
+
+        expect(res.status).toBe(200);
+        expect(eventsInsert).toHaveBeenCalledTimes(1);
+        const event = eventsInsert.mock.calls[0]![0] as Record<string, unknown>;
+        expect(event.session_id).toBe("123e4567-e89b-42d3-a456-426614174000");
+        expect(event.metadata).toMatchObject({
+            checkout_source: "pdp",
+            ab_variant: "2b",
+            ab_experiments: { funnel: "2b" },
+        });
+    });
+
+    it("leaves purchases unattributed when the note has no A/B markers", async () => {
+        const body = JSON.stringify({ id: 444, email: "buyer@example.com", note: "checkout_source:shop" });
+        const res = await POST(makeRequest(body, sign(body)));
+
+        expect(res.status).toBe(200);
+        const event = eventsInsert.mock.calls[0]![0] as Record<string, unknown>;
+        expect(event.session_id).toBeNull();
+        expect((event.metadata as Record<string, unknown>).ab_variant).toBeUndefined();
+    });
+
     it("skips the duplicate purchase event on a webhook re-fire", async () => {
         eventsLimit.mockResolvedValueOnce({ data: [{ id: 1 }] as never, error: null });
 

@@ -44,12 +44,14 @@ describe("edge-safety", () => {
     }
   });
 
-  it("assign.ts imports no Node built-ins or next/server (edge-safe, standalone types)", () => {
-    const content = readFileSync(join(srcDir, "assign.ts"), "utf8");
-    const imports = [...content.matchAll(/from\s+"([^"]+)"/g)].map((m) => m[1]);
-    for (const spec of imports) {
-      expect(spec?.startsWith("node:"), `node builtin import in assign.ts: ${spec}`).toBe(false);
-      expect(spec, "next/server must stay out of @dreamplay/ab").not.toContain("next");
+  it("edge-executed modules import no Node built-ins or next/server", () => {
+    for (const name of ["funnel.ts", "cookies.ts", "scoring.ts", "index.ts"]) {
+      const content = readFileSync(join(srcDir, name), "utf8");
+      const imports = [...content.matchAll(/from\s+"([^"]+)"/g)].map((m) => m[1]);
+      for (const spec of imports) {
+        expect(spec?.startsWith("node:"), `node builtin import in ${name}: ${spec}`).toBe(false);
+        expect(spec, `next/server must stay out of @dreamplay/ab (${name})`).not.toContain("next");
+      }
     }
   });
 });

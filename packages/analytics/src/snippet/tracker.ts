@@ -55,23 +55,15 @@ function scriptTagConfig(): TrackerSnippetConfig {
 }
 
 /**
- * Reads ab_<key> cookies without the @dreamplay/ab dependency (the snippet
- * must stay dependency-free). Same semantics as
- * @dreamplay/ab readAbAssignmentsFromCookieString.
+ * Reads the dp_ab funnel cookie (Decision D11) without the @dreamplay/ab
+ * dependency (the snippet must stay dependency-free). Same semantics as
+ * @dreamplay/ab createGetAbAssignments, minus registry validation.
  */
 function readAbCookies(): Record<string, string> {
   const assignments: Record<string, string> = {};
   try {
-    for (const part of document.cookie.split(";")) {
-      const eq = part.indexOf("=");
-      if (eq === -1) continue;
-      const name = part.slice(0, eq).trim();
-      if (!name.startsWith("ab_")) continue;
-      const key = name.slice(3);
-      if (!key) continue;
-      const value = decodeURIComponent(part.slice(eq + 1).trim());
-      if (value) assignments[key] = value;
-    }
+    const value = readCookie("dp_ab");
+    if (value) assignments.funnel = value;
   } catch {
     // no cookie access — no tagging
   }

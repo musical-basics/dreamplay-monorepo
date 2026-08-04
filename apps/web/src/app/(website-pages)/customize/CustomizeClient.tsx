@@ -10,6 +10,7 @@ import { useAnalytics } from "@dreamplay/analytics/react";
 import { ArrowRight, ArrowLeft, Check, ShieldCheck, X, CheckCircle2, Undo2, Truck } from "lucide-react";
 import { createBrowserClient } from "@dreamplay/db";
 import { VARIANT_MAP } from "@/config/variant-map";
+import { abCheckoutNoteParts } from "@/lib/ab-checkout";
 import { DynamicProductionTimeline } from "@/components/customize/DynamicProductionTimeline";
 import { RegisterModal } from "@/components/RegisterModal";
 import { formatOneProTargetDeliveryDate } from "@/lib/one-pro-delivery";
@@ -520,22 +521,34 @@ export default function CustomizeClient({ urls, hiddenProducts }: CustomizeClien
         });
     };
 
+    // "Info entered" scoring event (D11): first real configurator interaction
+    // this session — the visitor is actively speccing a keyboard.
+    const infoEnteredSent = useRef(false);
+    const markInfoEntered = () => {
+        if (infoEnteredSent.current) return;
+        infoEnteredSent.current = true;
+        void analytics.track('checkout_info_entered', { source: 'customize' });
+    };
+
     const handleSelectHandSize = (size: 'small' | 'medium' | 'large') => {
         const sizeMap = {
             small: 'DS5.5',
             medium: 'DS6.0',
             large: appState.product === 'pro' ? 'DS6.0' : 'DS6.5',
         };
+        markInfoEntered();
         setAppState(prev => ({ ...prev, handSpan: size, size: sizeMap[size] }));
         setTimeout(() => scrollToSection(2), 300);
     };
 
     const handleSelectSize = (size: string) => {
+        markInfoEntered();
         setAppState(prev => ({ ...prev, size }));
         setTimeout(() => scrollToSection(3), 300);
     };
 
     const handleSelectColor = (color: string) => {
+        markInfoEntered();
         setAppState(prev => ({ ...prev, color }));
         setTimeout(() => scrollToSection(4), 300);
     };
@@ -573,6 +586,9 @@ export default function CustomizeClient({ urls, hiddenProducts }: CustomizeClien
                 if (appState.product === 'pro') {
                     noteParts.push(`target_delivery:${oneProTargetDeliveryDate}`);
                 }
+                // Variant + session survive into the Shopify order note so the
+                // orders webhook can attribute the purchase (D11).
+                noteParts.push(...abCheckoutNoteParts(analytics.getSessionId()));
                 let permalink = `/cart/${exactVariantId}:1?note=${encodeURIComponent(noteParts.join(' | '))}`;
 
                 // Append discount code from URL params or sessionStorage (email links)
@@ -611,7 +627,8 @@ export default function CustomizeClient({ urls, hiddenProducts }: CustomizeClien
                     const finalParams = separator === '?' ? propertiesParams.substring(1) : propertiesParams;
                     checkoutUrl = baseUrl + (baseUrl.includes('?') ? propertiesParams : `?${finalParams}`);
 
-                    checkoutUrl += `&note=checkout_source:customize`;
+                    const fallbackNote = ['checkout_source:customize', ...abCheckoutNoteParts(analytics.getSessionId())];
+                    checkoutUrl += `&note=${encodeURIComponent(fallbackNote.join(' | '))}`;
 
                     if (discountCode) {
                         checkoutUrl += `&discount=${discountCode}`;

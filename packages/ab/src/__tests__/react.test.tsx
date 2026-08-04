@@ -1,58 +1,60 @@
 /**
- * React bindings — rendered with react-dom/server (no DOM needed).
+ * React bindings — rendered with react-dom/server (no DOM in this test env).
+ * The cookie is only read in a client effect, so SSR output always reflects
+ * the unassigned state; that IS the hydration contract we assert here. The
+ * cookie-parsing itself is covered in cookies.test.ts.
  */
 
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import { ExperimentProvider, useVariant, Variant } from "../react";
+import { defineAbFunnel } from "../funnel";
+import { AbFunnelProvider, useAbCta, useAbVariation } from "../react";
 
-function ShowVariant({ experiment }: { experiment: string }) {
-  const variant = useVariant(experiment);
-  return <span>{variant ?? "unassigned"}</span>;
-}
-
-describe("ExperimentProvider / useVariant", () => {
-  it("exposes assignments to hooks", () => {
-    const html = renderToStaticMarkup(
-      <ExperimentProvider assignments={{ hero: "b" }}>
-        <ShowVariant experiment="hero" />
-        <ShowVariant experiment="missing" />
-      </ExperimentProvider>
-    );
-    expect(html).toBe("<span>b</span><span>unassigned</span>");
-  });
-
-  it("returns undefined without a provider", () => {
-    const html = renderToStaticMarkup(<ShowVariant experiment="hero" />);
-    expect(html).toBe("<span>unassigned</span>");
-  });
+const config = defineAbFunnel({
+  main: { route: "/premium-offer", cta: "/shop" },
+  groups: [
+    {
+      group: "1",
+      name: "x",
+      active: true,
+      variations: [{ key: "1a", route: "/legacy-home", cta: "/customize", active: true }],
+    },
+  ],
 });
 
-describe("<Variant match>", () => {
-  const tree = (
-    <ExperimentProvider assignments={{ hero: "b" }}>
-      <Variant experiment="hero" match="b">
-        <p>b-content</p>
-      </Variant>
-      <Variant experiment="hero" match="a" fallback={<p>fallback</p>}>
-        <p>a-content</p>
-      </Variant>
-      <Variant experiment="hero" match={["b", "c"]}>
-        <p>multi</p>
-      </Variant>
-      <Variant experiment="unassigned_exp" match="a">
-        <p>never</p>
-      </Variant>
-    </ExperimentProvider>
-  );
+function Cta({ fallback }: { fallback: string }) {
+  return <a href={useAbCta(fallback)}>cta</a>;
+}
 
-  it("renders children on match, fallback otherwise, nothing when unassigned", () => {
-    const html = renderToStaticMarkup(tree);
-    expect(html).toContain("b-content");
-    expect(html).not.toContain("a-content");
-    expect(html).toContain("fallback");
-    expect(html).toContain("multi");
-    expect(html).not.toContain("never");
+function ShowVariation() {
+  const variation = useAbVariation();
+  return <span>{variation?.key ?? "main-funnel"}</span>;
+}
+
+describe("AbFunnelProvider SSR contract", () => {
+  it("renders the unassigned state on the server (cookie is read post-hydration)", () => {
+    const html = renderToStaticMarkup(
+      <AbFunnelProvider config={config} pathname="/premium-offer">
+        <ShowVariation />
+        <Cta fallback="/customize?product=pro" />
+      </AbFunnelProvider>
+    );
+    expect(html).toContain("main-funnel");
+    expect(html).toContain('href="/customize?product=pro"');
+  });
+
+  it("applies the manual main CTA on /main", () => {
+    const html = renderToStaticMarkup(
+      <AbFunnelProvider config={config} pathname="/main">
+        <Cta fallback="/customize?product=pro" />
+      </AbFunnelProvider>
+    );
+    expect(html).toContain('href="/shop?product=pro"');
+  });
+
+  it("falls back gracefully without a provider", () => {
+    expect(renderToStaticMarkup(<Cta fallback="/customize" />)).toContain('href="/customize"');
+    expect(renderToStaticMarkup(<ShowVariation />)).toContain("main-funnel");
   });
 });

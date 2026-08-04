@@ -44,6 +44,12 @@ export interface AnalyticsConfig {
    * single variant is used automatically.
    */
   primaryExperiment?: string;
+  /**
+   * Count document clicks per page and attach `metadata.click_count` to
+   * every `page_leave` event (engagement signal for A/B scoring).
+   * Default: true.
+   */
+  trackClicks?: boolean;
   /** Injectable transport (tests). Default: global fetch with keepalive. */
   fetch?: typeof globalThis.fetch;
   /**
@@ -180,6 +186,25 @@ export function createAnalytics(config: AnalyticsConfig = {}): Analytics {
   let pageStartedAt = 0;
   let pageLeaveSent = true; // no pageview yet → nothing to leave
   let currentPath = "";
+  let clickCount = 0;
+  let clickListenerAttached = false;
+
+  /**
+   * Per-page click counter (engagement metric). Attached lazily on the first
+   * dispatch — never during render/SSR — and capture-phase so stopPropagation
+   * in page code can't hide clicks.
+   */
+  function ensureClickTracking(): void {
+    if (clickListenerAttached || !hasDom() || config.trackClicks === false) return;
+    clickListenerAttached = true;
+    document.addEventListener(
+      "click",
+      () => {
+        clickCount += 1;
+      },
+      { capture: true, passive: true }
+    );
+  }
 
   function ensureIdentity(): void {
     if (!hasDom()) return;
@@ -337,6 +362,7 @@ export function createAnalytics(config: AnalyticsConfig = {}): Analytics {
   ): Promise<void> {
     if (!hasDom()) return;
     ensureIdentity();
+    ensureClickTracking();
     captureFirstTouch();
     const payload: TrackPayload = {
       eventName,
@@ -367,6 +393,7 @@ export function createAnalytics(config: AnalyticsConfig = {}): Analytics {
     async pageview(metadata) {
       pageStartedAt = Date.now();
       pageLeaveSent = false;
+      clickCount = 0;
       currentPath = pathFromContext();
       await dispatch("pageview", metadata, { path: currentPath });
     },
@@ -376,7 +403,7 @@ export function createAnalytics(config: AnalyticsConfig = {}): Analytics {
       const durationSeconds = Math.max(0, Math.round((Date.now() - pageStartedAt) / 1000));
       await dispatch(
         "page_leave",
-        metadata,
+        { ...(config.trackClicks === false ? {} : { click_count: clickCount }), ...metadata },
         { durationSeconds, path: currentPath || undefined },
         true
       );

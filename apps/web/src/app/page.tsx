@@ -1,10 +1,10 @@
 import { redirect } from "next/navigation"
 
 /**
- * Root page — the legacy journey engine rewrote `/` to the active journey's
- * homepage in middleware. All active journeys (and the bot/SEO STANDARD_JOURNEY)
- * pointed at /premium-offer, so `/` now redirects there directly, preserving
- * any query params (sid/cid email-tracking params, utm_*, etc.).
+ * Root page — normally unreachable: the middleware funnel router (D11)
+ * redirects `/` to /ab (funnel members) or /main before routing gets here.
+ * Kept as a fallback for any request the middleware matcher skips, matching
+ * the non-member branch and preserving query params (sid/cid, utm_*, etc.).
  */
 
 interface PageProps {
@@ -20,5 +20,5 @@ export default async function HomePage({ searchParams }: PageProps) {
         }, {} as Record<string, string>)
     ).toString()
 
-    redirect(queryString ? `/premium-offer?${queryString}` : "/premium-offer")
+    redirect(queryString ? `/main?${queryString}` : "/main")
 }

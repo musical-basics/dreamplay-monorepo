@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useAnalytics } from "@dreamplay/analytics/react";
+import { abCheckoutNoteParts } from "@/lib/ab-checkout";
 import {
     ArrowRight,
     Check,
@@ -142,6 +143,12 @@ export function ShopClient() {
                     : cartItem
             ));
         });
+        void analytics.track("add_to_cart", {
+            product_id: product.id,
+            product_name: product.name,
+            variant_title: variant.title,
+            price: product.price,
+        });
         setCheckoutError("");
         setCartOpen(true);
     };
@@ -165,7 +172,9 @@ export function ShopClient() {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    note: "checkout_source:shop",
+                    // Variant + session ride the order note so the orders
+                    // webhook can attribute the purchase (D11).
+                    note: ["checkout_source:shop", ...abCheckoutNoteParts(analytics.getSessionId())].join(" | "),
                     discountCodes,
                     attributes: [
                         { key: "checkout_source", value: "shop" },

@@ -1,70 +1,81 @@
 "use client";
 
 /**
- * React bindings for component-level variants (the belgium
- * VariantProvider/useVariant pattern, generalized to many experiments).
+ * React bindings for the A/B funnel (Decision D11).
  *
- * The server resolves assignments (middleware via resolveAssignments, or a
- * server component reading the ab_* cookies) and passes the plain
- * `{ experiment: variant }` map down:
+ * Mount one <AbFunnelProvider config={abFunnel} pathname={usePathname()}>
+ * near the root. It reads the dp_ab cookie after hydration (initial render
+ * always uses the fallback so server and client markup match), and exposes:
  *
- * ```tsx
- * // layout.tsx (server component)
- * const assignments = readAbAssignmentsFromCookieString(
- *   (await cookies()).toString(), experiments);
- * <ExperimentProvider assignments={assignments}>{children}</ExperimentProvider>
+ *   useAbVariation()      → the visitor's AbVariation, or undefined (main funnel)
+ *   useAbCta("/customize") → the href a CTA should point at:
+ *       - assigned visitors get their variation's CTA (they carry it on every
+ *         page — "continuously shown that variant going forward"),
+ *       - visitors on /main get the manually-configured main CTA,
+ *       - everyone else keeps the page's own default.
  *
- * // any client component
- * const variant = useVariant("hero_2026");           // "b" | undefined
- * <Variant experiment="hero_2026" match="b">…</Variant>
- * ```
+ * An href swapping shortly after hydration is invisible to the user — CTA
+ * targets only matter at click time.
  */
 
-import { createContext, useContext, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 
-export type AssignmentMap = Record<string, string>;
+import {
+  applyCtaBase,
+  findVariation,
+  type AbFunnelConfig,
+  type AbVariation,
+} from "./funnel";
+import { readAbVariantFromCookieString } from "./cookies";
 
-const ExperimentContext = createContext<AssignmentMap | null>(null);
+interface AbFunnelContextValue {
+  config: AbFunnelConfig;
+  variation: AbVariation | undefined;
+  pathname: string | undefined;
+}
 
-export function ExperimentProvider({
-  assignments,
+const AbFunnelContext = createContext<AbFunnelContextValue | null>(null);
+
+export function AbFunnelProvider({
+  config,
+  pathname,
   children,
 }: {
-  assignments: AssignmentMap;
+  config: AbFunnelConfig;
+  /** Pass usePathname() so the /main CTA override tracks client navigations. */
+  pathname?: string;
   children: ReactNode;
 }) {
-  return <ExperimentContext.Provider value={assignments}>{children}</ExperimentContext.Provider>;
+  const [variantKey, setVariantKey] = useState<string | undefined>(undefined);
+
+  // Read the cookie after mount (SSR-safe) and re-check on every navigation —
+  // a visitor can enter the funnel mid-session by clicking an /ab link.
+  useEffect(() => {
+    setVariantKey(readAbVariantFromCookieString(document.cookie, config));
+  }, [config, pathname]);
+
+  const variation = findVariation(config, variantKey)?.variation;
+  return (
+    <AbFunnelContext.Provider value={{ config, variation, pathname }}>
+      {children}
+    </AbFunnelContext.Provider>
+  );
+}
+
+/** The visitor's assigned variation, or undefined for the /main funnel. */
+export function useAbVariation(): AbVariation | undefined {
+  return useContext(AbFunnelContext)?.variation;
 }
 
 /**
- * The visitor's variant for an experiment, or undefined when unassigned
- * (experiment not matching this path, cookie missing, or provider absent —
- * callers must render a sane default for undefined).
+ * Resolve a CTA href. Pages keep their hardcoded default (`fallback`); the
+ * funnel swaps the base path per the assignment / main config, preserving the
+ * fallback's query and hash.
  */
-export function useVariant(experimentKey: string): string | undefined {
-  const assignments = useContext(ExperimentContext);
-  return assignments?.[experimentKey];
-}
-
-/**
- * Conditional renderer: children mount only when the visitor's variant for
- * `experiment` is (one of) `match`. `fallback` renders otherwise — handy for
- * control/unassigned content without a second <Variant> block.
- */
-export function Variant({
-  experiment,
-  match,
-  children,
-  fallback = null,
-}: {
-  experiment: string;
-  match: string | readonly string[];
-  children?: ReactNode;
-  fallback?: ReactNode;
-}) {
-  const variant = useVariant(experiment);
-  const matches =
-    variant !== undefined &&
-    (typeof match === "string" ? variant === match : match.includes(variant));
-  return <>{matches ? children : fallback}</>;
+export function useAbCta(fallback: string): string {
+  const ctx = useContext(AbFunnelContext);
+  if (!ctx) return fallback;
+  if (ctx.variation) return applyCtaBase(fallback, ctx.variation.cta);
+  if (ctx.pathname === "/main") return applyCtaBase(fallback, ctx.config.main.cta);
+  return fallback;
 }

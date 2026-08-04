@@ -188,3 +188,37 @@ describe("page_leave", () => {
     expect(h.payloads).toHaveLength(0);
   });
 });
+
+describe("click tracking", () => {
+  it("counts document clicks per page and attaches click_count to page_leave", async () => {
+    const h = createHarness();
+    await h.analytics.pageview();
+    document.body.click();
+    document.body.click();
+    document.body.click();
+    await h.analytics.pageLeave();
+    const leave = h.payloads.find((p) => p.eventName === "page_leave");
+    expect(leave?.metadata.click_count).toBe(3);
+  });
+
+  it("resets the counter on the next pageview", async () => {
+    const h = createHarness();
+    await h.analytics.pageview();
+    document.body.click();
+    await h.analytics.pageLeave();
+    await h.analytics.pageview();
+    await h.analytics.pageLeave();
+    const leaves = h.payloads.filter((p) => p.eventName === "page_leave");
+    expect(leaves[0]?.metadata.click_count).toBe(1);
+    expect(leaves[1]?.metadata.click_count).toBe(0);
+  });
+
+  it("omits click_count when trackClicks is disabled", async () => {
+    const h = createHarness({ trackClicks: false });
+    await h.analytics.pageview();
+    document.body.click();
+    await h.analytics.pageLeave();
+    const leave = h.payloads.find((p) => p.eventName === "page_leave");
+    expect(leave?.metadata.click_count).toBeUndefined();
+  });
+});

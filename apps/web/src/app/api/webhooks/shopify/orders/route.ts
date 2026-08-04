@@ -115,6 +115,11 @@ export async function POST(req: Request) {
         // "checkout_source:pdp" / "checkout_source:customize" marker.
         const sourceMatch = note.match(/checkout_source:(\w+)/);
         const checkoutSource = sourceMatch ? sourceMatch[1] : "unknown";
+        // D11: the checkout handoff also plants "ab_variant:<key>" and
+        // "dp_session:<id>" in the note — the only way variant/session survive
+        // into a cookie-less webhook. Parsing them makes purchases scoreable.
+        const abVariant = note.match(/ab_variant:(\d+[a-z])/)?.[1] ?? null;
+        const dpSession = note.match(/dp_session:([A-Za-z0-9_-]{8,64})/)?.[1] ?? null;
         const orderId = order.id != null ? String(order.id) : null;
 
         // Dedupe: this endpoint receives both orders/create and orders/paid
@@ -136,10 +141,14 @@ export async function POST(req: Request) {
                 event_name: "purchase",
                 path: "/webhook/shopify",
                 email: email || null,
+                session_id: dpSession,
                 ip_address:
                     req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "shopify-webhook",
                 user_agent: "Shopify-Webhook",
                 metadata: {
+                    ...(abVariant
+                        ? { ab_variant: abVariant, ab_experiments: { funnel: abVariant } }
+                        : {}),
                     topic,
                     order_id: orderId,
                     order_number:

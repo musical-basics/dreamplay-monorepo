@@ -2,25 +2,14 @@
  * Server-side helpers for the /admin dashboards (Phase 3 task 6 / Phase 4
  * task 5). Complements @dreamplay/analytics/queries with the two shapes the
  * get_analytics_summary RPC doesn't return (top pages, recent purchases) and
- * a defensive parser for the RPC's jsonb payload.
+ * a defensive parser for the RPC's jsonb payload. (A/B scoring lives in
+ * @dreamplay/ab + /admin/ab-tests, not here — Decision D11.)
  *
  * Admin client only — never import from client components.
  */
 
 import { rangeStartIso, type AnalyticsRange, type EventRow } from "@dreamplay/analytics/queries";
 import type { AdminClient, Json } from "@dreamplay/db";
-
-/**
- * Events that count as a conversion for experiment results. Passed to
- * getVariantResults as its conversionEvents param — edit here to change what
- * /admin/experiments counts.
- */
-export const CONVERSION_EVENTS = [
-  "begin_checkout",
-  "email_signup",
-  "cta_click",
-  "purchase",
-] as const;
 
 // ---------------------------------------------------------------------------
 // get_analytics_summary payload

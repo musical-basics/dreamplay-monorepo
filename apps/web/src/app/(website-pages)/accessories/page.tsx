@@ -1,10 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { cookies } from "next/headers";
 import { ArrowRight } from "lucide-react";
-import { readAbAssignmentsFromCookieString } from "@dreamplay/ab";
-import { ExperimentProvider } from "@dreamplay/ab/react";
-import { experiments } from "@/config/experiments";
 import { AccessoriesHero } from "./AccessoriesHero";
 
 // Mock data for your accessory lineup - using the "Point of View" copy strategy
@@ -48,19 +44,9 @@ const ACCESSORIES = [
 ];
 
 export default async function AccessoriesPage() {
-  // A/B (smoke-accessories-hero): the middleware stamped the assignment onto
-  // this request's cookies, so reading them here makes the SSR output match
-  // the visitor's variant (no control-flash). Reading cookies() opts this
-  // page into dynamic rendering — intentional while an experiment runs here.
-  const cookieStore = await cookies();
-  const abAssignments = readAbAssignmentsFromCookieString(cookieStore.toString(), experiments);
-
   return (
     <div className="min-h-screen bg-[#050505] text-white pt-24 pb-32">
-      {/* Hero Section (A/B: headline variant) */}
-      <ExperimentProvider assignments={abAssignments}>
-        <AccessoriesHero />
-      </ExperimentProvider>
+      <AccessoriesHero />
 
       {/* Products Grid - The "Boring but Profitable" Layout */}
       <section className="max-w-7xl mx-auto px-6">

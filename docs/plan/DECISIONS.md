@@ -62,3 +62,18 @@ Record decisions here BEFORE acting on them. Format: what / why / revisit-if.
 **What:** `EmailTracker.tsx` + `trackEmailConversion` + the middleware dp_sid/dp_cid cookie capture port as-is (env-driven endpoint). Only AnalyticsTracker/ABTracker/journey-engine die.
 **Why:** EmailTracker is the consumer of the email-attribution chain (sid/cid → subscriber). In Phase 5 its endpoint env var flips from email.dreamplaypianos.com to the in-app route — the component survives.
 **Revisit if:** Phase 5 replaces it with the unified @dreamplay/analytics client (likely; delete then, not now).
+
+## D11 — A/B v2: funnel model (groups × variations) replaces the experiment registry (2026-08-04)
+
+**What:** The D5 multi-experiment registry (`ab_<key>` cookies, per-path experiments) is replaced by a single-funnel model, per Lionel's spec:
+- One cookie `dp_ab` holding a variation key shaped `<group><letter>` (1a, 1b, 2a…). Group = layout family; letter = variation of that layout. 30d, CSPRNG-assigned, sticky.
+- `/` redirects to `/ab` when a `dp_ab` cookie exists, else to `/main`. Both `/main` and `/ab` are middleware-rewritten (URL preserved) to the route of the configured layout, so analytics `path` cleanly separates the funnels.
+- `/main` is manually pinned in config (route + CTA) and NEVER variant-tagged — its traffic/conversions are excluded from A/B scoring by construction, even when its layout matches a variant.
+- `/ab` assigns among active variations (weighted CSPRNG); `/ab/<key>` is a shareable preview/forced link. Deactivation per-variation or per-group via `active` flags in config; users on a deactivated variation are reassigned on their next `/ab` (or `/`) hit.
+- A main-funnel user who later clicks an `/ab` link is assigned and stays in the A/B funnel (cookie wins from then on).
+- Per-variation CTA (`/customize` vs `/shop` etc.) swaps client-side via a `useAbCta()` hook reading the cookie + registry — landing pages stay untouched apart from their CTA components.
+- Scoring: point-valued rules over the existing `events` table (time-on-page, clicks, email_signup, add_to_cart, cta_click, begin_checkout, checkout_info_entered, purchase) computed in a pure helper + `/admin/ab-tests` score sheet. No new DB tables/migrations; code registry is the source of truth (the `experiments` table is left as history, unused).
+- Purchase attribution fix: the Shopify order note now carries `ab_variant:<key> | dp_session:<id>`; the orders webhook parses both so `purchase` events join per-session variant scoring (previously impossible — webhooks have no cookies).
+
+**Why:** Lionel's directive 2026-08-04. The old model optimized for many small concurrent experiments; the real need is one landing-page funnel testing whole layouts (groups) and tweaks within a layout (letters), with an explicit manually-controlled main page outside the test. Keeps D5's invariants: CSPRNG only, literal `ab_variant` metadata key, cookie re-stamp semantics.
+**Revisit if:** concurrent independent experiments are ever needed again — resurrect the D5 registry from git alongside the funnel.

@@ -19,6 +19,12 @@ export default function robots(): MetadataRoute.Robots {
                     '/intro-offer',
                     '/premium-offer',
                     '/extended-offer',
+                    // A/B funnel (D11): entry points + variant-only layouts
+                    '/ab',
+                    '/main',
+                    '/legacy-home',
+                    '/special-offer',
+                    '/landing-page-1',
                     '/checkout-pages/',
                     '/vip',
                     '/accessories',

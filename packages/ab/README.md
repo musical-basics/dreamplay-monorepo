@@ -1,136 +1,67 @@
 # @dreamplay/ab
 
-First-class A/B experimentation for the monorepo — the belgium landing-page
-pattern (commit `4c6c865`) generalized into a typed registry of named,
-concurrent experiments. Edge-safe assignment (CSPRNG only, never
-`Math.random`), sticky 30-day `ab_<key>` cookies, `?ab=` preview overrides,
-geo pools, and automatic tagging of every analytics event via
-`@dreamplay/analytics`.
+The A/B **funnel** for the monorepo (Decision D11): whole-layout groups ×
+in-layout variations behind `/ab`, a manually-pinned `/main` outside the test,
+sticky CSPRNG assignment (never `Math.random`), one `dp_ab` cookie, and a
+point-based score engine over the unified `events` table.
 
 Entry points:
 
 | Import | Contents |
 | --- | --- |
-| `@dreamplay/ab` | registry (`defineExperiments`), assignment (`resolveAssignments`, `applyAssignments`), cookie readers |
-| `@dreamplay/ab/react` | `<ExperimentProvider>`, `useVariant()`, `<Variant>` |
-| `@dreamplay/ab/sync` | `syncExperimentsToDb()` (server-side, admin client) |
+| `@dreamplay/ab` | registry (`defineAbFunnel`), router (`resolveFunnel`), cookie readers (`createGetAbAssignments`), scoring (`computeVariationScores`, `rollUpGroups`) — all edge-safe |
+| `@dreamplay/ab/react` | `<AbFunnelProvider>`, `useAbVariation()`, `useAbCta()` |
 
-## How to launch an experiment
+## The model
 
-### 1. Add a registry entry
+- **`/main`** — everyone hitting `dreamplaypianos.com` lands here (the `/`
+  redirect). What it serves is pinned by hand in the registry (`main.route`,
+  `main.cta`). Its traffic is **never** variant-tagged, so it never appears on
+  the score sheet — even when its layout matches a variation.
+- **`/ab`** — the funnel entry. First visit assigns a variation
+  (weighted CSPRNG among active ones) and stamps `dp_ab=<key>` (30d,
+  httpOnly:false so analytics can read it). Every later `/` or `/ab` visit
+  serves that same variation ("continuously shown that variant"). A main-funnel
+  visitor who clicks any `/ab` link joins the funnel from then on.
+- **Variation keys** are `<group><letter>`: `1a, 1b, 2a…`. The number is a
+  layout family, the letter a variation of it. `<n>a` is the base version of
+  each layout.
+- **Rendering** is by middleware rewrite to the variation's `route` — the URL
+  stays `/ab` (or `/main`), so the analytics `path` column cleanly separates
+  funnels while the layout pages themselves stay untouched.
+- **CTA swapping**: each variation carries a `cta` (e.g. `/customize` vs
+  `/shop`). CTA components call `useAbCta(defaultHref)` (or use apps/web's
+  `<AbCtaLink>`), so swapping a CTA is a one-line registry change.
 
-The registry (in apps/web, e.g. `lib/experiments.ts`) is the source of truth:
+## Operating the funnel (registry: `apps/web/src/config/ab.ts`)
 
-```ts
-import { defineExperiments } from "@dreamplay/ab";
+1. **Change what /main serves**: edit `main.route` / `main.cta`. Deploy.
+2. **Add a variation**: add `{ key: "2b", route: "/some-layout", cta: "/customize", active: true }`
+   to group 2. The route must be a real page (add one under
+   `apps/web/src/app/(website-pages)/…`, noindexed, CTAs via `<AbCtaLink>`).
+3. **Deactivate a variation**: `active: false` on it. **Deactivate a whole
+   group**: `active: false` on the group. Cookied visitors of a deactivated
+   variation are reassigned on their next `/` or `/ab` hit; history stays on
+   the score sheet.
+4. **Preview / share**: `/ab/<key>` forces that variation (works for inactive
+   ones too) and stamps the cookie. `/ab?v=<key>` is equivalent.
+5. **Tune scoring**: point values live in `AB_SCORING` next to the registry.
+6. **Read results**: `/admin/ab-tests` — per-variation points per rule, total,
+   avg per session, and group roll-ups. Purchases are attributed via the
+   `ab_variant:<key> | dp_session:<id>` markers the checkout handoffs plant in
+   the Shopify order note (parsed back by the orders webhook).
+7. **Retire for good**: delete the variation from the registry — its data
+   still shows under "Retired variants" on the score sheet. Never reuse a
+   retired key.
 
-export const experiments = defineExperiments([
-  {
-    key: "hero_2026",              // cookie becomes ab_hero_2026 — pick once, never rename mid-flight
-    name: "Hero: video vs image",
-    status: "running",
-    paths: [{ type: "exact", path: "/" }],
-    variants: [
-      { key: "control", weight: 1, label: "Current hero" },
-      { key: "image", weight: 1, label: "Image hero" },
-      // Whole-page variant? Give it a route and create app/(variants)/b/page.tsx:
-      // { key: "b", weight: 1, route: "/b" },
-    ],
-    // Optional geo pools (belgium LOCAL/INTERNATIONAL pattern):
-    // geoPools: {
-    //   pools: [
-    //     { countries: ["BE", "NL", "LU", "GB", "FR", "DE"], variants: ["control"] },
-    //     { variants: ["image"] }, // catch-all for everyone else
-    //   ],
-    // },
-  },
-]);
-```
+## Invariants (do not break)
 
-Weights are relative (`1/1` = 50/50, `3/1` = 75/25). Bucketing uses
-`crypto.getRandomValues` — a test in this package fails if `Math.random()`
-ever sneaks into the source (it repeats across reused edge isolates and pins
-every visitor to one variant).
-
-### 2. Wire assignment in middleware (already done once, per-app)
-
-```ts
-// apps/web middleware.ts
-import { NextResponse, type NextRequest } from "next/server";
-import { applyAssignments, getRewritePath, resolveAssignments } from "@dreamplay/ab";
-import { experiments } from "@/lib/experiments";
-
-export function middleware(req: NextRequest) {
-  const assignments = resolveAssignments(req, experiments);
-  const rewrite = getRewritePath(assignments); // whole-page variants only
-  const res = rewrite ? NextResponse.rewrite(new URL(rewrite, req.url)) : NextResponse.next();
-  return applyAssignments(res, assignments); // stamps ab_<key> cookies (30d, lax, secure)
-}
-```
-
-Per-experiment priority: `?ab_<key>=` / `?ab=` override → `forcedVariant` or
-non-running status → valid cookie inside the visitor's geo pool → fresh
-CSPRNG bucket (cookie re-stamped whenever the resolved variant differs).
-
-### 3. Add the variant content
-
-Component-level (preferred for most tests):
-
-```tsx
-// server layout: pass assignments down
-import { readAbAssignmentsFromCookieString } from "@dreamplay/ab";
-const assignments = readAbAssignmentsFromCookieString((await cookies()).toString(), experiments);
-<ExperimentProvider assignments={assignments}>{children}</ExperimentProvider>
-
-// client component
-const variant = useVariant("hero_2026");
-<Variant experiment="hero_2026" match="image" fallback={<VideoHero />}><ImageHero /></Variant>
-```
-
-Whole-page (belgium style): give the variant a `route` and build that page;
-the middleware rewrite keeps the visitor's URL on the canonical path.
-
-### 4. Sync to the DB & verify tracking
-
-```ts
-import { syncExperimentsToDb } from "@dreamplay/ab/sync";
-await syncExperimentsToDb(experiments); // upserts into the experiments table for /admin/experiments
-```
-
-Analytics tagging is automatic once the analytics provider is configured with
-
-```ts
-createAnalytics({ getAbAssignments: createGetAbAssignments(experiments) });
-```
-
-— every event (exposures AND conversions) then carries
-`metadata.ab_experiments` plus `metadata.ab_variant` (keep that literal key;
-the dashboard reads it). Pass `primaryExperiment: "hero_2026"` to the
-analytics config when several experiments run concurrently.
-
-### 5. Verify on preview
-
-- Open `/?ab_hero_2026=image` (or `/?ab=image` while it's the only experiment
-  on the path) — the override renders that variant and re-stamps the cookie.
-  Share these links for design review.
-- Reload without the param: assignment must be sticky (same variant).
-- Clear the `ab_hero_2026` cookie a few times: both variants should appear at
-  roughly the configured split.
-- Check `/admin/experiments` for per-variant exposures/conversions
-  (`getVariantResults("hero_2026", "7d")` from `@dreamplay/analytics/queries`).
-
-### 6. Pause / conclude
-
-- **Pause the split** without unshipping: set `forcedVariant: "control"` (or
-  `status: "paused"`). Everyone lands on the pinned variant; `?ab=` preview
-  links keep working.
-- **Conclude:** set `status: "concluded"` + `forcedVariant: "<winner>"`,
-  redeploy, run `syncExperimentsToDb` (stamps `concluded_at`). Leave the entry
-  in place until traffic with old cookies has drained (30d cookie lifetime).
-
-### 7. Clean up
-
-Fold the winning variant into the default page, delete the losing variant
-content/routes, then delete the registry entry. The `experiments` DB row stays
-as history. Never reuse a retired experiment key for a different test —
-lingering `ab_<key>` cookies would pollute the new results.
+- CSPRNG only (`crypto.getRandomValues`) — `Math.random` can repeat across
+  reused edge isolates; `no-math-random.test.ts` enforces this.
+- The analytics metadata key is literally `ab_variant` (D5) — dashboards and
+  the events index depend on it.
+- `dp_ab` stays `httpOnly: false` — client JS must read it to tag events.
+- `/main` traffic stays untagged. If you ever tag it, the "main is not part of
+  the test" guarantee dies.
+- No `next/*` imports in this package — middleware imports it in the edge
+  runtime, and it must keep typechecking standalone.

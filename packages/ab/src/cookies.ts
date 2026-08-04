@@ -1,112 +1,54 @@
 /**
- * Client-side assignment readers — the bridge to @dreamplay/analytics.
+ * Client-side bridge between the dp_ab funnel cookie and analytics.
  *
- * The analytics client accepts a `getAbAssignments?: () => Record<string,
- * string>` hook and merges the result into every event's metadata as
- * `ab_variant` (primary experiment) + `ab_experiments` (full map). Keep the
- * metadata key literally `ab_variant` — the dashboard reads that exact key
- * (Decision D5 / belgium porting rule 3).
+ * The middleware stamps `dp_ab=<variation key>` (httpOnly:false on purpose);
+ * these helpers read it back so every analytics event — exposure AND
+ * conversion, on any page — carries the visitor's variation. Visitors without
+ * the cookie (the /main funnel) produce no assignment and therefore no
+ * `ab_variant` metadata: that is what keeps /main out of the score sheet.
+ * Keep the metadata key literally `ab_variant` (Decision D5/D11).
  */
 
-import { abCookieName, type Experiment } from "./experiments";
-
-const AB_COOKIE_PREFIX = "ab_";
+import { AB_COOKIE, findVariation, type AbFunnelConfig } from "./funnel";
 
 /**
- * Parses `ab_<key>=<variant>` cookies out of a cookie header/document.cookie
- * string into an `{ experimentKey: variantKey }` map.
- *
- * With a registry, only known experiment keys are returned and each value is
- * validated against the experiment's variants (stale cookies from renamed
- * experiments/variants are dropped). Without one, every `ab_*` cookie is
- * returned as-is (the standalone-snippet mode).
+ * Key under which the funnel assignment appears in the analytics assignment
+ * map (metadata.ab_experiments.funnel). With a single assignment the
+ * analytics client also sets the top-level `ab_variant` key automatically.
  */
-export function readAbAssignmentsFromCookieString(
+export const FUNNEL_ASSIGNMENT_KEY = "funnel";
+
+/** Parse the dp_ab value out of a Cookie header / document.cookie string. */
+export function readAbVariantFromCookieString(
   cookieString: string | null | undefined,
-  experiments?: readonly Experiment[]
-): Record<string, string> {
-  const assignments: Record<string, string> = {};
-  if (!cookieString) return assignments;
-
-  for (const part of cookieString.split(";")) {
-    const eq = part.indexOf("=");
-    if (eq === -1) continue;
-    const name = part.slice(0, eq).trim();
-    if (!name.startsWith(AB_COOKIE_PREFIX)) continue;
-    const key = name.slice(AB_COOKIE_PREFIX.length);
-    if (!key) continue;
-    let value = part.slice(eq + 1).trim();
-    try {
-      value = decodeURIComponent(value);
-    } catch {
-      // keep raw value
-    }
-    if (!value) continue;
-
-    if (experiments) {
-      const exp = experiments.find((e) => e.key === key);
-      if (!exp || !exp.variants.some((v) => v.key === value)) continue;
-      assignments[key] = value;
-    } else {
-      assignments[key] = value;
-    }
+  config?: AbFunnelConfig
+): string | undefined {
+  if (!cookieString) return undefined;
+  const match = cookieString.match(new RegExp(`(?:^|;\\s*)${AB_COOKIE}=([^;]+)`));
+  if (!match?.[1]) return undefined;
+  let value: string;
+  try {
+    value = decodeURIComponent(match[1]);
+  } catch {
+    return undefined;
   }
-  return assignments;
+  // With a registry, drop stale values that no longer exist in it. Inactive
+  // variations still validate — their sessions keep reporting historically.
+  if (config && !findVariation(config, value)) return undefined;
+  return value;
 }
 
 /**
- * Browser hook factory for AnalyticsConfig.getAbAssignments:
- *
- * ```ts
- * createAnalytics({ getAbAssignments: createGetAbAssignments(experiments) });
- * ```
- *
- * Reads document.cookie fresh on every event, so a mid-session re-bucketing
- * (or an ?ab= override) is reflected immediately.
+ * Assignment getter for the analytics client (`getAbAssignments` config).
+ * Reads document.cookie fresh on every event so a mid-session (re)assignment
+ * is reflected immediately.
  */
-export function createGetAbAssignments(
-  experiments?: readonly Experiment[]
-): () => Record<string, string> {
+export function createGetAbAssignments(config?: AbFunnelConfig): () => Record<string, string> {
   return () => {
-    if (typeof document === "undefined") return {};
-    return readAbAssignmentsFromCookieString(document.cookie, experiments);
+    const result: Record<string, string> = {};
+    if (typeof document === "undefined") return result;
+    const variant = readAbVariantFromCookieString(document.cookie, config);
+    if (variant) result[FUNNEL_ASSIGNMENT_KEY] = variant;
+    return result;
   };
 }
-
-/**
- * Assignment map → analytics metadata shape. `ab_variant` is set to the
- * single RUNNING experiment's variant when exactly one such assignment
- * exists (or the single entry when no registry is supplied); with several
- * concurrent experiments only `ab_experiments` is emitted and consumers pass
- * `primaryExperiment` to the analytics client instead.
- */
-export function abAssignmentsToMetadata(
-  assignments: Record<string, string>,
-  experiments?: readonly Experiment[]
-): { ab_variant?: string; ab_experiments?: Record<string, string> } {
-  const keys = Object.keys(assignments);
-  if (keys.length === 0) return {};
-  const meta: { ab_variant?: string; ab_experiments?: Record<string, string> } = {
-    ab_experiments: { ...assignments },
-  };
-  let candidates = keys;
-  if (experiments) {
-    candidates = keys.filter(
-      (key) => experiments.find((e) => e.key === key)?.status === "running"
-    );
-  }
-  if (candidates.length === 1) {
-    meta.ab_variant = assignments[candidates[0] as string];
-  }
-  return meta;
-}
-
-/** Convenience: does this cookie string carry an assignment for `experimentKey`? */
-export function hasAssignment(
-  cookieString: string | null | undefined,
-  experimentKey: string
-): boolean {
-  return readAbAssignmentsFromCookieString(cookieString)[experimentKey] !== undefined;
-}
-
-export { abCookieName };
