@@ -4,8 +4,8 @@
 
 ## Current position
 
-- **Current phase:** Phases 0–6 COMPLETE. Phase 7 (cutover) prepped and [HUMAN]-gated.
-- **Next action:** Lionel: cutover session per phase-7 (batch: Inngest app + Resend webhook + DNS/domains + Shopify webhook registration + optional password-hash import). Everything up to that line is done.
+- **Current phase:** Phase 7 CUTOVER EXECUTED 2026-07-18 — production domains serve the monorepo. 4 leftovers below.
+- **Next action:** Lionel: (1) add TXT _vercel.musicalbasics.com = "vc-domain-verify=link.musicalbasics.com,c3b63117427e9a1f2e06" in Google Cloud DNS; (2) create Resend webhook → www.dreamplaypianos.com/api/webhooks/resend, update RESEND_WEBHOOK_SECRET; (3) register Inngest app (apps/web /api/inngest) → set INNGEST_SIGNING_KEY (scheduled sends inert until then); (4) after ~2 stable weeks: pause old Vercel projects + old Supabase projects (phase-7 task 7). Also: /tracker.js for legacy non-Next sites still pending (phase-3 task 8).
 - **Blocked on:** nothing
 
 ## Phase status
@@ -19,7 +19,7 @@
 | 4 — A/B testing | **done** — smoke experiment verified via curl; dashboard DB-side check awaits env | 2026-07-16 |
 | 5 — Email | **done** — task 10 (live verification send) is [HUMAN]-gated on Inngest+Resend-webhook keys | 2026-07-18 |
 | 6 — Data migration | **done incl. password hashes** — Lionel test-login outstanding | 2026-07-18 |
-| 7 — Cutover | not started | — |
+| 7 — Cutover | **mostly done 2026-07-18** — see phase file; 4 [HUMAN] leftovers | — |
 | 8 — Hardening | not started | — |
 
 ## Pending [HUMAN] items
@@ -32,6 +32,8 @@
 4. After 1–3: run phase-2 task 10 + phase-3/4 live acceptance checks on the preview URL.
 
 ## Log
+
+- **2026-07-18 CUTOVER** — Production flipped to the monorepo. Delta re-sync + reconcile re-run (subscribers 9,459; compliance PASSED; 05-subscribers PK-stability bug fixed). Legacy-link compat shipped (path rewrites + unsigned legacy unsubscribe). All 9 domains moved to dreamplay-monorepo (apex/www redirect preserved; brief apex detach during move, recovered). Verified serving: www + apex 308 + shop + data ingest 200 + email-host legacy pixel 200 gif + unsubscribe page. link.musicalbasics.com pending TXT verification (404s until Lionel adds record — musicalbasics.com apex isn't in this Vercel team, unlike ultimatepianist.com). Shopify ORDERS_CREATE/ORDERS_PAID registered to www (legacy app had NO webhooks registered — root cause of the 24 missing buyers); synthetic signed order verified end-to-end (buyer upsert + purchase event) then cleaned. NEXT_PUBLIC_APP_URL prod = https://www.dreamplaypianos.com (canonical). Old Vercel projects still running domain-less as rollback path.
 
 - **2026-07-18** — Inngest/Resend keys copied from email-3 env into monorepo env + Vercel: INNGEST_EVENT_KEY, RESEND_WEBHOOK_SECRET, and email-3's RESEND_API_KEY (differed from website-2's; email-3's verified able to send as support@dreamplaypianos.com via real test email to Lionel — covers transactional AND bulk). Only external key still missing: INNGEST_SIGNING_KEY (Inngest dashboard, when the monorepo app is registered at Phase 7). NOTE: RESEND_WEBHOOK_SECRET is the OLD webhook's secret pointing at dp-email-2 — at cutover create a NEW Resend webhook targeting <app>/api/webhooks/resend and replace the secret.
 
