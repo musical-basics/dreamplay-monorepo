@@ -8,6 +8,7 @@ import {
 } from "@dreamplay/ab";
 import { fetchAbTaggedEvents, type AnalyticsRange } from "@dreamplay/analytics/queries";
 import { AB_SCORING, AB_TESTING_SETTING_KEY, abFunnel } from "@/config/ab";
+import { getExcludedIps } from "@/lib/admin-analytics";
 import { getAdminDb } from "@/lib/db";
 
 /**
@@ -70,12 +71,14 @@ export default async function AdminAbTestsPage({
   let loadError: string | null = null;
   try {
     const client = getAdminDb();
-    const [rows, mode] = await Promise.all([
+    const [rows, mode, excludedIps] = await Promise.all([
       fetchAbTaggedEvents(range, { client }),
       getTestingMode(),
+      getExcludedIps(client),
     ]);
     scores = computeVariationScores(rows, AB_SCORING, {
       sinceByVariant: variationSinceMap(abFunnel),
+      excludeIps: excludedIps,
     });
     testingMode = mode;
   } catch (error) {

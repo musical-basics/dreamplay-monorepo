@@ -10,6 +10,7 @@ import { variationSinceMap } from "@dreamplay/ab";
 import { createResendSender, defaultFromAddress } from "@dreamplay/email";
 import { buildAbReportData, renderAbReportPdfBase64 } from "@dreamplay/reports";
 import { AB_SCORING, abFunnel } from "@/config/ab";
+import { getExcludedIps } from "@/lib/admin-analytics";
 import { getAdminDb } from "@/lib/db";
 import { inngest } from "./client";
 
@@ -27,8 +28,10 @@ export const dailyAbReport = inngest.createFunction(
         const asOf = new Date(asOfIso);
 
         const data = await step.run("build-report-data", async () => {
-            return buildAbReportData(asOf, AB_SCORING, { client: getAdminDb() }, {
+            const client = getAdminDb();
+            return buildAbReportData(asOf, AB_SCORING, { client }, {
                 sinceByVariant: variationSinceMap(abFunnel),
+                excludeIps: await getExcludedIps(client),
             });
         });
 

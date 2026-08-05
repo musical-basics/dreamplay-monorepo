@@ -70,6 +70,8 @@ export interface AbEventRow {
   metadata: Json;
   /** Needed by the score engine's per-variation `since` cutoffs. */
   created_at: string;
+  /** Needed by the score engine's retroactive admin/bot IP exclusion. */
+  ip_address: string | null;
 }
 
 export interface AbEventsOptions extends QueryOptions {
@@ -98,7 +100,7 @@ export async function fetchAbTaggedEvents(
   while (rows.length < maxRows) {
     const { data, error } = await client
       .from("events")
-      .select("event_name, path, session_id, duration_seconds, metadata, created_at")
+      .select("event_name, path, session_id, duration_seconds, metadata, created_at, ip_address")
       .gte("created_at", startIso)
       .not("metadata->>ab_variant", "is", null)
       .order("id", { ascending: true })
@@ -132,7 +134,7 @@ export async function fetchAbTaggedEventsBetween(
   while (rows.length < maxRows) {
     const { data, error } = await client
       .from("events")
-      .select("event_name, path, session_id, duration_seconds, metadata, created_at")
+      .select("event_name, path, session_id, duration_seconds, metadata, created_at, ip_address")
       .gte("created_at", startIso)
       .lt("created_at", endIso)
       .not("metadata->>ab_variant", "is", null)

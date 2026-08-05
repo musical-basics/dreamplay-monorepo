@@ -112,6 +112,26 @@ describe("since cutoffs", () => {
   });
 });
 
+describe("excludeIps", () => {
+  it("drops rows from excluded IPs retroactively, matching ::ffff:-mapped forms", () => {
+    const rows = [
+      { ...row("1a", "s1", "purchase"), ip_address: "71.38.79.10" },
+      { ...row("1a", "s2", "purchase"), ip_address: "::ffff:71.38.79.10" },
+      { ...row("1a", "s3", "purchase"), ip_address: "8.8.8.8" },
+      { ...row("1a", "s4", "purchase"), ip_address: null },
+    ];
+    const scores = computeVariationScores(rows, rules, { excludeIps: ["71.38.79.10"] });
+    expect(scores[0]!.sessions).toBe(2); // s3 + the null-IP row survive
+    expect(scores[0]!.rules["purchase"]!.raw).toBe(2);
+  });
+
+  it("excluded-IP entries in ::ffff: form still match plain IPv4 rows", () => {
+    const rows = [{ ...row("1a", "s1", "purchase"), ip_address: "71.38.79.10" }];
+    const scores = computeVariationScores(rows, rules, { excludeIps: ["::ffff:71.38.79.10"] });
+    expect(scores).toHaveLength(0);
+  });
+});
+
 describe("rollUpGroups", () => {
   it("aggregates variations into their layout group", () => {
     const rows = [

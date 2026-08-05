@@ -11,6 +11,41 @@
 import { rangeStartIso, type AnalyticsRange, type EventRow } from "@dreamplay/analytics/queries";
 import type { AdminClient, Json } from "@dreamplay/db";
 
+/**
+ * Combined admin_ips + bot_ips from the settings table — the exclusion lists
+ * for every dashboard/score computation (legacy dreamplay-analytics parity:
+ * filter at QUERY time by IP, so adding an IP retroactively cleans history).
+ * Failure degrades to an empty list rather than breaking a dashboard.
+ */
+export async function getExcludedIps(client: AdminClient): Promise<string[]> {
+  try {
+    const { data } = await client
+      .from("settings")
+      .select("key, value")
+      .in("key", ["admin_ips", "bot_ips"]);
+    const ips: string[] = [];
+    for (const row of data ?? []) {
+      if (!Array.isArray(row.value)) continue;
+      for (const entry of row.value) {
+        if (typeof entry === "string" && entry.length > 0) ips.push(entry);
+      }
+    }
+    return ips;
+  } catch {
+    return [];
+  }
+}
+
+/** ::ffff:-mapped IPv6 equals its IPv4 form (legacy isAdminIP semantics). */
+function normalizeIp(ip: string): string {
+  return ip.replace(/^::ffff:/i, "").toLowerCase();
+}
+
+export function buildIpMatcher(excludeIps: readonly string[]): (ip: string | null) => boolean {
+  const set = new Set(excludeIps.map(normalizeIp));
+  return (ip) => ip !== null && ip !== "" && set.has(normalizeIp(ip));
+}
+
 // ---------------------------------------------------------------------------
 // get_analytics_summary payload
 // ---------------------------------------------------------------------------
@@ -105,16 +140,18 @@ export interface TopPage {
 export async function getTopPages(
   client: AdminClient,
   range: AnalyticsRange,
+  excludeIps: readonly string[] = [],
   limit = 10,
   maxRows = 20_000
 ): Promise<TopPage[]> {
   const startIso = rangeStartIso(range);
+  const isExcluded = buildIpMatcher(excludeIps);
   const counts = new Map<string, number>();
   const pageSize = 1000;
   for (let offset = 0; offset < maxRows; offset += pageSize) {
     const { data, error } = await client
       .from("events")
-      .select("path")
+      .select("path, ip_address")
       .eq("event_name", "pageview")
       .gte("created_at", startIso)
       .order("id", { ascending: false })
@@ -122,7 +159,7 @@ export async function getTopPages(
     if (error) throw new Error(`getTopPages failed: ${error.message}`);
     const rows = data ?? [];
     for (const row of rows) {
-      if (!row.path) continue;
+      if (!row.path || isExcluded(row.ip_address)) continue;
       const path = row.path.split("?")[0] || row.path;
       counts.set(path, (counts.get(path) ?? 0) + 1);
     }

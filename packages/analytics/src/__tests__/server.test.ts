@@ -265,6 +265,17 @@ describe("event enrichment", () => {
     expect(metas[2]?.is_bot).toBeUndefined();
   });
 
+  it("matches IPv4-mapped IPv6 request IPs against IPv4 admin entries", async () => {
+    const db = createFakeDb({
+      settingsRows: [{ key: "admin_ips", value: ["203.0.113.9"] }],
+    });
+    const { handler } = makeHandler(db);
+    await handler(trackRequest({ headers: { "x-forwarded-for": "::ffff:203.0.113.9" } }));
+
+    const meta = db.state.inserted[0]?.metadata as Record<string, unknown>;
+    expect(meta.is_admin).toBe(true);
+  });
+
   it("caches the IP lists for the TTL window", async () => {
     let clock = 0;
     const db = createFakeDb({ settingsRows: [] });

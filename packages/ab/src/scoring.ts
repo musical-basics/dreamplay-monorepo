@@ -26,6 +26,8 @@ export interface ScoringEventRow {
   metadata?: unknown;
   /** Needed only when per-variation `since` cutoffs are in play. */
   created_at?: string | null;
+  /** Needed only when `excludeIps` filtering is in play. */
+  ip_address?: string | null;
 }
 
 export interface ComputeScoresOptions {
@@ -36,6 +38,19 @@ export interface ComputeScoresOptions {
    * changes meaning so stale data can't blend into the new test.
    */
   sinceByVariant?: Record<string, string>;
+  /**
+   * IPs whose rows are excluded (admin/bot lists from the settings table).
+   * Query-time and therefore RETROACTIVE — unlike the ingest-time
+   * is_admin/is_bot flags, this also catches events logged before an IP was
+   * added to the list. IPv4-mapped IPv6 (::ffff:x.x.x.x) matches its IPv4
+   * entry, per the legacy dreamplay-analytics isAdminIP semantics.
+   */
+  excludeIps?: readonly string[];
+}
+
+/** ::ffff:-mapped IPv6 equals its IPv4 form for exclusion purposes. */
+function normalizeIp(ip: string): string {
+  return ip.replace(/^::ffff:/i, "").toLowerCase();
 }
 
 /** Extract `{ variant: sinceIso }` for every variation that declares one. */
@@ -160,6 +175,7 @@ export function computeVariationScores(
     const ms = Date.parse(iso);
     if (!Number.isNaN(ms)) sinceMs.set(variant, ms);
   }
+  const excludedIps = new Set((opts.excludeIps ?? []).map(normalizeIp));
 
   // variant → session → per-rule accumulator (+ presence marker)
   const perVariant = new Map<string, Map<string, Map<string, number>>>();
@@ -170,6 +186,9 @@ export function computeVariationScores(
     const variant = typeof meta["ab_variant"] === "string" ? (meta["ab_variant"] as string) : undefined;
     if (!variant) continue;
     if (meta["is_bot"] === true || meta["is_admin"] === true) continue;
+    if (excludedIps.size > 0 && row.ip_address && excludedIps.has(normalizeIp(row.ip_address))) {
+      continue; // admin/bot IP — excluded retroactively regardless of flags
+    }
     const cutoff = sinceMs.get(variant);
     if (cutoff !== undefined && row.created_at) {
       const at = Date.parse(row.created_at);

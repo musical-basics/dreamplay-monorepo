@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getSummary, type AnalyticsRange } from "@dreamplay/analytics/queries";
 import { getAdminDb } from "@/lib/db";
 import {
+  getExcludedIps,
   getRecentPurchases,
   getTopPages,
   parseSummary,
@@ -63,9 +64,12 @@ export default async function AdminAnalyticsPage({
 
   try {
     const client = getAdminDb();
+    // Admin/bot traffic is excluded everywhere (legacy-analytics parity):
+    // the RPC filters by the settings IP lists, top pages by the same lists.
+    const excludedIps = await getExcludedIps(client);
     const [summaryJson, pages, recent] = await Promise.all([
-      getSummary(range, { client }),
-      getTopPages(client, range),
+      getSummary(range, { client, excludeAdmin: true, excludeBots: true }),
+      getTopPages(client, range, excludedIps),
       getRecentPurchases(client),
     ]);
     summary = parseSummary(summaryJson);

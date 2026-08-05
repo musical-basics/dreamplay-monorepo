@@ -103,6 +103,14 @@ interface IpLists {
   botIps: Set<string>;
 }
 
+/**
+ * Canonical form for IP comparison: IPv4-mapped IPv6 (::ffff:71.38.79.10)
+ * equals its IPv4 form — the legacy dreamplay-analytics isAdminIP() semantics.
+ */
+export function normalizeIp(ip: string): string {
+  return ip.replace(/^::ffff:/i, "").toLowerCase();
+}
+
 function json(status: number, body: unknown, headers: Record<string, string>): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -157,7 +165,7 @@ export function createTrackHandler(
         if (!Array.isArray(row.value)) continue;
         const target = row.key === "admin_ips" ? lists.adminIps : lists.botIps;
         for (const entry of row.value) {
-          if (typeof entry === "string" && entry.length > 0) target.add(entry);
+          if (typeof entry === "string" && entry.length > 0) target.add(normalizeIp(entry));
         }
       }
       ipListsCache = { lists, fetchedAt: now() };
@@ -251,9 +259,10 @@ export function createTrackHandler(
     const metadata: Record<string, unknown> = { ...(payload.metadata ?? {}) };
 
     // Flag (don't drop) admin/bot IPs so dashboards can exclude cheaply.
+    // Normalized comparison: ::ffff:-mapped IPv6 matches its IPv4 entry.
     const { adminIps, botIps } = await getIpLists();
-    if (ipAddress && adminIps.has(ipAddress)) metadata.is_admin = true;
-    if (ipAddress && botIps.has(ipAddress)) metadata.is_bot = true;
+    if (ipAddress && adminIps.has(normalizeIp(ipAddress))) metadata.is_admin = true;
+    if (ipAddress && botIps.has(normalizeIp(ipAddress))) metadata.is_bot = true;
 
     // Identity enrichment: explicit metadata.email wins; otherwise resolve
     // metadata.sid (subscriber id from email-link cookies) in the same DB.

@@ -143,8 +143,18 @@ into every event as:
 
 The literal key **`ab_variant`** is the join point for all reporting (and has
 a Postgres expression index). No cookie → no keys → row invisible to scoring.
-Rows flagged `metadata.is_bot` / `is_admin` (stamped by the ingest endpoint)
-are excluded by the score engine.
+
+**Admin/bot exclusion is two-layer** (the second layer is the legacy
+dreamplay-analytics lesson): ① the ingest endpoint stamps
+`metadata.is_admin`/`is_bot` on rows whose IP is in the settings-table
+`admin_ips`/`bot_ips` lists (cached 60s), and the score engine skips flagged
+rows; ② the score engine, score sheet, daily report, and dashboards ALSO
+filter **at query time by the current IP lists** (`excludeIps` /
+`getExcludedIps()`), which is retroactive — adding an IP to `settings.admin_ips`
+cleans historical data too, covering events logged while the list was stale.
+IP comparison normalizes IPv4-mapped IPv6 (`::ffff:71.38.79.10` ≡
+`71.38.79.10`). Keep the admin list current: add your IP whenever your ISP
+rotates it (the lists live in the DB, no deploy needed).
 
 ### The webhook-purchase attribution trick (important)
 
