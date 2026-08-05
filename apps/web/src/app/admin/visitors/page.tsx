@@ -121,14 +121,14 @@ export default async function AdminVisitorsPage({
           ) : null}
 
           <section className="border border-white/10 bg-white/[0.03] p-6 overflow-x-auto">
-            <table className="w-full font-sans text-sm min-w-[1000px]">
+            <table className="w-full font-sans text-sm min-w-[1100px] [&_th]:pr-4 [&_td]:pr-4">
               <thead>
                 <tr className="text-left text-white/40 text-xs uppercase tracking-widest">
                   <th className="pb-2 font-normal">Last seen</th>
                   <th className="pb-2 font-normal">IP / who</th>
                   <th className="pb-2 font-normal">Where</th>
                   <th className="pb-2 font-normal">Device</th>
-                  <th className="pb-2 font-normal">A/B</th>
+                  <th className="pb-2 font-normal">Variant</th>
                   <th className="pb-2 font-normal">Pages visited</th>
                   <th className="pb-2 font-normal text-right">Views</th>
                   <th className="pb-2 font-normal text-right">Time</th>
@@ -172,8 +172,14 @@ export default async function AdminVisitorsPage({
                       {[visit.city, visit.country].filter(Boolean).join(", ") || "—"}
                     </td>
                     <td className="py-2 text-white/60">{visit.device}</td>
-                    <td className="py-2 text-white/60">
-                      {visit.abVariant ? <code>{visit.abVariant}</code> : "—"}
+                    <td className="py-2">
+                      {visit.abVariant ? (
+                        <code className="px-1.5 py-0.5 text-xs border border-emerald-500/40 text-emerald-300">
+                          {visit.abVariant}
+                        </code>
+                      ) : (
+                        <span className="text-white/30">main</span>
+                      )}
                     </td>
                     <td className="py-2 text-white/60 max-w-[320px]">
                       <span className="break-words">{visit.pages.join(" → ") || "—"}</span>

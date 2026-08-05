@@ -164,8 +164,15 @@ export async function getVisitsOverview(
       if (row.event_name === "pageview" && row.path) {
         visit.pageviews += 1;
         const path = row.path.split("?")[0] || row.path;
+        // /ab and /main serve their layout via rewrite (URL unchanged), so
+        // annotate the trail with what was actually rendered there.
+        const rowVariant = typeof meta.ab_variant === "string" ? meta.ab_variant : null;
+        const label =
+          (path === "/ab" || path.startsWith("/ab/")) && rowVariant
+            ? `/ab[${rowVariant}]`
+            : path;
         // Building newest→oldest; unshift so pages end up in visit order.
-        if (!visit.pages.includes(path)) visit.pages.unshift(path);
+        if (!visit.pages.includes(label)) visit.pages.unshift(label);
       }
       if (row.event_name === "page_leave") {
         const dur = Number(row.duration_seconds ?? 0);
