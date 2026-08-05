@@ -26,7 +26,7 @@ const roadmap = [
     {
         when: "August 2026",
         title: "Video, in your hands",
-        body: "Once the prototype is working, we will share real video of the keyboard being played — so you can see and hear it for yourself, not renders.",
+        body: "Once the prototype is working, we will share real video of the keyboard being played, so you can see and hear it for yourself, not renders.",
     },
     {
         when: "September 2026",
@@ -92,10 +92,10 @@ export default function JuneUpdatePage() {
                     <AnimatedSection>
                         <h2 className="font-serif text-3xl md:text-4xl font-semibold mb-6">Real DS6.0 keys. Internals built oversized on purpose.</h2>
                         <p className="font-sans text-base md:text-lg text-white/60 leading-relaxed mb-5">
-                            To be clear about what this is: the keys themselves are the real, final DS6.0 size — exactly the narrow keys you reserved. The keys are not changing. What we have deliberately built larger is everything inside.
+                            To be clear about what this is: the keys themselves are the real, final DS6.0 size, exactly the narrow keys you reserved. The keys are not changing. What we have deliberately built larger is everything inside.
                         </p>
                         <p className="font-sans text-base md:text-lg text-white/60 leading-relaxed">
-                            By scaling up the internals — the circuit boards, the sensor array and the electronics — for this first prototype, our engineers get the room they need to probe, measure and validate every core system, including the key action, before we condense it all into the slim final enclosure. Prove it works first, then miniaturize it. That is the difference between rushing a product and building one worthy of the DreamPlay name.
+                            By scaling up the internals (the circuit boards, the sensor array and the electronics) for this first prototype, our engineers get the room they need to probe, measure and validate every core system, including the key action, before we condense it all into the slim final enclosure. Prove it works first, then miniaturize it. That is the difference between rushing a product and building one worthy of the DreamPlay name.
                         </p>
                     </AnimatedSection>
                 </section>
@@ -152,8 +152,8 @@ export default function JuneUpdatePage() {
                                 Your estimated delivery date now lives on your account. Log in with the email address on your order to see your live status and choose what you would like to do:
                             </p>
                             <div className="font-sans text-sm text-white/60 leading-relaxed max-w-xl mx-auto mb-10 space-y-2 text-left sm:text-center">
-                                <p><strong className="text-white">Keep your reservation</strong> — ship as soon as it is ready, at the price you originally paid.</p>
-                                <p><strong className="text-white">Request a full refund</strong> — no questions asked, if you would rather not wait.</p>
+                                <p><strong className="text-white">Keep your reservation</strong>: ship as soon as it is ready, at the price you originally paid.</p>
+                                <p><strong className="text-white">Request a full refund</strong>: no questions asked, if you would rather not wait.</p>
                             </div>
                             <Link href="/my-reservation" className="group inline-flex items-center justify-center gap-3 border border-white bg-white px-8 py-4 font-sans text-xs font-bold uppercase tracking-widest text-black transition-all hover:bg-neutral-200 rounded-full shadow-[0_0_20px_rgba(255,255,255,0.1)]">
                                 Check My Order Status

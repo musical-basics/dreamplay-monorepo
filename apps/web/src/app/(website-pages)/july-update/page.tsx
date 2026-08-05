@@ -8,7 +8,7 @@ import { ArrowRight } from "lucide-react";
 export const metadata = {
     title: "July 2026 Production Update | DreamPlay Pianos",
     description:
-        "The first DreamPlay prototype is here — and it plays. Watch the video, see the photos, and check where your order stands.",
+        "The first DreamPlay prototype is here, and it plays. Watch the video, see the photos, and check where your order stands.",
 };
 
 const gallery = [
@@ -27,14 +27,14 @@ const internals = [
 
 const roadmap = [
     {
-        when: "July 2026 — Done",
+        when: "July 2026 · Done",
         title: "Working prototype complete",
         body: "The first full prototype is assembled and playing: keys, lights, sound and speakers all working together. This update is that milestone.",
     },
     {
         when: "August 2026",
         title: "Calibration and refinement",
-        body: "We are tuning key sensitivity, volume response and sound quality — the details that decide how the instrument feels under your fingers.",
+        body: "We are tuning key sensitivity, volume response and sound quality: the details that decide how the instrument feels under your fingers.",
     },
     {
         when: "September 2026",
@@ -70,7 +70,7 @@ export default function JulyUpdatePage() {
                             The first prototype is here. And it plays.
                         </h1>
                         <p className="font-sans text-base md:text-lg text-white/60 leading-relaxed">
-                            Last month we told you the first full prototype was being built. This month, it is on the bench and working — keys, lights, sound and all. Watch it for yourself.
+                            Last month we told you the first full prototype was being built. This month, it is on the bench and working: keys, lights, sound and all. Watch it for yourself.
                         </p>
                     </AnimatedSection>
                 </section>
@@ -82,7 +82,7 @@ export default function JulyUpdatePage() {
                             <iframe
                                 className="absolute inset-0 h-full w-full"
                                 src="https://www.youtube.com/embed/_wrlDpEAQdU"
-                                title="DreamPlay July 2026 Update — the first prototype, playing"
+                                title="DreamPlay July 2026 Update: the first prototype, playing"
                                 frameBorder="0"
                                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                 allowFullScreen
@@ -99,13 +99,13 @@ export default function JulyUpdatePage() {
                     <AnimatedSection>
                         <h2 className="font-serif text-3xl md:text-4xl font-semibold mb-6">Proof, not promises.</h2>
                         <p className="font-sans text-base md:text-lg text-white/60 leading-relaxed mb-5">
-                            This is the milestone we have been building toward all year — especially for our earliest backers, who have waited the longest. The first DreamPlay prototype is fully assembled and working: the narrow keys, the built-in guide lights, the speakers, the volume and reverb controls, all of it playing together in one instrument.
+                            This is the milestone we have been building toward all year, especially for our earliest backers, who have waited the longest. The first DreamPlay prototype is fully assembled and working: the narrow keys, the built-in guide lights, the speakers, the volume and reverb controls, all of it playing together in one instrument.
                         </p>
                         <p className="font-sans text-base md:text-lg text-white/60 leading-relaxed mb-5">
-                            As we explained in June, this prototype is deliberately built larger than the final DreamPlay One. It is a proof of concept — the point is to prove every core system works before we condense it all into the slim final enclosure. The keys themselves are the real DS6.0 size: 92% of a standard full-size keyboard, exactly the narrow keys you reserved. And for the many of you who ordered the DS5.5, that size enters production at the same time.
+                            As we explained in June, this prototype is deliberately built larger than the final DreamPlay One. It is a proof of concept. The point is to prove every core system works before we condense it all into the slim final enclosure. The keys themselves are the real DS6.0 size: 92% of a standard full-size keyboard, exactly the narrow keys you reserved. And for the many of you who ordered the DS5.5, that size enters production at the same time.
                         </p>
                         <p className="font-sans text-base md:text-lg text-white/60 leading-relaxed">
-                            To be honest about where we are: this prototype is still in testing and QA. The sound quality is not final, and we are deep in calibration — key sensitivity, volume response, the things that decide how an instrument feels. That is the most important part to get right, and it is exactly what the coming weeks are for.
+                            To be honest about where we are: this prototype is still in testing and QA. The sound quality is not final, and we are deep in calibration: key sensitivity, volume response, the things that decide how an instrument feels. That is the most important part to get right, and it is exactly what the coming weeks are for.
                         </p>
                     </AnimatedSection>
                 </section>
@@ -121,7 +121,7 @@ export default function JulyUpdatePage() {
                             ))}
                         </div>
                         <p className="font-sans text-xs text-white/40 mt-3 text-center">
-                            The prototype this month: assembled, on its stand, pedals connected — real photos, not renders.
+                            The prototype this month: assembled, on its stand, pedals connected. Real photos, not renders.
                         </p>
                     </AnimatedSection>
                 </section>
@@ -196,7 +196,7 @@ export default function JulyUpdatePage() {
                     <AnimatedSection>
                         <div className="border-t border-white/10 pt-12">
                             <p className="font-sans text-base md:text-lg text-white/60 leading-relaxed mb-5">
-                                To everyone who has pre-ordered so far: thank you. We are working on this every day, and we want this keyboard to be the best it can possibly be — a lifetime instrument. Getting to sit down and actually play the first prototype was a moment I will not forget, and I am excited to share the next one with you.
+                                To everyone who has pre-ordered so far: thank you. We are working on this every day, and we want this keyboard to be the best it can possibly be: a lifetime instrument. Getting to sit down and actually play the first prototype was a moment I will not forget, and I am excited to share the next one with you.
                             </p>
                             <p className="font-sans text-base text-white">
                                 Lionel Yu
