@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Navbar } from "@/components/Navbar"
 import { AbCtaLink } from "@/components/ab/AbCtaLink"
+import { SmallHandsGuideCapture } from "@/components/SmallHandsGuideCapture"
 import {
     Check,
     Star,
@@ -887,6 +888,9 @@ export function LandingPage1Content() {
                         </div>
                     </div>
                 </section>
+                {/* Small Hands Guide capture (lead magnet) */}
+                <SmallHandsGuideCapture />
+
                 {/* ═══════════════════════════════════════════════════
                     7. STANDALONE FAQ
                 ═══════════════════════════════════════════════════ */}

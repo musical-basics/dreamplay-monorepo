@@ -5,6 +5,7 @@ import { SocialProofBar } from "@/components/premium-offer/social-proof-bar"
 import { HandComparisonSection } from "@/components/extended-offer/hand-comparison-section"
 import { PricingSection } from "@/components/premium-offer/pricing-section"
 import { GuaranteeSection } from "@/components/premium-offer/guarantee-section"
+import { SmallHandsGuideCapture } from "@/components/SmallHandsGuideCapture"
 import Footer from "@/components/Footer"
 import { getHiddenProducts } from "@/actions/admin-actions"
 
@@ -40,6 +41,7 @@ export default async function SimpleOfferPage() {
                 <SimpleHero />
                 <SocialProofBar />
                 <HandComparisonSection />
+                <SmallHandsGuideCapture />
                 <PricingSection hiddenProducts={hiddenProducts} />
                 <GuaranteeSection />
             </main>

@@ -14,6 +14,7 @@ import { FeaturesSection } from "@/components/extended-offer/features-section"
 import { VideoHero4 } from "@/components/extended-offer/video-hero-4"
 import { SizeVisualSection } from "@/components/extended-offer/size-visual-section"
 import { SpecsSection } from "@/components/extended-offer/specs-section"
+import { SmallHandsGuideCapture } from "@/components/SmallHandsGuideCapture"
 import { StanfordQuoteSection } from "@/components/extended-offer/stanford-quote-section"
 import { CreatorSection } from "@/components/extended-offer/creator-section"
 import { TrustSection } from "@/components/extended-offer/trust-section"
@@ -106,6 +107,11 @@ export default async function ExtendedOfferPage() {
                     {/* Section 13 — Stanford Quote (regular scroll) */}
                     <div className="relative z-[23] bg-foreground">
                         <StanfordQuoteSection />
+                    </div>
+
+                    {/* Small Hands Guide capture (lead magnet) */}
+                    <div className="relative z-[23]">
+                        <SmallHandsGuideCapture />
                     </div>
 
                     {/* Section 14 — Trust (regular scroll, gradient) */}

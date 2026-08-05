@@ -9,6 +9,7 @@ import { FeaturesSection } from "@/components/premium-offer/features-section"
 import { SizeFinderSection } from "@/components/premium-offer/size-finder-section"
 import { SizeVisualSection } from "@/components/premium-offer/size-visual-section"
 import { SpecsSection } from "@/components/premium-offer/specs-section"
+import { SmallHandsGuideCapture } from "@/components/SmallHandsGuideCapture"
 import { CreatorSection } from "@/components/premium-offer/creator-section"
 import { TrustSection } from "@/components/premium-offer/trust-section"
 import { PricingSection } from "@/components/premium-offer/pricing-section"
@@ -57,6 +58,7 @@ export default async function OldPremiumOfferPage() {
                 <SizeFinderSection />
                 <SizeVisualSection />
                 <SpecsSection />
+                <SmallHandsGuideCapture />
                 <CreatorSection />
                 <TrustSection />
                 <PricingSection hiddenProducts={hiddenProducts} />

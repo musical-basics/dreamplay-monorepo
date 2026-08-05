@@ -1,6 +1,46 @@
 'use server';
 
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
+
+/**
+ * Notify support of every fresh email capture, including which A/B variant
+ * the visitor was on (dp_ab cookie) — non-blocking, a notification failure
+ * never fails the capture. Skipped for contact-form submissions (those send
+ * their own richer notification below).
+ */
+async function notifySupportOfCapture(
+    email: string,
+    tags: string[] | undefined,
+    geo: { city: string; country: string }
+): Promise<void> {
+    try {
+        const resendApiKey = process.env.RESEND_API_KEY;
+        if (!resendApiKey) return;
+
+        const cookieStore = await cookies();
+        const variant = cookieStore.get("dp_ab")?.value;
+        const headerStore = await headers();
+        const page = headerStore.get("referer") || "unknown";
+
+        const { Resend } = await import("resend");
+        const resend = new Resend(resendApiKey);
+        await resend.emails.send({
+            from: "DreamPlay <lionel@email.dreamplaypianos.com>",
+            to: "support@dreamplaypianos.com",
+            subject: `[Email Capture] ${email} — ${variant ? `variant ${variant}` : "main funnel"}`,
+            html: [
+                `<h2>New email capture</h2>`,
+                `<p><strong>Email:</strong> ${email}</p>`,
+                `<p><strong>A/B variant:</strong> ${variant ?? "none (main funnel)"}</p>`,
+                `<p><strong>Page:</strong> ${page}</p>`,
+                `<p><strong>Tags:</strong> ${(tags ?? []).join(", ") || "—"}</p>`,
+                `<p><strong>Location:</strong> ${geo.city}, ${geo.country}</p>`,
+            ].join("\n"),
+        });
+    } catch (error) {
+        console.error("Capture notification failed (non-blocking):", error);
+    }
+}
 
 interface SubscribePayload {
     email: string;
@@ -66,6 +106,13 @@ export async function subscribeToNewsletter(payload: SubscribePayload): Promise<
         }
 
         const data = await response.json();
+
+        // Fresh capture → notify support with the variant (contact-form
+        // submissions send their own notification; don't double up).
+        if (!(payload.tags ?? []).includes("contact-form")) {
+            await notifySupportOfCapture(payload.email, payload.tags, { city, country });
+        }
+
         return { success: true, id: data.id };
 
     } catch (error: unknown) {

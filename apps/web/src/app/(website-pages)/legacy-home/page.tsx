@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 import React from "react";
 import Link from "next/link";
+import { SmallHandsGuideCapture } from "@/components/SmallHandsGuideCapture"
 import { Navbar } from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { AbCtaLink } from "@/components/ab/AbCtaLink";
@@ -513,6 +514,8 @@ export default function LegacyHomePage() {
                 </section>
 
                 {/* --------------------------- RESERVE --------------------------- */}
+                <SmallHandsGuideCapture />
+
                 <section id="Reserve" className="bg-white">
                     <div className="px-[5%] py-20 md:py-28">
                         <div className="mx-auto flex w-full max-w-[50rem] flex-col items-center gap-8 text-center">

@@ -2,6 +2,7 @@
 
 import { SpecialOfferHeader } from "@/components/special-offer/header"
 import { HeroSection } from "@/components/special-offer/hero-section"
+import { SmallHandsGuideCapture } from "@/components/SmallHandsGuideCapture"
 import { FeaturesPianoSection } from "@/components/special-offer/features-piano-section"
 import { FeaturesGridSection } from "@/components/special-offer/features-grid-section"
 import { LessonsSection } from "@/components/special-offer/lessons-section"
@@ -59,6 +60,11 @@ export function SpecialOfferPage() {
                 {/* Section 4: Features Piano - STICKY */}
                 <div className="sticky top-0 z-30 min-h-screen shadow-[0_-10px_30px_rgba(0,0,0,0.1)]" id="features-piano">
                     <FeaturesPianoSection />
+                </div>
+
+                {/* Small Hands Guide capture (lead magnet) — normal flow between cards */}
+                <div className="relative z-40 bg-[#f7f4ee]">
+                    <SmallHandsGuideCapture />
                 </div>
 
                 {/* Section 7: Guarantee - STICKY */}
