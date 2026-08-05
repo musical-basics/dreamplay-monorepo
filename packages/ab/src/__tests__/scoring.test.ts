@@ -130,6 +130,16 @@ describe("excludeIps", () => {
     const scores = computeVariationScores(rows, rules, { excludeIps: ["::ffff:71.38.79.10"] });
     expect(scores).toHaveLength(0);
   });
+
+  it("entries ending with '.' match as datacenter prefixes", () => {
+    const rows = [
+      { ...row("1a", "s1", "purchase"), ip_address: "47.79.11.129" }, // Alibaba crawler
+      { ...row("1a", "s2", "purchase"), ip_address: "147.90.1.1" },   // NOT 47.79.*
+    ];
+    const scores = computeVariationScores(rows, rules, { excludeIps: ["47.79."] });
+    expect(scores[0]!.sessions).toBe(1);
+    expect(scores[0]!.rules["purchase"]!.raw).toBe(1);
+  });
 });
 
 describe("rollUpGroups", () => {

@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 import React from "react";
 import Link from "next/link";
+import { InlineHandGuide } from "@/components/InlineHandGuide"
 import { SmallHandsGuideCapture } from "@/components/SmallHandsGuideCapture"
 import { Navbar } from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -345,15 +346,10 @@ export default function LegacyHomePage() {
                                     />
                                 </div>
                             </div>
-                            <div className="mx-auto mt-10 w-full max-w-[25rem] md:w-1/2">
-                                <a
-                                    href="https://www.dropbox.com/scl/fi/9b72rbi4ga0pjterxyoan/DreamPlay-Infographic.pdf?rlkey=mc08i1ahn5tp3thdd0qjnag2d&st=olbh1t9w&dl=1"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className={pillButtonOutlinedClass}
-                                >
-                                    <PillButtonInner label="Download Our Hand-Measuring Guide" />
-                                </a>
+                            {/* Email-gated: the hand-measuring guide is the
+                                strongest capture asset — never a bare link. */}
+                            <div className="mx-auto mt-6 w-full max-w-2xl">
+                                <InlineHandGuide />
                             </div>
                         </div>
                     </div>

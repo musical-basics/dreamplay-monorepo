@@ -41,9 +41,24 @@ function normalizeIp(ip: string): string {
   return ip.replace(/^::ffff:/i, "").toLowerCase();
 }
 
+/**
+ * List entries ending with "." are prefix matches (e.g. "47.79." catches the
+ * whole Alibaba Cloud range) — the legacy CLOUD_PROVIDER_PREFIXES semantics
+ * for datacenter crawlers that run real browsers and defeat UA detection.
+ */
 export function buildIpMatcher(excludeIps: readonly string[]): (ip: string | null) => boolean {
-  const set = new Set(excludeIps.map(normalizeIp));
-  return (ip) => ip !== null && ip !== "" && set.has(normalizeIp(ip));
+  const exact = new Set<string>();
+  const prefixes: string[] = [];
+  for (const entry of excludeIps) {
+    const normalized = normalizeIp(entry);
+    if (normalized.endsWith(".")) prefixes.push(normalized);
+    else exact.add(normalized);
+  }
+  return (ip) => {
+    if (!ip) return false;
+    const normalized = normalizeIp(ip);
+    return exact.has(normalized) || prefixes.some((p) => normalized.startsWith(p));
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -160,6 +175,8 @@ export async function getTopPages(
     const rows = data ?? [];
     for (const row of rows) {
       if (!row.path || isExcluded(row.ip_address)) continue;
+      // External legacy-tracker sites record absolute paths — not this site.
+      if (!row.path.startsWith("/")) continue;
       const path = row.path.split("?")[0] || row.path;
       counts.set(path, (counts.get(path) ?? 0) + 1);
     }

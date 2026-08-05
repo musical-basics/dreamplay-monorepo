@@ -11,7 +11,7 @@ import { trackEmailConversion } from "@/components/EmailTracker";
 import { useAnalytics } from "@dreamplay/analytics/react";
 import { WAITLIST_OFFER_BODY, WAITLIST_OFFER_HEADLINE, WAITLIST_OFFER_TAGS, WAITLIST_OFFER_TERMS } from "@/lib/waitlist-offer";
 
-type PopupType = "none" | "shipping" | "pdf" | "discount" | "discount_44" | "accessory_25" | "store_credit_25" | "priority_shipping" | "survey_5off" | "tips";
+type PopupType = "none" | "shipping" | "pdf" | "classical_guide" | "discount" | "discount_44" | "accessory_25" | "store_credit_25" | "priority_shipping" | "survey_5off" | "tips";
 type DreamPlayAnalyticsWindow = Window & {
     dreamplay?: {
         track?: (eventName: string, properties?: Record<string, unknown>) => void;
@@ -30,7 +30,11 @@ const getPopupSeenKey = (popupType: PopupType) => (
     popupType === "shipping" ? "dp_v2_waitlist_credit_seen" : `dp_v2_${popupType}_seen`
 );
 
-const HAND_SIZE_GUIDE_POPUP_ENABLED = true;
+// The Small Hands Guide (classical repertoire lead magnet) is the primary
+// offer — value-first, no discount language. The hand-measuring guide stays
+// available via InlineHandGuide on education pages.
+const CLASSICAL_GUIDE_POPUP_ENABLED = true;
+const HAND_SIZE_GUIDE_POPUP_ENABLED = false;
 const WAITLIST_CREDIT_POPUP_ENABLED = false;
 
 export default function NewsletterPopup() {
@@ -76,6 +80,7 @@ export default function NewsletterPopup() {
             }
 
             const popups: Array<{ type: PopupType; delaySeconds: number }> = [
+                ...(CLASSICAL_GUIDE_POPUP_ENABLED ? [{ type: "classical_guide" as const, delaySeconds: 35 }] : []),
                 ...(HAND_SIZE_GUIDE_POPUP_ENABLED ? [{ type: "pdf" as const, delaySeconds: 35 }] : []),
                 ...(WAITLIST_CREDIT_POPUP_ENABLED ? [{ type: "shipping" as const, delaySeconds: 35 }] : []),
             ];
@@ -125,8 +130,9 @@ export default function NewsletterPopup() {
 
     // --- EXIT-INTENT POPUP ---
     useEffect(() => {
-        const excludedPaths = ["/vip", "/login", "/register", "/activate", "/forgot-password", "/reset-password"];
-        if (!WAITLIST_CREDIT_POPUP_ENABLED) return;
+        // Never interrupt commerce or account flows with exit intent.
+        const excludedPaths = ["/vip", "/login", "/register", "/activate", "/forgot-password", "/reset-password", "/customize", "/shop", "/checkout"];
+        if (!CLASSICAL_GUIDE_POPUP_ENABLED) return;
         if (excludedPaths.includes(pathname)) return;
 
         const handleMouseLeave = (e: MouseEvent) => {
@@ -138,8 +144,8 @@ export default function NewsletterPopup() {
 
             hasExitFired.current = true;
             console.log('[PopupDebug] Exit-intent fired');
-            if (localStorage.getItem(getPopupSeenKey("shipping")) === 'true') return;
-            setActivePopup("shipping");
+            if (localStorage.getItem(getPopupSeenKey("classical_guide")) === 'true') return;
+            setActivePopup(prev => prev === "none" ? "classical_guide" : prev);
         };
 
         // Delay attaching exit-intent by 5s to prevent false triggers on page load/refresh
@@ -159,6 +165,7 @@ export default function NewsletterPopup() {
         const popupTrackNames: Record<string, string> = {
             shipping: 'waitlist_100_credit',
             pdf: 'hand_size',
+            classical_guide: 'small_hands_guide',
             discount: 'discount_300',
             discount_44: 'discount_44',
             accessory_25: 'accessory_25',
@@ -192,6 +199,7 @@ export default function NewsletterPopup() {
                 discount_44: "44% Off Lead",
                 accessory_25: "25% Accessory Lead",
                 pdf: "Hand Guide Download",
+                classical_guide: "Small Hands Guide",
                 tips: "Piano Tips Subscriber",
             };
             const tags = currentOffer === "shipping"
@@ -220,7 +228,7 @@ export default function NewsletterPopup() {
             setIsSubmitted(currentOffer);
             void analytics.track('email_signup', { source: 'newsletter_popup', offer: currentOffer, email });
             trackEmailConversion('conversion_t1', window.location.pathname);
-            trackPopup('yes', currentOffer === 'shipping' ? 'waitlist_100_credit' : currentOffer === 'discount' ? 'discount_300' : 'hand_size');
+            trackPopup('yes', currentOffer === 'classical_guide' ? 'small_hands_guide' : currentOffer === 'shipping' ? 'waitlist_100_credit' : currentOffer === 'discount' ? 'discount_300' : 'hand_size');
 
             // Auto-open PDF for pdf offer
             if (currentOffer === "pdf") {
@@ -378,7 +386,9 @@ export default function NewsletterPopup() {
                             </p>
 
                             <h2 className="text-2xl md:text-3xl font-serif text-white tracking-tight leading-tight mb-4">
-                                {activePopup === "shipping"
+                                {activePopup === "classical_guide"
+                                    ? "The Small Hands Guide to Classical Piano Music."
+                                    : activePopup === "shipping"
                                     ? WAITLIST_OFFER_HEADLINE
                                     : activePopup === "discount"
                                         ? "Lock in Founder's Pricing."
@@ -394,7 +404,9 @@ export default function NewsletterPopup() {
                             </h2>
 
                             <p className="text-white/60 font-sans text-sm leading-relaxed">
-                                {activePopup === "shipping"
+                                {activePopup === "classical_guide"
+                                    ? "Which pieces flatter a smaller hand span, the fingerings that tame the wide stretches, and how to build a repertoire that works with your hands. Free the day it's released."
+                                    : activePopup === "shipping"
                                     ? WAITLIST_OFFER_BODY
                                     : activePopup === "discount"
                                         ? "Enter your email to secure early-adopter pricing for the DreamPlay One Founder's Batch, shipping October 2026."
@@ -433,7 +445,9 @@ export default function NewsletterPopup() {
                             >
                                 {isLoading
                                     ? "Processing..."
-                                    : activePopup === "shipping"
+                                    : activePopup === "classical_guide"
+                                        ? "Get The Guide"
+                                        : activePopup === "shipping"
                                         ? "Join Waitlist"
                                         : activePopup === "discount"
                                             ? "Secure My Spot"
@@ -465,7 +479,7 @@ export default function NewsletterPopup() {
                             )}
                         </form>
                     </>
-                ) : isSubmitted === "shipping" || isSubmitted === "discount" || isSubmitted === "discount_44" || isSubmitted === "accessory_25" || isSubmitted === "store_credit_25" || isSubmitted === "priority_shipping" ? (
+                ) : isSubmitted === "classical_guide" || isSubmitted === "shipping" || isSubmitted === "discount" || isSubmitted === "discount_44" || isSubmitted === "accessory_25" || isSubmitted === "store_credit_25" || isSubmitted === "priority_shipping" ? (
                     /* ── Shipping / Discount Success: Check your email ── */
                     <div className="text-center py-6">
                         <div className="mx-auto bg-white border border-white/20 w-16 h-16 rounded-none flex items-center justify-center mb-6">
@@ -473,7 +487,9 @@ export default function NewsletterPopup() {
                         </div>
                         <h3 className="text-2xl font-serif text-white mb-3">Check your inbox.</h3>
                         <p className="text-white/60 font-sans text-sm mb-8 max-w-xs mx-auto leading-relaxed">
-                            {isSubmitted === "discount"
+                            {isSubmitted === "classical_guide"
+                                ? "You're on the list — the Small Hands Guide to Classical Piano Music will land in your inbox the day it's released."
+                                : isSubmitted === "discount"
                                 ? "We just sent you an email with your exclusive $300 discount code. Use it at checkout to save on any DreamPlay keyboard or bundle."
                                 : isSubmitted === "discount_44"
                                     ? "We just sent you an email with your exclusive 44% discount code. Use it at checkout to save on any DreamPlay keyboard."

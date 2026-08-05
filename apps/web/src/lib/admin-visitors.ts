@@ -121,6 +121,11 @@ export async function getVisitsOverview(
 
     for (const row of rows) {
       if (!row.session_id) continue;
+      // Legacy-tracker feeds from other properties (ultimatepianist.com,
+      // crowdfund.…) record absolute URLs as the path — they're single-page
+      // sites that would read as bounces and don't belong in THIS site's
+      // visit list.
+      if (row.path && !row.path.startsWith("/")) continue;
       const meta = metaOf(row.metadata);
       const isAdmin = meta.is_admin === true || isExcludedIp(row.ip_address);
       const isBot = meta.is_bot === true;

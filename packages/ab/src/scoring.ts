@@ -43,7 +43,8 @@ export interface ComputeScoresOptions {
    * Query-time and therefore RETROACTIVE — unlike the ingest-time
    * is_admin/is_bot flags, this also catches events logged before an IP was
    * added to the list. IPv4-mapped IPv6 (::ffff:x.x.x.x) matches its IPv4
-   * entry, per the legacy dreamplay-analytics isAdminIP semantics.
+   * entry, and entries ending with "." are prefix matches for datacenter
+   * ranges (legacy isAdminIP + CLOUD_PROVIDER_PREFIXES semantics).
    */
   excludeIps?: readonly string[];
 }
@@ -175,7 +176,17 @@ export function computeVariationScores(
     const ms = Date.parse(iso);
     if (!Number.isNaN(ms)) sinceMs.set(variant, ms);
   }
-  const excludedIps = new Set((opts.excludeIps ?? []).map(normalizeIp));
+  const excludedExact = new Set<string>();
+  const excludedPrefixes: string[] = [];
+  for (const entry of opts.excludeIps ?? []) {
+    const normalized = normalizeIp(entry);
+    if (normalized.endsWith(".")) excludedPrefixes.push(normalized);
+    else excludedExact.add(normalized);
+  }
+  const isExcludedIp = (ip: string): boolean => {
+    const normalized = normalizeIp(ip);
+    return excludedExact.has(normalized) || excludedPrefixes.some((p) => normalized.startsWith(p));
+  };
 
   // variant → session → per-rule accumulator (+ presence marker)
   const perVariant = new Map<string, Map<string, Map<string, number>>>();
@@ -186,7 +197,7 @@ export function computeVariationScores(
     const variant = typeof meta["ab_variant"] === "string" ? (meta["ab_variant"] as string) : undefined;
     if (!variant) continue;
     if (meta["is_bot"] === true || meta["is_admin"] === true) continue;
-    if (excludedIps.size > 0 && row.ip_address && excludedIps.has(normalizeIp(row.ip_address))) {
+    if (row.ip_address && isExcludedIp(row.ip_address)) {
       continue; // admin/bot IP — excluded retroactively regardless of flags
     }
     const cutoff = sinceMs.get(variant);

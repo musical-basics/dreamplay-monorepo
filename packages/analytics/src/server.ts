@@ -98,9 +98,29 @@ export interface TrackHandlerOptions {
 const PATH_COLUMN_MAX = 2000;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+/**
+ * Exact entries + trailing-dot prefix entries (e.g. "47.79." flags a whole
+ * datacenter range — crawlers running real browsers defeat UA detection).
+ */
+interface IpMatchList {
+  exact: Set<string>;
+  prefixes: string[];
+}
+
 interface IpLists {
-  adminIps: Set<string>;
-  botIps: Set<string>;
+  adminIps: IpMatchList;
+  botIps: IpMatchList;
+}
+
+function addIpEntry(list: IpMatchList, entry: string): void {
+  const normalized = normalizeIp(entry);
+  if (normalized.endsWith(".")) list.prefixes.push(normalized);
+  else list.exact.add(normalized);
+}
+
+function matchesIpList(list: IpMatchList, ip: string): boolean {
+  const normalized = normalizeIp(ip);
+  return list.exact.has(normalized) || list.prefixes.some((p) => normalized.startsWith(p));
 }
 
 /**
@@ -155,7 +175,10 @@ export function createTrackHandler(
     if (ipListsCache && now() - ipListsCache.fetchedAt < cacheTtl) {
       return ipListsCache.lists;
     }
-    const lists: IpLists = { adminIps: new Set(), botIps: new Set() };
+    const lists: IpLists = {
+      adminIps: { exact: new Set(), prefixes: [] },
+      botIps: { exact: new Set(), prefixes: [] },
+    };
     try {
       const { data } = await getClient()
         .from("settings")
@@ -165,7 +188,7 @@ export function createTrackHandler(
         if (!Array.isArray(row.value)) continue;
         const target = row.key === "admin_ips" ? lists.adminIps : lists.botIps;
         for (const entry of row.value) {
-          if (typeof entry === "string" && entry.length > 0) target.add(normalizeIp(entry));
+          if (typeof entry === "string" && entry.length > 0) addIpEntry(target, entry);
         }
       }
       ipListsCache = { lists, fetchedAt: now() };
@@ -259,10 +282,11 @@ export function createTrackHandler(
     const metadata: Record<string, unknown> = { ...(payload.metadata ?? {}) };
 
     // Flag (don't drop) admin/bot IPs so dashboards can exclude cheaply.
-    // Normalized comparison: ::ffff:-mapped IPv6 matches its IPv4 entry.
+    // Normalized comparison (::ffff:-mapped IPv6 = IPv4) + datacenter
+    // prefix ranges for bot lists.
     const { adminIps, botIps } = await getIpLists();
-    if (ipAddress && adminIps.has(normalizeIp(ipAddress))) metadata.is_admin = true;
-    if (ipAddress && botIps.has(normalizeIp(ipAddress))) metadata.is_bot = true;
+    if (ipAddress && matchesIpList(adminIps, ipAddress)) metadata.is_admin = true;
+    if (ipAddress && matchesIpList(botIps, ipAddress)) metadata.is_bot = true;
 
     // Identity enrichment: explicit metadata.email wins; otherwise resolve
     // metadata.sid (subscriber id from email-link cookies) in the same DB.

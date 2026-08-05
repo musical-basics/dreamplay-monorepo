@@ -671,6 +671,13 @@ export default function CustomizeClient({ urls, hiddenProducts }: CustomizeClien
             localStorage.setItem("dp_v2_subscribed", "true");
             localStorage.setItem("dp_user_email", saveEmail);
             if (res.id) localStorage.setItem("dp_subscriber_id", res.id);
+            void analytics.track('email_signup', {
+                source: 'customize_save_build',
+                email: saveEmail,
+                size: appState.size,
+                color: appState.color,
+            });
+            trackEmailConversion('conversion_t1', window.location.pathname);
             setSaveSuccess(true);
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : "Something went wrong. Please try again.";
@@ -1352,15 +1359,51 @@ export default function CustomizeClient({ urls, hiddenProducts }: CustomizeClien
                         </p>
                     )}
 
-                    {/* Save My Build CTA */}
-                    <div className="text-center mt-6">
-                        <button
-                            onClick={() => setIsSaveModalOpen(true)}
-                            className="font-sans text-sm text-white/50 hover:text-white underline underline-offset-4 transition-colors cursor-pointer"
-                        >
-                            Not ready to reserve today? Join the waitlist and save this build.
-                        </button>
-                    </div>
+                    {/* Save My Build — once the visitor has invested effort
+                        configuring, saving the build is a service, not a grab.
+                        Inline and visible for configured visitors; the subtle
+                        link remains for everyone else. */}
+                    {appState.size && appState.color && !saveSuccess ? (
+                        <div className="mt-8 mx-auto max-w-xl border border-white/15 bg-white/[0.04] p-6 text-center">
+                            <h4 className="font-serif text-lg text-white">Not ready to reserve today?</h4>
+                            <p className="font-sans text-sm text-white/55 mt-1">
+                                Email yourself this build — {appState.size}, {appState.color} — and pick up right where you left off.
+                            </p>
+                            <form onSubmit={handleSaveBuild} className="mt-4 flex flex-col gap-3 sm:flex-row sm:justify-center">
+                                <input
+                                    type="email"
+                                    required
+                                    value={saveEmail}
+                                    onChange={(e) => setSaveEmail(e.target.value)}
+                                    placeholder="Your email address"
+                                    className="w-full sm:w-72 border border-white/25 bg-transparent px-4 py-3 font-sans text-sm text-white placeholder:text-white/40 outline-none focus:border-white transition-colors"
+                                />
+                                <button
+                                    type="submit"
+                                    disabled={saveLoading}
+                                    className="px-6 py-3 bg-white text-black font-sans text-xs uppercase tracking-widest hover:bg-white/90 transition-colors disabled:opacity-60 cursor-pointer"
+                                >
+                                    {saveLoading ? "Saving…" : "Email me my build"}
+                                </button>
+                            </form>
+                            {saveError ? (
+                                <p className="mt-2 font-sans text-xs text-red-400">{saveError}</p>
+                            ) : null}
+                        </div>
+                    ) : saveSuccess ? (
+                        <p className="text-center mt-8 font-sans text-sm text-emerald-300">
+                            Build saved — check your inbox for the details.
+                        </p>
+                    ) : (
+                        <div className="text-center mt-6">
+                            <button
+                                onClick={() => setIsSaveModalOpen(true)}
+                                className="font-sans text-sm text-white/50 hover:text-white underline underline-offset-4 transition-colors cursor-pointer"
+                            >
+                                Not ready to reserve today? Join the waitlist and save this build.
+                            </button>
+                        </div>
+                    )}
 
                     {appState.product === 'one' && (
                         <div className="mt-12 mx-auto max-w-2xl border border-white/15 bg-white/[0.04] backdrop-blur-md p-8 md:p-10">
