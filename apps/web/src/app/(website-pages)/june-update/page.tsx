@@ -153,7 +153,6 @@ export default function JuneUpdatePage() {
                             </p>
                             <div className="font-sans text-sm text-white/60 leading-relaxed max-w-xl mx-auto mb-10 space-y-2 text-left sm:text-center">
                                 <p><strong className="text-white">Keep your reservation</strong> — ship as soon as it is ready, at the price you originally paid.</p>
-                                <p><strong className="text-white">Upgrade to DreamPlay One Pro</strong> — for a flat $200 more, as an early supporter.</p>
                                 <p><strong className="text-white">Request a full refund</strong> — no questions asked, if you would rather not wait.</p>
                             </div>
                             <Link href="/my-reservation" className="group inline-flex items-center justify-center gap-3 border border-white bg-white px-8 py-4 font-sans text-xs font-bold uppercase tracking-widest text-black transition-all hover:bg-neutral-200 rounded-full shadow-[0_0_20px_rgba(255,255,255,0.1)]">
