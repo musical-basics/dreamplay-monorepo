@@ -3,7 +3,9 @@
 import { useEffect, useRef, Suspense } from "react"
 import { useSearchParams, usePathname } from "next/navigation"
 
-const EMAIL_TRACK_URL = process.env.NEXT_PUBLIC_EMAIL_TRACK_URL || "https://email.dreamplaypianos.com/api/track"
+// Same-origin by default (all hosts serve this app post-cutover) — avoids a
+// CORS preflight on every event. Env override kept for special deployments.
+const EMAIL_TRACK_URL = process.env.NEXT_PUBLIC_EMAIL_TRACK_URL || "/api/email/track"
 
 function sendEvent(sid: string | null, type: string, urlPath: string, duration?: number, tempSession?: string | null) {
     const payload = {

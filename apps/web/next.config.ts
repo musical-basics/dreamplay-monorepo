@@ -43,6 +43,14 @@ const nextConfig: NextConfig = {
         source: "/api/track/open",
         destination: "/api/email/open",
       },
+      // Bare /api/track on the EMAIL host is the legacy dp-email-2 event sink
+      // (subscriber_id/type payloads) — route it to the email receiver instead
+      // of the analytics ingest, which expects a different schema.
+      {
+        source: "/api/track",
+        has: [{ type: "host", value: "email.dreamplaypianos.com" }],
+        destination: "/api/email/track",
+      },
       {
         source: "/api/track/click",
         destination: "/api/email/click",
