@@ -97,4 +97,26 @@
 
 ## Notes for the next session
 
-- Nothing yet.
+**2026-08-05/06 digest — buyer comms overhaul (details in the Log entries below):**
+
+Shipped: /july-update page + Navbar links; June page's public $200 Pro notice removed (offer is PRIVATE now); buyer_update_emails comms log + coverage view (April 60 / June 68 / July 62 recipients); buyers table extended (kind, order details from Shopify, est_ship_date, unit_count, pro_upgrade_requested); /admin/buyers dashboard (per-buyer email preview + prefs-page links); tokenized /order-preferences self-service (size/finish switch + gated $200 Pro upgrade); /my-reservation config button; append-mode open/click tracking loop fixed (new POST /api/email/track); JULY UPDATE SENT to 62 buyers (0 failures); Shopify $200 upgrade product (variant 53858415739194) + automatic payment email on upgrade request.
+
+**Standing business rules (do not re-derive):**
+- Est. ship date = purchase_date + 12 months, floored at 2027-01-31. Stored on buyers, hand-editable; script 09 only recomputes null dates unless --recompute-ship-dates.
+- Pro upgrade offer: ONLY kind=buyer, purchased before 2026-05-01, not already Pro. $200 flat per keyboard. NEVER shown publicly (June page notice was removed on purpose).
+- Buyer kinds: 66 buyer / 11 waitlist / 8 founder / 10 test / 9 unknown (mostly alt emails + grandfathered cancelled orders). Default update audience = kind=buyer minus the two @no-email.invalid phone-only rows (#1117 Diana Bozian +1 716 982 4956, #1121 Li Sa +852 9801 7994).
+- Email sends: test to musicalbasics@gmail.com FIRST, Lionel approves, then send. From "Lionel from DreamPlay <lionel@email.dreamplaypianos.com>", reply-to support@. Append-mode tracking only (sid/cid params; redirect mode killed Gmail deliverability 2026-05-03). All email links must point at our own domains or clicks are invisible.
+- NO EM DASHES in any copy, anywhere. Lionel's hard rule.
+
+**Technical gotchas (cost us time today):**
+- Shopify Admin API: ALWAYS use currentTotalPriceSet / currentQuantity, never totalPriceSet / quantity (originals ignore order edits + refunds; caused the phantom "2-keyboard" order #1104).
+- This machine can no longer reach Postgres directly (5432 AND pooler 6543 blocked). Apply migrations via Supabase Management API: POST https://api.supabase.com/v1/projects/huviqtkjkdkcfneorrmo/database/query with SUPABASE_ACCESS_TOKEN from root .env.local.
+- Resend API 403s python-urllib's default user agent (WAF). Use curl or node fetch.
+- Shopify allows phone-only checkout (no email). Script 09 auto-creates buyers rows with order-<n>@no-email.invalid placeholders.
+
+**Open follow-ups:**
+1. Lionel: phone/SMS the July update to Diana Bozian and Li Sa (can't be emailed).
+2. Watch /admin/buyers for incoming config picks + "Pro upgrade requested" badges; after a $200 payment arrives, flip that buyer's product_line to Pro (manual for now — consider automating in the orders webhook via the "Pro upgrade | reservation ..." note).
+3. 17 early buyers still have no size/finish on file; the July email pointed them at their config page — chase stragglers before November manufacturing.
+4. 2 real buyers are suppressed (izumiwatanabe23, pbeck) and got no July update; contact manually if needed.
+5. The $200 upgrade product is publicly visible on the Online Store channel (permalinks require publishing) — switch to draft-order invoices if that becomes a problem.
