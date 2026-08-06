@@ -115,8 +115,18 @@ export function PreferencesForm(props: PreferencesFormProps) {
                             <span className="block font-sans text-sm text-white/60 leading-relaxed mt-2">
                                 As an early supporter, you can move up to the $1,899 DreamPlay One Pro for $200 on top
                                 of what you have already paid. The Pro adds premium finishes (Nightmare Black and Aztec
-                                Gold), a graded hammer action, and a richer sound and LED system. Nothing to pay today:
-                                we will follow up by email with a secure payment link to complete the upgrade.
+                                Gold), a graded hammer action, and a richer sound and LED system. See the full Pro
+                                details on the{" "}
+                                <a
+                                    href="https://www.dreamplaypianos.com/product-information"
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-amber-300 underline hover:text-amber-200"
+                                >
+                                    product information page
+                                </a>
+                                . Nothing to pay today: we will follow up by email with a secure payment link to
+                                complete the upgrade.
                             </span>
                         </span>
                     </label>

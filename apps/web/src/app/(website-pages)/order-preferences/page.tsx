@@ -74,7 +74,11 @@ export default async function OrderPreferencesPage({
                     </h1>
                     <p className="font-sans text-base text-white/60 leading-relaxed mb-10">
                         Before manufacturing begins, tell us exactly how you want your instrument built. You can change
-                        this any time until your order enters production.
+                        this any time until your order enters production. Not sure what to pick? Compare sizes, finishes
+                        and models on the{" "}
+                        <a href="https://www.dreamplaypianos.com/product-information" className="text-blue-400 underline hover:text-blue-300">
+                            product information page
+                        </a>.
                     </p>
 
                     {/* ORDER SUMMARY */}

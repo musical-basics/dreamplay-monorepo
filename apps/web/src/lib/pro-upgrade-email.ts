@@ -54,7 +54,7 @@ export function buildProUpgradeEmail(
             <p class="gold" style="margin:0 0 14px 0; font-size:11px; letter-spacing:4px; text-transform:uppercase;">Your Pro Upgrade</p>
             <h1 style="margin:0 0 20px 0; font-size:32px; line-height:1.25; font-weight:400; color:#f7f3ea;">One step left, ${firstName}.</h1>
             <p class="muted" style="margin:0 0 16px 0; font-size:16px; line-height:1.85;">We received your request to upgrade your reservation to the DreamPlay One Pro. As an early supporter, your upgrade is a flat <strong style="color:#f7f3ea;">$200</strong> on top of what you have already paid.</p>
-            <p class="muted" style="margin:0 0 16px 0; font-size:16px; line-height:1.85;">The Pro adds a graded hammer action, a richer sound and LED system, and premium finishes. Complete the payment below and your reservation is upgraded.</p>
+            <p class="muted" style="margin:0 0 16px 0; font-size:16px; line-height:1.85;">The Pro adds a graded hammer action, a richer sound and LED system, and premium finishes. You can review everything the Pro includes on our <a href="https://www.dreamplaypianos.com/product-information" style="color:#d8b25c; text-decoration:underline;">product information page</a>. Complete the payment below and your reservation is upgraded.</p>
           </td>
         </tr>
         <tr>
