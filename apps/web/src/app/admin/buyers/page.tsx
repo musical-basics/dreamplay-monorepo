@@ -101,13 +101,16 @@ export default async function AdminBuyersPage({
                 <div className="border border-red-500/30 bg-red-500/10 p-4 font-sans text-sm text-red-300 mb-8">{loadError}</div>
             )}
 
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-8">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
                 {[
                     { label: "Real buyers", value: counts.get("buyer") ?? 0 },
+                    { label: "DS5.5 orders", value: buyers.filter((b) => b.kind === "buyer" && b.size_variant === "DS5.5").length },
+                    { label: "DS6.0 orders", value: buyers.filter((b) => b.kind === "buyer" && b.size_variant === "DS6.0").length },
+                    { label: "Size not on file", value: buyers.filter((b) => b.kind === "buyer" && !b.size_variant).length, warn: buyers.some((b) => b.kind === "buyer" && !b.size_variant) },
                     { label: "Waitlist ($1)", value: counts.get("waitlist") ?? 0 },
                     { label: "Founders ($0)", value: counts.get("founder") ?? 0 },
                     { label: "Buyers missing details", value: missingDetails, warn: missingDetails > 0 },
-                { label: "No email (phone only)", value: buyers.filter((b) => b.email.endsWith("@no-email.invalid")).length, warn: buyers.some((b) => b.email.endsWith("@no-email.invalid")) },
+                    { label: "No email (phone only)", value: buyers.filter((b) => b.email.endsWith("@no-email.invalid")).length, warn: buyers.some((b) => b.email.endsWith("@no-email.invalid")) },
                 ].map((s) => (
                     <div key={s.label} className={`border p-4 ${s.warn ? "border-amber-400/40 bg-amber-400/[0.06]" : "border-white/10 bg-white/[0.03]"}`}>
                         <p className="font-sans text-2xl">{s.value}</p>
