@@ -15,7 +15,8 @@ export const dynamic = "force-dynamic";
 
 type Buyer = Tables<"buyers">;
 
-const KINDS: readonly (BuyerKind | "all")[] = ["all", "buyer", "waitlist", "founder", "test", "unknown"];
+// Default view = real purchasers only; the rest are opt-in via the chips.
+const KINDS: readonly (BuyerKind | "all")[] = ["buyer", "all", "waitlist", "founder", "test", "unknown"];
 
 const KIND_BADGE: Record<BuyerKind, string> = {
     buyer: "border-emerald-400/40 text-emerald-300",
@@ -41,7 +42,7 @@ export default async function AdminBuyersPage({
     searchParams: Promise<{ kind?: string }>;
 }) {
     const params = await searchParams;
-    const kind = (KINDS as readonly string[]).includes(params.kind ?? "") ? (params.kind as BuyerKind | "all") : "all";
+    const kind = (KINDS as readonly string[]).includes(params.kind ?? "") ? (params.kind as BuyerKind | "all") : "buyer";
 
     let buyers: Buyer[] = [];
     let loadError: string | null = null;
@@ -82,7 +83,7 @@ export default async function AdminBuyersPage({
                     {KINDS.map((k) => (
                         <Link
                             key={k}
-                            href={k === "all" ? "/admin/buyers" : `/admin/buyers?kind=${k}`}
+                            href={k === "buyer" ? "/admin/buyers" : `/admin/buyers?kind=${k}`}
                             className={`px-4 py-2 font-sans text-xs uppercase tracking-widest border transition-colors ${
                                 k === kind
                                     ? "border-white bg-white text-black"
