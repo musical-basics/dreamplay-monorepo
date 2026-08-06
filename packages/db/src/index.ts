@@ -11,6 +11,7 @@ export type {
   TablesInsert,
   TablesUpdate,
   BuyerSource,
+  BuyerKind,
   ReservationDecision,
   SubscriberStatus,
   CampaignStatus,

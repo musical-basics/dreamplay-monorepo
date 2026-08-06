@@ -14,6 +14,15 @@
  *                                   chat_sessions, chat_messages
  *   20260716000500_analytics_functions.sql — get_analytics_summary,
  *                                   get_setting_text_array
+ *   20260804120000_blog.sql       — posts, post_versions, blog_themes,
+ *                                   research_knowledgebase, media_assets,
+ *                                   asset_tags, asset_tag_links
+ *   20260804120100_crowdfunding.sql — cf_creator, cf_campaign, cf_reward,
+ *                                   cf_faq, cf_update, cf_comment, cf_pledge
+ *   20260804130000_preorder_orders.sql — preorder_orders
+ *   20260805170000_buyer_update_emails.sql — buyer_update_emails
+ *   20260806090000_buyers_order_details.sql — order-detail columns merged
+ *                                   into buyers above
  *
  * Conventions mirroring `supabase gen types typescript`:
  *   - columns with defaults are optional in Insert
@@ -29,6 +38,7 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 // --- CHECK-constraint unions -------------------------------------------------
 
 export type BuyerSource = "shopify_webhook" | "backfill" | "manual";
+export type BuyerKind = "buyer" | "waitlist" | "founder" | "test" | "unknown";
 export type ReservationDecision = "refund_requested" | "keep_reservation" | "upgrade_to_pro";
 export type SubscriberStatus =
   | "active"
@@ -47,6 +57,10 @@ export type ChainProcessStatus = "active" | "paused" | "completed" | "cancelled"
 export type ExperimentStatus = "draft" | "running" | "paused" | "concluded";
 export type ChatSessionStatus = "active" | "closed" | "admin_takeover";
 export type ChatMessageRole = "user" | "assistant" | "admin" | "system";
+export type PostStatus = "draft" | "published";
+export type MediaAssetType = "image" | "video" | "document";
+export type MediaAssetRole = "master" | "derivative";
+export type BuyerUpdateEmailStatus = "draft" | "scheduled" | "sent";
 
 // --- Database ------------------------------------------------------------------
 
@@ -82,6 +96,14 @@ export interface Database {
           notes: string | null;
           source: BuyerSource;
           shopify_order_number: string | null;
+          kind: BuyerKind;
+          purchase_date: string | null;
+          price_paid_usd: number | null;
+          product_line: string | null;
+          size_variant: string | null;
+          finish: string | null;
+          est_ship_date: string | null;
+          order_details_source: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -91,6 +113,14 @@ export interface Database {
           notes?: string | null;
           source?: BuyerSource;
           shopify_order_number?: string | null;
+          kind?: BuyerKind;
+          purchase_date?: string | null;
+          price_paid_usd?: number | null;
+          product_line?: string | null;
+          size_variant?: string | null;
+          finish?: string | null;
+          est_ship_date?: string | null;
+          order_details_source?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -100,6 +130,14 @@ export interface Database {
           notes?: string | null;
           source?: BuyerSource;
           shopify_order_number?: string | null;
+          kind?: BuyerKind;
+          purchase_date?: string | null;
+          price_paid_usd?: number | null;
+          product_line?: string | null;
+          size_variant?: string | null;
+          finish?: string | null;
+          est_ship_date?: string | null;
+          order_details_source?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -975,6 +1013,685 @@ export interface Database {
             referencedColumns: ["id"];
           },
         ];
+      };
+      // --- blog ----------------------------------------------------------------
+      posts: {
+        Row: {
+          id: string;
+          title: string;
+          slug: string;
+          excerpt: string | null;
+          category: string | null;
+          featured_image: string | null;
+          html_content: string | null;
+          variable_values: Json | null;
+          status: PostStatus | null;
+          published_at: string | null;
+          created_at: string | null;
+          updated_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          title: string;
+          slug: string;
+          excerpt?: string | null;
+          category?: string | null;
+          featured_image?: string | null;
+          html_content?: string | null;
+          variable_values?: Json | null;
+          status?: PostStatus | null;
+          published_at?: string | null;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          title?: string;
+          slug?: string;
+          excerpt?: string | null;
+          category?: string | null;
+          featured_image?: string | null;
+          html_content?: string | null;
+          variable_values?: Json | null;
+          status?: PostStatus | null;
+          published_at?: string | null;
+          created_at?: string | null;
+          updated_at?: string | null;
+        };
+        Relationships: [];
+      };
+      post_versions: {
+        Row: {
+          id: string;
+          post_id: string | null;
+          html_content: string;
+          prompt: string | null;
+          created_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          post_id?: string | null;
+          html_content: string;
+          prompt?: string | null;
+          created_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          post_id?: string | null;
+          html_content?: string;
+          prompt?: string | null;
+          created_at?: string | null;
+        };
+        Relationships: [];
+      };
+      blog_themes: {
+        Row: {
+          id: string;
+          name: string;
+          html_template: string;
+          created_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          html_template: string;
+          created_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          html_template?: string;
+          created_at?: string | null;
+        };
+        Relationships: [];
+      };
+      research_knowledgebase: {
+        Row: {
+          id: string;
+          title: string;
+          author: string | null;
+          year: string | null;
+          url: string | null;
+          content: string;
+          is_active: boolean | null;
+          created_at: string | null;
+          updated_at: string | null;
+          r2_key: string | null;
+          source: string | null;
+          description: string | null;
+          file_size_kb: number | null;
+          batch: string | null;
+          download_status: string | null;
+          abstract: string | null;
+          citation_count: number | null;
+        };
+        Insert: {
+          id?: string;
+          title: string;
+          author?: string | null;
+          year?: string | null;
+          url?: string | null;
+          content: string;
+          is_active?: boolean | null;
+          created_at?: string | null;
+          updated_at?: string | null;
+          r2_key?: string | null;
+          source?: string | null;
+          description?: string | null;
+          file_size_kb?: number | null;
+          batch?: string | null;
+          download_status?: string | null;
+          abstract?: string | null;
+          citation_count?: number | null;
+        };
+        Update: {
+          id?: string;
+          title?: string;
+          author?: string | null;
+          year?: string | null;
+          url?: string | null;
+          content?: string;
+          is_active?: boolean | null;
+          created_at?: string | null;
+          updated_at?: string | null;
+          r2_key?: string | null;
+          source?: string | null;
+          description?: string | null;
+          file_size_kb?: number | null;
+          batch?: string | null;
+          download_status?: string | null;
+          abstract?: string | null;
+          citation_count?: number | null;
+        };
+        Relationships: [];
+      };
+      media_assets: {
+        Row: {
+          id: string;
+          filename: string;
+          folder_path: string | null;
+          storage_hash: string;
+          public_url: string;
+          size: number | null;
+          is_deleted: boolean | null;
+          created_at: string | null;
+          description: string | null;
+          is_starred: boolean | null;
+          asset_type: MediaAssetType | null;
+          role: MediaAssetRole | null;
+          parent_id: string | null;
+          usage_score: number | null;
+          category_id: string | null;
+        };
+        Insert: {
+          id?: string;
+          filename: string;
+          folder_path?: string | null;
+          storage_hash: string;
+          public_url: string;
+          size?: number | null;
+          is_deleted?: boolean | null;
+          created_at?: string | null;
+          description?: string | null;
+          is_starred?: boolean | null;
+          asset_type?: MediaAssetType | null;
+          role?: MediaAssetRole | null;
+          parent_id?: string | null;
+          usage_score?: number | null;
+          category_id?: string | null;
+        };
+        Update: {
+          id?: string;
+          filename?: string;
+          folder_path?: string | null;
+          storage_hash?: string;
+          public_url?: string;
+          size?: number | null;
+          is_deleted?: boolean | null;
+          created_at?: string | null;
+          description?: string | null;
+          is_starred?: boolean | null;
+          asset_type?: MediaAssetType | null;
+          role?: MediaAssetRole | null;
+          parent_id?: string | null;
+          usage_score?: number | null;
+          category_id?: string | null;
+        };
+        Relationships: [];
+      };
+      asset_tags: {
+        Row: {
+          id: string;
+          name: string;
+          color: string;
+          created_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          color?: string;
+          created_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          color?: string;
+          created_at?: string | null;
+        };
+        Relationships: [];
+      };
+      asset_tag_links: {
+        Row: {
+          asset_id: string;
+          tag_id: string;
+        };
+        Insert: {
+          asset_id: string;
+          tag_id: string;
+        };
+        Update: {
+          asset_id?: string;
+          tag_id?: string;
+        };
+        Relationships: [];
+      };
+      // --- crowdfunding --------------------------------------------------------
+      cf_creator: {
+        Row: {
+          id: string;
+          name: string;
+          avatar_url: string | null;
+          bio: string | null;
+          location: string | null;
+          projects_created: number | null;
+          projects_backed: number | null;
+          created_at: string;
+          page_content: string | null;
+        };
+        Insert: {
+          id: string;
+          name: string;
+          avatar_url?: string | null;
+          bio?: string | null;
+          location?: string | null;
+          projects_created?: number | null;
+          projects_backed?: number | null;
+          created_at?: string;
+          page_content?: string | null;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          avatar_url?: string | null;
+          bio?: string | null;
+          location?: string | null;
+          projects_created?: number | null;
+          projects_backed?: number | null;
+          created_at?: string;
+          page_content?: string | null;
+        };
+        Relationships: [];
+      };
+      cf_campaign: {
+        Row: {
+          id: string;
+          creator_id: string | null;
+          title: string;
+          subtitle: string | null;
+          story: string | null;
+          risks: string | null;
+          hero_image: string | null;
+          gallery_images: string[] | null;
+          goal_amount: number;
+          total_pledged: number | null;
+          total_backers: number | null;
+          ends_at: string | null;
+          created_at: string;
+          key_features: Json | null;
+          tech_specs: Json | null;
+          shipping: string | null;
+          technical_details: string | null;
+          faq_page_content: string | null;
+          media_gallery: Json | null;
+          manufacturer_details: string | null;
+          loves_count: number | null;
+          total_supply: number | null;
+          is_variant_a: boolean | null;
+          show_announcement: boolean;
+          show_reserved_amount: boolean;
+          show_sold_out_percent: boolean;
+          hidden_sections: Json | null;
+        };
+        Insert: {
+          id: string;
+          creator_id?: string | null;
+          title: string;
+          subtitle?: string | null;
+          story?: string | null;
+          risks?: string | null;
+          hero_image?: string | null;
+          gallery_images?: string[] | null;
+          goal_amount: number;
+          total_pledged?: number | null;
+          total_backers?: number | null;
+          ends_at?: string | null;
+          created_at?: string;
+          key_features?: Json | null;
+          tech_specs?: Json | null;
+          shipping?: string | null;
+          technical_details?: string | null;
+          faq_page_content?: string | null;
+          media_gallery?: Json | null;
+          manufacturer_details?: string | null;
+          loves_count?: number | null;
+          total_supply?: number | null;
+          is_variant_a?: boolean | null;
+          show_announcement?: boolean;
+          show_reserved_amount?: boolean;
+          show_sold_out_percent?: boolean;
+          hidden_sections?: Json | null;
+        };
+        Update: {
+          id?: string;
+          creator_id?: string | null;
+          title?: string;
+          subtitle?: string | null;
+          story?: string | null;
+          risks?: string | null;
+          hero_image?: string | null;
+          gallery_images?: string[] | null;
+          goal_amount?: number;
+          total_pledged?: number | null;
+          total_backers?: number | null;
+          ends_at?: string | null;
+          created_at?: string;
+          key_features?: Json | null;
+          tech_specs?: Json | null;
+          shipping?: string | null;
+          technical_details?: string | null;
+          faq_page_content?: string | null;
+          media_gallery?: Json | null;
+          manufacturer_details?: string | null;
+          loves_count?: number | null;
+          total_supply?: number | null;
+          is_variant_a?: boolean | null;
+          show_announcement?: boolean;
+          show_reserved_amount?: boolean;
+          show_sold_out_percent?: boolean;
+          hidden_sections?: Json | null;
+        };
+        Relationships: [];
+      };
+      cf_reward: {
+        Row: {
+          id: string;
+          campaign_id: string | null;
+          title: string;
+          price: number;
+          original_price: number | null;
+          description: string | null;
+          items_included: string[] | null;
+          estimated_delivery: string | null;
+          ships_to: string[] | null;
+          limit_quantity: number | null;
+          backers_count: number | null;
+          is_sold_out: boolean | null;
+          created_at: string;
+          image_url: string | null;
+          is_featured: boolean | null;
+          checkout_url: string | null;
+          shopify_variant_id: string | null;
+          is_visible: boolean | null;
+          sort_order: number | null;
+          badge_type: string | null;
+          reward_type: string | null;
+        };
+        Insert: {
+          id: string;
+          campaign_id?: string | null;
+          title: string;
+          price: number;
+          original_price?: number | null;
+          description?: string | null;
+          items_included?: string[] | null;
+          estimated_delivery?: string | null;
+          ships_to?: string[] | null;
+          limit_quantity?: number | null;
+          backers_count?: number | null;
+          is_sold_out?: boolean | null;
+          created_at?: string;
+          image_url?: string | null;
+          is_featured?: boolean | null;
+          checkout_url?: string | null;
+          shopify_variant_id?: string | null;
+          is_visible?: boolean | null;
+          sort_order?: number | null;
+          badge_type?: string | null;
+          reward_type?: string | null;
+        };
+        Update: {
+          id?: string;
+          campaign_id?: string | null;
+          title?: string;
+          price?: number;
+          original_price?: number | null;
+          description?: string | null;
+          items_included?: string[] | null;
+          estimated_delivery?: string | null;
+          ships_to?: string[] | null;
+          limit_quantity?: number | null;
+          backers_count?: number | null;
+          is_sold_out?: boolean | null;
+          created_at?: string;
+          image_url?: string | null;
+          is_featured?: boolean | null;
+          checkout_url?: string | null;
+          shopify_variant_id?: string | null;
+          is_visible?: boolean | null;
+          sort_order?: number | null;
+          badge_type?: string | null;
+          reward_type?: string | null;
+        };
+        Relationships: [];
+      };
+      cf_faq: {
+        Row: {
+          id: string;
+          campaign_id: string | null;
+          category: string | null;
+          question: string;
+          answer: string;
+          order: number | null;
+        };
+        Insert: {
+          id: string;
+          campaign_id?: string | null;
+          category?: string | null;
+          question: string;
+          answer: string;
+          order?: number | null;
+        };
+        Update: {
+          id?: string;
+          campaign_id?: string | null;
+          category?: string | null;
+          question?: string;
+          answer?: string;
+          order?: number | null;
+        };
+        Relationships: [];
+      };
+      cf_update: {
+        Row: {
+          id: string;
+          campaign_id: string;
+          title: string;
+          content: string;
+          image: string | null;
+          created_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          campaign_id?: string;
+          title: string;
+          content: string;
+          image?: string | null;
+          created_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          campaign_id?: string;
+          title?: string;
+          content?: string;
+          image?: string | null;
+          created_at?: string | null;
+        };
+        Relationships: [];
+      };
+      cf_comment: {
+        Row: {
+          id: string;
+          update_id: string | null;
+          email: string;
+          name: string;
+          content: string;
+          created_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          update_id?: string | null;
+          email: string;
+          name: string;
+          content: string;
+          created_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          update_id?: string | null;
+          email?: string;
+          name?: string;
+          content?: string;
+          created_at?: string | null;
+        };
+        Relationships: [];
+      };
+      cf_pledge: {
+        Row: {
+          id: string;
+          campaign_id: string | null;
+          reward_id: string | null;
+          customer_id: string | null;
+          amount: number;
+          status: string | null;
+          created_at: string;
+          shipping_address: string | null;
+          shipping_location: string | null;
+        };
+        Insert: {
+          id?: string;
+          campaign_id?: string | null;
+          reward_id?: string | null;
+          customer_id?: string | null;
+          amount: number;
+          status?: string | null;
+          created_at?: string;
+          shipping_address?: string | null;
+          shipping_location?: string | null;
+        };
+        Update: {
+          id?: string;
+          campaign_id?: string | null;
+          reward_id?: string | null;
+          customer_id?: string | null;
+          amount?: number;
+          status?: string | null;
+          created_at?: string;
+          shipping_address?: string | null;
+          shipping_location?: string | null;
+        };
+        Relationships: [];
+      };
+      // --- preorder orders -----------------------------------------------------
+      preorder_orders: {
+        Row: {
+          id: string;
+          order_name: string;
+          raw_shopify_id: string | null;
+          import_batch_id: string;
+          source: string;
+          email: string;
+          customer_name: string | null;
+          created_at: string;
+          financial_status: string | null;
+          fulfillment_status: string | null;
+          total_paid_usd: number | null;
+          payment_type: string;
+          is_reservation: boolean;
+          lineitem_name: string | null;
+          product_line: string | null;
+          size_variant: string | null;
+          finish: string | null;
+          inserted_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          order_name: string;
+          raw_shopify_id?: string | null;
+          import_batch_id: string;
+          source?: string;
+          email: string;
+          customer_name?: string | null;
+          created_at: string;
+          financial_status?: string | null;
+          fulfillment_status?: string | null;
+          total_paid_usd?: number | null;
+          payment_type: string;
+          is_reservation?: boolean;
+          lineitem_name?: string | null;
+          product_line?: string | null;
+          size_variant?: string | null;
+          finish?: string | null;
+          inserted_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          order_name?: string;
+          raw_shopify_id?: string | null;
+          import_batch_id?: string;
+          source?: string;
+          email?: string;
+          customer_name?: string | null;
+          created_at?: string;
+          financial_status?: string | null;
+          fulfillment_status?: string | null;
+          total_paid_usd?: number | null;
+          payment_type?: string;
+          is_reservation?: boolean;
+          lineitem_name?: string | null;
+          product_line?: string | null;
+          size_variant?: string | null;
+          finish?: string | null;
+          inserted_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      // --- buyer update emails -------------------------------------------------
+      buyer_update_emails: {
+        Row: {
+          id: string;
+          update_key: string;
+          title: string;
+          status: BuyerUpdateEmailStatus;
+          subject_lines: string[];
+          campaign_ids: string[];
+          sent_first_at: string | null;
+          sent_last_at: string | null;
+          recipient_count: number;
+          audience: string;
+          website_url: string | null;
+          video_url: string | null;
+          summary: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          update_key: string;
+          title: string;
+          status?: BuyerUpdateEmailStatus;
+          subject_lines?: string[];
+          campaign_ids?: string[];
+          sent_first_at?: string | null;
+          sent_last_at?: string | null;
+          recipient_count?: number;
+          audience?: string;
+          website_url?: string | null;
+          video_url?: string | null;
+          summary?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          update_key?: string;
+          title?: string;
+          status?: BuyerUpdateEmailStatus;
+          subject_lines?: string[];
+          campaign_ids?: string[];
+          sent_first_at?: string | null;
+          sent_last_at?: string | null;
+          recipient_count?: number;
+          audience?: string;
+          website_url?: string | null;
+          video_url?: string | null;
+          summary?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
       };
     };
     Views: Record<string, never>;
