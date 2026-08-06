@@ -25,6 +25,9 @@ export const STANDARD_FINISHES = [
 export const PRO_FINISHES = [
     { value: "Nightmare Black", label: "Nightmare Black" },
     { value: "Aztec Gold", label: "Aztec Gold" },
+    // Added 2026-08-06: Pro buyers may now choose the standard-keys Midnight
+    // Black finish, which was not offered to them at purchase time.
+    { value: "Midnight Black (Standard Keys)", label: "Midnight Black", description: "Standard keys" },
 ] as const;
 
 function getSecret(): string {

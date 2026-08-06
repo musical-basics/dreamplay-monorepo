@@ -6,6 +6,8 @@ import ReservationDecisionModule from "./ReservationDecisionModule";
 import ReservationPageClient from "./ReservationPageClient";
 import { getReservationDecision, isBuyer } from "@/actions/reservation-actions";
 import { getLatestOrderForEmail, sizeLabel } from "@/lib/shopify/admin";
+import { getAdminDb } from "@/lib/db";
+import { buildPreferencesPath } from "@/lib/buyer-preferences";
 
 export const metadata = {
     title: "My Reservation | DreamPlay Pianos",
@@ -32,6 +34,15 @@ export default async function MyReservationPage() {
     // Pull the buyer's actual order config (size/finish) live from Shopify so the
     // page shows what they ordered — no more guessing from generic milestone copy.
     const order = await getLatestOrderForEmail(user.email);
+
+    // Buyer row for the self-service configuration page (signed personal link,
+    // same destination the update-email button points at).
+    const { data: buyerRow } = await getAdminDb()
+        .from("buyers")
+        .select("id")
+        .eq("email", user.email)
+        .maybeSingle();
+    const preferencesPath = buyerRow ? buildPreferencesPath(buyerRow.id) : null;
 
     return (
         <div className="min-h-screen bg-[#050505] text-white font-sans selection:bg-white/20">
@@ -88,10 +99,37 @@ export default async function MyReservationPage() {
                                     </div>
                                 ))}
                             </div>
+                            {preferencesPath && (
+                                <a
+                                    href={preferencesPath}
+                                    className="inline-block mt-6 border border-white/30 px-6 py-3 font-sans text-xs font-bold uppercase tracking-widest text-white/80 transition-colors hover:border-white hover:text-white"
+                                >
+                                    Confirm or Change My Configuration
+                                </a>
+                            )}
                             <p className="font-sans text-xs text-white/30 mt-6">
                                 This is the configuration on file for your reservation. If anything looks off,{" "}
                                 <a href="/contact" className="underline hover:text-white/60">contact us</a>.
                             </p>
+                        </div>
+                    )}
+
+                    {/* Config link still available when no Shopify order rendered */}
+                    {(!order || order.items.length === 0) && preferencesPath && (
+                        <div className="border border-white/10 bg-white/[0.03] p-8 md:p-10 mb-12">
+                            <p className="font-sans text-[10px] uppercase tracking-[0.3em] text-white/50 mb-4">
+                                Your Configuration
+                            </p>
+                            <p className="font-sans text-sm text-white/60 leading-relaxed mb-6">
+                                Choose or update the key size and finish for your DreamPlay One before production
+                                begins.
+                            </p>
+                            <a
+                                href={preferencesPath}
+                                className="inline-block border border-white/30 px-6 py-3 font-sans text-xs font-bold uppercase tracking-widest text-white/80 transition-colors hover:border-white hover:text-white"
+                            >
+                                Confirm or Change My Configuration
+                            </a>
                         </div>
                     )}
 
