@@ -93,12 +93,13 @@ export default async function AdminBuyersPage({
                 <div className="border border-red-500/30 bg-red-500/10 p-4 font-sans text-sm text-red-300 mb-8">{loadError}</div>
             )}
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-8">
                 {[
                     { label: "Real buyers", value: counts.get("buyer") ?? 0 },
                     { label: "Waitlist ($1)", value: counts.get("waitlist") ?? 0 },
                     { label: "Founders ($0)", value: counts.get("founder") ?? 0 },
                     { label: "Buyers missing details", value: missingDetails, warn: missingDetails > 0 },
+                { label: "No email (phone only)", value: buyers.filter((b) => b.email.endsWith("@no-email.invalid")).length, warn: buyers.some((b) => b.email.endsWith("@no-email.invalid")) },
                 ].map((s) => (
                     <div key={s.label} className={`border p-4 ${s.warn ? "border-amber-400/40 bg-amber-400/[0.06]" : "border-white/10 bg-white/[0.03]"}`}>
                         <p className="font-sans text-2xl">{s.value}</p>
@@ -120,11 +121,21 @@ export default async function AdminBuyersPage({
                         {shown.map((b) => {
                             const name = displayName(b);
                             const missing = b.kind === "buyer" && (!b.size_variant || !b.finish);
+                            const noEmail = b.email.endsWith("@no-email.invalid");
                             return (
                                 <tr key={b.id} className="border-b border-white/5 hover:bg-white/[0.03]">
                                     <td className="px-3 py-2.5">
-                                        <p className="text-white/90">{b.email}</p>
+                                        {noEmail ? (
+                                            <p className="text-amber-300">
+                                                No email · phone-only order {b.shopify_order_number}
+                                            </p>
+                                        ) : (
+                                            <p className="text-white/90">{b.email}</p>
+                                        )}
                                         {name && <p className="text-white/40 text-xs">{name}</p>}
+                                        {noEmail && (
+                                            <p className="text-white/40 text-xs">{(b.notes ?? "").split("|")[1]?.trim()}</p>
+                                        )}
                                     </td>
                                     <td className="px-3 py-2.5">
                                         <span className={`inline-block border px-2 py-0.5 text-[10px] uppercase tracking-widest ${KIND_BADGE[b.kind]}`}>{b.kind}</span>

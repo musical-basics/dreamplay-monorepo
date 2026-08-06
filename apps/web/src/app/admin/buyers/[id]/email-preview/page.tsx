@@ -51,6 +51,13 @@ export default async function BuyerEmailPreviewPage({
                 ))}
             </div>
 
+            {buyer.email.endsWith("@no-email.invalid") && (
+                <div className="border border-amber-400/40 bg-amber-400/[0.06] px-5 py-3 mb-6 font-sans text-sm text-amber-300">
+                    This buyer checked out with a phone number only; there is no email on file, so they cannot
+                    receive this update by email. Contact info is in the notes: {buyer.notes}
+                </div>
+            )}
+
             {buyer.kind !== "buyer" && (
                 <div className="border border-amber-400/40 bg-amber-400/[0.06] px-5 py-3 mb-6 font-sans text-sm text-amber-300">
                     This row is classified as &quot;{buyer.kind}&quot;, not a real buyer. It would be excluded from a

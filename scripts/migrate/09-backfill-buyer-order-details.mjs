@@ -12,6 +12,12 @@
  *   - unknown:  no order found anywhere (e.g. "Purchased tag" backfills from
  *               the pre-Shopify Wix era) — review by hand on /admin/buyers
  *
+ * No-email orders: Shopify allows phone-only checkout (orders #1117, #1121).
+ * Those buyers get a placeholder address `order-<n>@no-email.invalid` (.invalid
+ * is the RFC-reserved TLD — undeliverable by construction, and the send
+ * pipeline targets subscribers so it can never be emailed), phone + name in
+ * notes, and are matched on re-runs via shopify_order_number.
+ *
  * est_ship_date policy (Lionel, 2026-08-06): purchase_date + 12 months,
  * floored at 2027-01-31 (the date promised to early backers in the June
  * update). Manual per-buyer overrides are allowed afterwards; re-running with
@@ -71,9 +77,10 @@ let cursor = null;
 for (;;) {
   const q = `{ orders(first: 100, sortKey: CREATED_AT${cursor ? `, after: "${cursor}"` : ""}) {
     pageInfo { hasNextPage endCursor }
-    nodes { name email createdAt cancelledAt displayFinancialStatus
+    nodes { name email phone createdAt cancelledAt displayFinancialStatus
       totalPriceSet { shopMoney { amount } }
-      customer { email displayName }
+      customer { email phone displayName }
+      shippingAddress { phone name }
       lineItems(first: 10) { nodes { title variantTitle quantity } } } } }`;
   const r = await fetch(`https://${store}/admin/api/2025-10/graphql.json`, {
     method: "POST",
@@ -89,10 +96,17 @@ for (;;) {
 console.log(`Shopify orders: ${orders.length}`);
 
 const byEmail = new Map();
+const byName = new Map();
+const payingNoEmail = [];
 for (const o of orders) {
   const email = (o.email || o.customer?.email || "").toLowerCase().trim();
   const status = o.cancelledAt ? "CANCELLED" : o.displayFinancialStatus;
-  if (!email || !["PAID", "PARTIALLY_REFUNDED", "AUTHORIZED"].includes(status)) continue;
+  if (!["PAID", "PARTIALLY_REFUNDED", "AUTHORIZED"].includes(status)) continue;
+  byName.set(o.name, o);
+  if (!email) {
+    payingNoEmail.push(o);
+    continue;
+  }
   if (!byEmail.has(email)) byEmail.set(email, []);
   byEmail.get(email).push(o);
 }
@@ -137,7 +151,11 @@ for (const b of buyers) {
   const notes = b.notes || "";
   let kind, purchase_date = null, price = null, product = null, size = null, finish = null, source = null;
 
-  const os = byEmail.get(email) || [];
+  let os = byEmail.get(email) || [];
+  // no-email buyers (placeholder address) match via their Shopify order number
+  if (!os.length && b.shopify_order_number && byName.has(b.shopify_order_number)) {
+    os = [byName.get(b.shopify_order_number)];
+  }
   if (os.length) {
     // best = highest-value order (deposit vs full payment: the real product order wins)
     const best = os.reduce((a, o) => (+o.totalPriceSet.shopMoney.amount > +a.totalPriceSet.shopMoney.amount ? o : a));
@@ -188,5 +206,48 @@ if (EXECUTE) {
     await rest(`buyers?id=eq.${id}`, { method: "PATCH", body: JSON.stringify(fields) });
   }
   console.log(`\nupdated ${updates.length} buyers`);
+}
+
+// --- paying orders with NO buyers row at all -----------------------------------
+const knownOrderNums = new Set(buyers.map((b) => b.shopify_order_number).filter(Boolean));
+const missingNoEmail = payingNoEmail.filter((o) => !knownOrderNums.has(o.name));
+for (const o of missingNoEmail) {
+  const amt = +o.totalPriceSet.shopMoney.amount;
+  const name = o.customer?.displayName || o.shippingAddress?.name || "Unknown";
+  const phone = o.phone || o.customer?.phone || o.shippingAddress?.phone || null;
+  const li = o.lineItems.nodes.find((n) => /dreamplay|piano|keyboard/i.test(n.title)) || o.lineItems.nodes[0];
+  const v = parseVariant(li?.variantTitle);
+  const kind = amt === 0 ? "founder" : amt <= 5 ? "waitlist" : "buyer";
+  const row = {
+    email: `order-${o.name.replace("#", "")}@no-email.invalid`,
+    notes: `${name} | NO EMAIL - phone ${phone ?? "unknown"} | phone-only checkout, Shopify ${o.name}`,
+    source: "backfill",
+    shopify_order_number: o.name,
+    kind,
+    purchase_date: o.createdAt,
+    price_paid_usd: Math.round(amt * 100) / 100,
+    product_line: li?.title ?? null,
+    size_variant: v.size,
+    finish: v.finish,
+    est_ship_date: kind === "buyer" ? estShip(o.createdAt) : null,
+    order_details_source: `shopify ${o.name} (no email)`,
+  };
+  console.log(`\nNO-EMAIL ORDER, creating buyers row: ${o.name} ${name} $${amt} ${[row.product_line, row.size_variant, row.finish].filter(Boolean).join(" / ")} est_ship=${row.est_ship_date}`);
+  if (EXECUTE) {
+    await rest("buyers?on_conflict=email", {
+      method: "POST",
+      headers: { ...H, Prefer: "resolution=merge-duplicates" },
+      body: JSON.stringify([row]),
+    });
+    console.log("   inserted");
+  }
+}
+
+// paying orders with an email that still is not in buyers: 07's territory
+for (const [email, os] of byEmail.entries()) {
+  const inBuyers = buyers.some((b) => b.email.toLowerCase().trim() === email);
+  if (!inBuyers && !os.every((o) => knownOrderNums.has(o.name))) {
+    console.warn(`!! paying order(s) for ${email} have no buyers row — run 07-shopify-reconcile.mjs`);
+  }
 }
 console.log("done.");
