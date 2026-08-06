@@ -23,6 +23,8 @@
  *   20260805170000_buyer_update_emails.sql — buyer_update_emails
  *   20260806090000_buyers_order_details.sql — order-detail columns merged
  *                                   into buyers above
+ *   20260806150000_buyer_preferences.sql — buyer_preference_changes,
+ *                                   buyers.pro_upgrade_requested
  *
  * Conventions mirroring `supabase gen types typescript`:
  *   - columns with defaults are optional in Insert
@@ -104,6 +106,7 @@ export interface Database {
           finish: string | null;
           est_ship_date: string | null;
           order_details_source: string | null;
+          pro_upgrade_requested: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -121,6 +124,7 @@ export interface Database {
           finish?: string | null;
           est_ship_date?: string | null;
           order_details_source?: string | null;
+          pro_upgrade_requested?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -138,6 +142,7 @@ export interface Database {
           finish?: string | null;
           est_ship_date?: string | null;
           order_details_source?: string | null;
+          pro_upgrade_requested?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -1690,6 +1695,39 @@ export interface Database {
           summary?: string | null;
           created_at?: string;
           updated_at?: string;
+        };
+        Relationships: [];
+      };
+      buyer_preference_changes: {
+        Row: {
+          id: string;
+          buyer_id: string;
+          size_variant: string | null;
+          finish: string | null;
+          upgrade_to_pro: boolean;
+          previous: Json;
+          source: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          buyer_id: string;
+          size_variant?: string | null;
+          finish?: string | null;
+          upgrade_to_pro?: boolean;
+          previous?: Json;
+          source?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          buyer_id?: string;
+          size_variant?: string | null;
+          finish?: string | null;
+          upgrade_to_pro?: boolean;
+          previous?: Json;
+          source?: string;
+          created_at?: string;
         };
         Relationships: [];
       };

@@ -1,5 +1,6 @@
 import type { Tables } from "@dreamplay/db";
 import { getAdminDb } from "@/lib/db";
+import { buildPreferencesPath } from "@/lib/buyer-preferences";
 
 /**
  * Rendering for buyer product-update emails (the "Customer Update" campaign
@@ -31,6 +32,7 @@ export function formatShipMonth(isoDate: string | null): string {
 }
 
 export function buyerMergeValues(buyer: Buyer, firstName: string | null): Record<string, string> {
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.dreamplaypianos.com";
     return {
         first_name: firstName?.trim() || "there",
         product_name: buyer.product_line || "DreamPlay One",
@@ -38,6 +40,7 @@ export function buyerMergeValues(buyer: Buyer, firstName: string | null): Record
         finish: buyer.finish || NOT_ON_FILE,
         price_paid: formatPricePaid(buyer.price_paid_usd),
         est_ship_date: formatShipMonth(buyer.est_ship_date),
+        preferences_url: `${baseUrl}${buildPreferencesPath(buyer.id)}`,
     };
 }
 

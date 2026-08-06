@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { formatPricePaid, formatShipMonth, renderJulyEmailForBuyer } from "@/lib/buyer-update-email";
+import { boughtPro, canUpgradeToPro } from "@/lib/buyer-preferences";
 
 /**
  * /admin/buyers/[id]/email-preview — the current buyer-update email rendered
@@ -28,6 +29,16 @@ export default async function BuyerEmailPreviewPage({
         ["Configuration", [buyer.size_variant, buyer.finish].filter(Boolean).join(" · ") || "Not on file"],
         ["Paid", formatPricePaid(buyer.price_paid_usd)],
         ["Est. ship", formatShipMonth(buyer.est_ship_date)],
+        [
+            "Pro upgrade",
+            buyer.pro_upgrade_requested
+                ? "REQUESTED"
+                : boughtPro(buyer)
+                  ? "already Pro"
+                  : canUpgradeToPro(buyer)
+                    ? "eligible (offer shown on prefs page)"
+                    : "not eligible",
+        ],
     ];
 
     return (

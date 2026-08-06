@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { BuyerKind, Tables } from "@dreamplay/db";
 import { getAdminDb } from "@/lib/db";
 import { formatPricePaid, formatShipMonth } from "@/lib/buyer-update-email";
+import { buildPreferencesPath, canUpgradeToPro } from "@/lib/buyer-preferences";
 
 /**
  * /admin/buyers — every row in the buyers table with the order details we
@@ -139,6 +140,11 @@ export default async function AdminBuyersPage({
                                     </td>
                                     <td className="px-3 py-2.5">
                                         <span className={`inline-block border px-2 py-0.5 text-[10px] uppercase tracking-widest ${KIND_BADGE[b.kind]}`}>{b.kind}</span>
+                                        {b.pro_upgrade_requested && (
+                                            <span className="mt-1 block border border-amber-400/50 px-2 py-0.5 text-[10px] uppercase tracking-widest text-amber-300 w-fit">
+                                                Pro upgrade requested
+                                            </span>
+                                        )}
                                     </td>
                                     <td className="px-3 py-2.5 whitespace-nowrap text-white/70">{fmtDate(b.purchase_date)}</td>
                                     <td className="px-3 py-2.5 whitespace-nowrap text-white/70">{b.price_paid_usd != null ? formatPricePaid(b.price_paid_usd) : ""}</td>
@@ -147,12 +153,21 @@ export default async function AdminBuyersPage({
                                     <td className={`px-3 py-2.5 whitespace-nowrap ${missing && !b.finish ? "text-amber-300" : "text-white/70"}`}>{b.finish ?? (missing ? "missing" : "")}</td>
                                     <td className="px-3 py-2.5 whitespace-nowrap text-white/70">{b.kind === "buyer" ? formatShipMonth(b.est_ship_date) : ""}</td>
                                     <td className="px-3 py-2.5 whitespace-nowrap">
-                                        <Link
-                                            href={`/admin/buyers/${b.id}/email-preview`}
-                                            className="border border-white/25 px-3 py-1.5 text-[11px] uppercase tracking-widest text-white/70 hover:border-white hover:text-white transition-colors"
-                                        >
-                                            Preview email
-                                        </Link>
+                                        <div className="flex flex-col gap-1.5">
+                                            <Link
+                                                href={`/admin/buyers/${b.id}/email-preview`}
+                                                className="border border-white/25 px-3 py-1.5 text-center text-[11px] uppercase tracking-widest text-white/70 hover:border-white hover:text-white transition-colors"
+                                            >
+                                                Preview email
+                                            </Link>
+                                            <Link
+                                                href={buildPreferencesPath(b.id)}
+                                                target="_blank"
+                                                className="border border-white/15 px-3 py-1.5 text-center text-[11px] uppercase tracking-widest text-white/50 hover:border-white/60 hover:text-white transition-colors"
+                                            >
+                                                Prefs page{canUpgradeToPro(b) ? " · upg" : ""}
+                                            </Link>
+                                        </div>
                                     </td>
                                 </tr>
                             );
