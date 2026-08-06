@@ -10,6 +10,7 @@ import {
     canUpgradeToPro,
     parsePreferencesToken,
 } from "@/lib/buyer-preferences";
+import { sendProUpgradeEmail } from "@/lib/pro-upgrade-email";
 
 export interface SavePreferencesResult {
     ok: boolean;
@@ -78,6 +79,21 @@ export async function saveBuyerPreferences(
         })
         .eq("id", buyer.id);
     if (updateError) return { ok: false, error: "Something went wrong saving your choice. Please try again." };
+
+    // Newly requested upgrade: automatically send the $200 payment email.
+    // Fire-and-forget semantics but awaited (serverless): failures never
+    // block the save; the request stays visible on /admin/buyers regardless.
+    if (upgradeToPro && !buyer.pro_upgrade_requested) {
+        const { data: sub } = await db
+            .from("subscribers")
+            .select("first_name")
+            .eq("email", buyer.email)
+            .maybeSingle();
+        await sendProUpgradeEmail(
+            { ...buyer, size_variant: input.size, finish: input.finish },
+            sub?.first_name?.trim() || "there",
+        );
+    }
 
     return { ok: true };
 }
