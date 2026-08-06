@@ -78,10 +78,10 @@ for (;;) {
   const q = `{ orders(first: 100, sortKey: CREATED_AT${cursor ? `, after: "${cursor}"` : ""}) {
     pageInfo { hasNextPage endCursor }
     nodes { name email phone createdAt cancelledAt displayFinancialStatus
-      totalPriceSet { shopMoney { amount } }
+      currentTotalPriceSet { shopMoney { amount } }
       customer { email phone displayName }
       shippingAddress { phone name }
-      lineItems(first: 10) { nodes { title variantTitle quantity } } } } }`;
+      lineItems(first: 10) { nodes { title variantTitle currentQuantity } } } } }`;
   const r = await fetch(`https://${store}/admin/api/2025-10/graphql.json`, {
     method: "POST",
     headers: { "X-Shopify-Access-Token": token, "Content-Type": "application/json" },
@@ -149,7 +149,7 @@ const updates = [];
 for (const b of buyers) {
   const email = b.email.toLowerCase().trim();
   const notes = b.notes || "";
-  let kind, purchase_date = null, price = null, product = null, size = null, finish = null, source = null;
+  let kind, purchase_date = null, price = null, product = null, size = null, finish = null, source = null, units = 1;
 
   let os = byEmail.get(email) || [];
   // no-email buyers (placeholder address) match via their Shopify order number
@@ -158,15 +158,31 @@ for (const b of buyers) {
   }
   if (os.length) {
     // best = highest-value order (deposit vs full payment: the real product order wins)
-    const best = os.reduce((a, o) => (+o.totalPriceSet.shopMoney.amount > +a.totalPriceSet.shopMoney.amount ? o : a));
-    const total = os.reduce((s, o) => s + +o.totalPriceSet.shopMoney.amount, 0);
-    const bestAmt = +best.totalPriceSet.shopMoney.amount;
+    const best = os.reduce((a, o) => (+o.currentTotalPriceSet.shopMoney.amount > +a.currentTotalPriceSet.shopMoney.amount ? o : a));
+    const total = os.reduce((s, o) => s + +o.currentTotalPriceSet.shopMoney.amount, 0);
+    const bestAmt = +best.currentTotalPriceSet.shopMoney.amount;
     purchase_date = best.createdAt;
     price = Math.round(total * 100) / 100;
-    const li = best.lineItems.nodes.find((n) => /dreamplay|piano|keyboard/i.test(n.title)) || best.lineItems.nodes[0];
-    product = li?.title ?? null;
-    const v = parseVariant(li?.variantTitle);
-    size = v.size; finish = v.finish;
+    // keyboard line items only (accessories don't count as units)
+    const kbItems = best.lineItems.nodes.filter(
+      (n) => (n.currentQuantity || 0) > 0 && /dreamplay|piano|keyboard/i.test(n.title) && !/bench|stand|pedal|dust|cover/i.test(n.title),
+    );
+    const li = kbItems[0] || best.lineItems.nodes[0];
+    units = Math.max(1, kbItems.reduce((s, n) => s + n.currentQuantity, 0));
+    if (units > 1) {
+      // multi-unit order (only #1104 as of 2026-08-06): combine per-unit configs
+      const titles = [...new Set(kbItems.map((n) => n.title))];
+      const variants = kbItems.map((n) => parseVariant(n.variantTitle));
+      const sizes = [...new Set(variants.map((v) => v.size).filter(Boolean))];
+      const finishes = [...new Set(variants.map((v) => v.finish).filter(Boolean))];
+      product = `${units}x ${titles.join(" + ")}`;
+      size = sizes.join(" + ") || null;
+      finish = finishes.join(" + ") || null;
+    } else {
+      product = li?.title ?? null;
+      const v = parseVariant(li?.variantTitle);
+      size = v.size; finish = v.finish;
+    }
     source = `shopify ${best.name}`;
     kind = bestAmt === 0 ? "founder" : bestAmt <= 5 ? "waitlist" : "buyer";
   }
@@ -189,7 +205,7 @@ for (const b of buyers) {
   const est_ship_date = RECOMPUTE ? est : (b.est_ship_date ?? est);
 
   counts[kind] = (counts[kind] || 0) + 1;
-  updates.push({ id: b.id, email, kind, purchase_date, price_paid_usd: price, product_line: product, size_variant: size, finish, est_ship_date, order_details_source: source });
+  updates.push({ id: b.id, email, kind, purchase_date, price_paid_usd: price, product_line: product, size_variant: size, finish, est_ship_date, order_details_source: source, unit_count: units });
 }
 
 console.log("\nkind counts:", counts);
@@ -212,10 +228,10 @@ if (EXECUTE) {
 const knownOrderNums = new Set(buyers.map((b) => b.shopify_order_number).filter(Boolean));
 const missingNoEmail = payingNoEmail.filter((o) => !knownOrderNums.has(o.name));
 for (const o of missingNoEmail) {
-  const amt = +o.totalPriceSet.shopMoney.amount;
+  const amt = +o.currentTotalPriceSet.shopMoney.amount;
   const name = o.customer?.displayName || o.shippingAddress?.name || "Unknown";
   const phone = o.phone || o.customer?.phone || o.shippingAddress?.phone || null;
-  const li = o.lineItems.nodes.find((n) => /dreamplay|piano|keyboard/i.test(n.title)) || o.lineItems.nodes[0];
+  const li = o.lineItems.nodes.find((n) => (n.currentQuantity || 0) > 0 && /dreamplay|piano|keyboard/i.test(n.title)) || o.lineItems.nodes[0];
   const v = parseVariant(li?.variantTitle);
   const kind = amt === 0 ? "founder" : amt <= 5 ? "waitlist" : "buyer";
   const row = {

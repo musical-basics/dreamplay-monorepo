@@ -116,6 +116,7 @@ describe("types.ts covers the schema", () => {
       est_ship_date: "2027-07-01",
       order_details_source: "shopify #1234",
       pro_upgrade_requested: false,
+      unit_count: 1,
       created_at: "2026-07-16T00:00:00Z",
       updated_at: "2026-07-16T00:00:00Z",
     };

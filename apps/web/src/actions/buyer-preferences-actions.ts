@@ -32,6 +32,15 @@ export async function saveBuyerPreferences(
     const { data: buyer } = await db.from("buyers").select("*").eq("id", buyerId).maybeSingle();
     if (!buyer) return { ok: false, error: "We could not find your order. Please contact support." };
 
+    if (buyer.unit_count > 1) {
+        // multi-keyboard orders are handled by support; the one-config form
+        // cannot represent per-unit choices
+        return {
+            ok: false,
+            error: "Your order includes multiple keyboards. Please email support@dreamplaypianos.com with the configuration you would like for each one.",
+        };
+    }
+
     const eligible = canUpgradeToPro(buyer);
     const upgradeToPro = input.upgradeToPro && eligible; // server-enforced: never trust the client on eligibility
     if (input.upgradeToPro && !eligible) {

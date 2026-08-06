@@ -25,6 +25,7 @@
  *                                   into buyers above
  *   20260806150000_buyer_preferences.sql — buyer_preference_changes,
  *                                   buyers.pro_upgrade_requested
+ *   20260806190000_buyers_unit_count.sql — buyers.unit_count
  *
  * Conventions mirroring `supabase gen types typescript`:
  *   - columns with defaults are optional in Insert
@@ -107,6 +108,7 @@ export interface Database {
           est_ship_date: string | null;
           order_details_source: string | null;
           pro_upgrade_requested: boolean;
+          unit_count: number;
           created_at: string;
           updated_at: string;
         };
@@ -125,6 +127,7 @@ export interface Database {
           est_ship_date?: string | null;
           order_details_source?: string | null;
           pro_upgrade_requested?: boolean;
+          unit_count?: number;
           created_at?: string;
           updated_at?: string;
         };
@@ -143,6 +146,7 @@ export interface Database {
           est_ship_date?: string | null;
           order_details_source?: string | null;
           pro_upgrade_requested?: boolean;
+          unit_count?: number;
           created_at?: string;
           updated_at?: string;
         };

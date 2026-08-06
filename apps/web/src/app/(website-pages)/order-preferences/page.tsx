@@ -101,18 +101,44 @@ export default async function OrderPreferencesPage({
                         </div>
                     </div>
 
-                    <PreferencesForm
-                        token={t!}
-                        initialSize={buyer.size_variant}
-                        initialFinish={buyer.finish}
-                        initialUpgradeRequested={buyer.pro_upgrade_requested}
-                        alreadyPro={alreadyPro}
-                        upgradeEligible={upgradeEligible}
-                        standardSizes={STANDARD_SIZES.map((s) => ({ value: s, label: s, description: SIZE_DESCRIPTIONS[s] }))}
-                        proSizes={PRO_SIZES.map((s) => ({ value: s, label: s, description: SIZE_DESCRIPTIONS[s] }))}
-                        standardFinishes={STANDARD_FINISHES.map((f) => ({ ...f }))}
-                        proFinishes={PRO_FINISHES.map((f) => ({ ...f }))}
-                    />
+                    {buyer.unit_count > 1 ? (
+                        <div className="border border-blue-500/30 bg-blue-900/10 rounded-xl p-8">
+                            <h2 className="font-sans text-xs uppercase tracking-[0.25em] text-blue-400 font-bold mb-4">
+                                Your order includes {buyer.unit_count} keyboards
+                            </h2>
+                            <p className="font-sans text-base text-white/70 leading-relaxed mb-5">
+                                You reserved {buyer.unit_count} instruments ({[buyer.size_variant, buyer.finish].filter(Boolean).join(" · ")}), so we handle
+                                configuration changes for each keyboard individually. Just email us with what you would
+                                like for each one and we will update your order.
+                            </p>
+                            {upgradeEligible && (
+                                <p className="font-sans text-base text-white/70 leading-relaxed mb-6">
+                                    As an early supporter you can also upgrade any of your keyboards to the DreamPlay
+                                    One Pro for a flat $200 per keyboard. Mention it in your email and we will send a
+                                    secure payment link.
+                                </p>
+                            )}
+                            <a
+                                href={`mailto:support@dreamplaypianos.com?subject=Configuration for order ${buyer.shopify_order_number ?? ""}`}
+                                className="inline-block border border-white bg-white px-8 py-4 font-sans text-xs font-bold uppercase tracking-widest text-black transition-all hover:bg-neutral-200 rounded-full"
+                            >
+                                Email Us Your Configuration
+                            </a>
+                        </div>
+                    ) : (
+                        <PreferencesForm
+                            token={t!}
+                            initialSize={buyer.size_variant}
+                            initialFinish={buyer.finish}
+                            initialUpgradeRequested={buyer.pro_upgrade_requested}
+                            alreadyPro={alreadyPro}
+                            upgradeEligible={upgradeEligible}
+                            standardSizes={STANDARD_SIZES.map((s) => ({ value: s, label: s, description: SIZE_DESCRIPTIONS[s] }))}
+                            proSizes={PRO_SIZES.map((s) => ({ value: s, label: s, description: SIZE_DESCRIPTIONS[s] }))}
+                            standardFinishes={STANDARD_FINISHES.map((f) => ({ ...f }))}
+                            proFinishes={PRO_FINISHES.map((f) => ({ ...f }))}
+                        />
+                    )}
 
                     <p className="font-sans text-xs text-white/35 leading-relaxed mt-12">
                         Questions, or want to change something else about your order? Email{" "}
