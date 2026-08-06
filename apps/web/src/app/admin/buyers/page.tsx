@@ -73,6 +73,12 @@ export default async function AdminBuyersPage({
                     </p>
                 </div>
                 <nav className="flex gap-2 flex-wrap">
+                    <Link
+                        href="/admin/buyers/activity"
+                        className="px-4 py-2 font-sans text-xs uppercase tracking-widest border border-amber-400/40 text-amber-300 hover:border-amber-300 transition-colors"
+                    >
+                        Email activity
+                    </Link>
                     {KINDS.map((k) => (
                         <Link
                             key={k}
