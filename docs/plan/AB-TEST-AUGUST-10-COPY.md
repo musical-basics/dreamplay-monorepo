@@ -2,7 +2,7 @@
 
 > **Purpose of this document:** the test design plus every word of copy in it, in one place.
 >
-> **Status (2026-08-10):** the copy below is the **rewritten** version, warmer and less self-explanatory than the first draft. It is not yet pushed to the database or the page components. Applying it is the next step, see section 6.
+> **Status (2026-08-10): LIVE.** The copy below is the rewritten version, warmer and less self-explanatory than the first draft, and it has been applied to both the four campaign templates and the two landing pages. This document now matches what is actually deployed. Nothing has been sent to buyers yet.
 >
 > **Hard house rule: no em dashes anywhere.** Use commas, colons or periods instead.
 
@@ -274,15 +274,15 @@ The subject line for A1 and A2 is now identical, as is the headline. That is int
 
 ---
 
-## 6. Applying this copy
+## 6. Where this copy lives (applied 2026-08-10)
 
-None of the above is live yet. Two places to change, and they should ship together:
-
-1. **The four emails** are rows in the `campaigns` table (`is_template = true`), named `Buyer Research Survey Credit (A1)`, `Buyer Research Survey NoCredit (A2)`, `Buyer Research Call Credit (B1)`, `Buyer Research Call NoCredit (B2)`. Edit them through `/admin/ab-test-august-10`, which has a live preview and writes straight to those rows. The layout, gold button and wordmark stay as they are, only the text changes. Note the body is now three or four paragraphs instead of two, so a paragraph block needs adding in the HTML.
+1. **The four emails** are rows in the `campaigns` table (`is_template = true`), named `Buyer Research Survey Credit (A1)`, `Buyer Research Survey NoCredit (A2)`, `Buyer Research Call Credit (B1)`, `Buyer Research Call NoCredit (B2)`. They were updated in place, so the layout, gold button and wordmark are unchanged and only the text moved. Bodies went from two paragraphs to three (A1), two (A2), four (B1) and three (B2). Further edits go through `/admin/ab-test-august-10`, which has a live preview and writes straight to these rows.
 2. **The two landing pages** are code:
    - `apps/web/src/app/(website-pages)/buyer-survey/page.tsx` and its `SurveyForm.tsx`
    - `apps/web/src/app/(website-pages)/founder-call/page.tsx` and its `CallRequestForm.tsx`
 
-The nine survey questions and their answer options are unchanged by this rewrite, they live in `SURVEY_QUESTIONS` in `apps/web/src/lib/buyer-research.ts`.
+The nine survey questions and their answer options were not touched by this rewrite, they live in `SURVEY_QUESTIONS` in `apps/web/src/lib/buyer-research.ts`.
 
-Before sending, send yourself the usual `[TEST A1/A2/B1/B2]` set and read all four on a phone.
+Verified after applying: no em dashes in any of the four templates, the credit paragraph exists only in A1 and B1, `{{survey_url}}` only in the call arms, and the A1-vs-A2 and B1-vs-B2 HTML diffs are exactly three lines each (preheader, eyebrow, credit paragraph).
+
+**Still to do before the send:** email yourself the `[TEST A1/A2/B1/B2]` set and read all four on a phone. The send itself is manual and still waiting on Lionel.

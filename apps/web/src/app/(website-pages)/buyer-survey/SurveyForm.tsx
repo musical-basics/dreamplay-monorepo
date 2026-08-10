@@ -37,14 +37,14 @@ export function SurveyForm({
                 <h2 className="font-serif text-2xl mb-3">
                     {done
                         ? showReward
-                            ? "Thank you. Your $5 store credit is in your account."
-                            : "Thank you. Your answers are in."
-                        : "You have already completed this survey."}
+                            ? "Thank you. Your $5 credit is in your account."
+                            : "Thank you, this is really helpful."
+                        : "You have already filled this out."}
                 </h2>
                 <p className="font-sans text-sm text-white/60 leading-relaxed max-w-md mx-auto">
                     {done
-                        ? "Every answer directly shapes how we build and talk about the DreamPlay One. Lionel reads each one personally."
-                        : "Submitting again would simply update your answers, so if anything has changed, reply to the email instead."}
+                        ? "I'll be reading these myself. Thanks again for being here this early, it really does mean a lot to me."
+                        : "Sending it again would just update your answers, so if something has changed, reply to my email instead."}
                 </p>
             </div>
         );
@@ -94,7 +94,7 @@ export function SurveyForm({
                     onClick={submit}
                     className="inline-flex items-center justify-center border border-white bg-white px-8 py-4 font-sans text-xs font-bold uppercase tracking-widest text-black transition-all hover:bg-neutral-200 rounded-full disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                    {pending ? "Submitting..." : showReward ? "Submit and Claim My $5 Credit" : "Submit My Answers"}
+                    {pending ? "Sending..." : showReward ? "Send My Answers and Claim $5" : "Send My Answers"}
                 </button>
                 {missing > 0 && (
                     <p className="font-sans text-xs text-white/40 mt-3">

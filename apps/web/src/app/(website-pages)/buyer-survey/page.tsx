@@ -30,7 +30,7 @@ function InvalidLink() {
         <section className="max-w-2xl mx-auto px-6 pt-40 pb-32 text-center">
             <h1 className="font-serif text-3xl md:text-4xl font-semibold mb-6">This link is not valid.</h1>
             <p className="font-sans text-base text-white/60 leading-relaxed">
-                Please use the personal link from your DreamPlay email, or write to{" "}
+                Please use the personal link from my email, or just write to{" "}
                 <a href="mailto:support@dreamplaypianos.com" className="text-white/80 underline">support@dreamplaypianos.com</a>.
             </p>
         </section>
@@ -61,25 +61,25 @@ export default async function BuyerSurveyPage({
             content = (
                 <div className="max-w-2xl mx-auto px-6 pt-36 pb-28">
                     <p className="font-sans text-[10px] uppercase tracking-[0.3em] text-blue-400 font-bold mb-4">
-                        DreamPlay Buyer Survey &nbsp;&middot;&nbsp; 2 minutes
+                        A quick question &nbsp;&middot;&nbsp; 2 minutes
                         {withCredit && <> &nbsp;&middot;&nbsp; ${SURVEY_REWARD_USD} store credit</>}
                     </p>
                     <h1 className="font-serif text-3xl md:text-5xl font-semibold tracking-tight mb-6">
-                        Help us build this right.
+                        I&rsquo;d love to hear from you.
                     </h1>
                     <p className="font-sans text-base text-white/60 leading-relaxed mb-3">
-                        You are one of the first people in the world to order a DreamPlay One, and that makes your
-                        perspective priceless. These few questions tell us who this instrument is really for and what
-                        matters most to you.
+                        You ordered a DreamPlay One long before most people have even had a chance to see one in
+                        person. I&rsquo;d really like to understand what made you decide to take a chance on us.
                     </p>
                     {withCredit ? (
                         <p className="font-sans text-base text-white/60 leading-relaxed mb-12">
-                            As a thank you, <strong className="text-white">${SURVEY_REWARD_USD} of DreamPlay store
-                            credit</strong> is added to your account the moment you submit.
+                            Nine questions, a couple of minutes. As a thank you for doing it,{" "}
+                            <strong className="text-white">${SURVEY_REWARD_USD} of DreamPlay store credit</strong> goes
+                            into your account as soon as you submit.
                         </p>
                     ) : (
                         <p className="font-sans text-base text-white/60 leading-relaxed mb-12">
-                            It takes about two minutes, and every answer is read personally.
+                            Nine questions, a couple of minutes. I&rsquo;ll personally be reading the responses.
                         </p>
                     )}
                     <SurveyForm

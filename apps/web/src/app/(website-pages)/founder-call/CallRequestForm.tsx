@@ -4,8 +4,8 @@ import { useState, useTransition } from "react";
 import { requestFounderCall } from "@/actions/buyer-research-actions";
 
 const METHODS = [
-    { value: "zoom", label: "Zoom", hint: "We email you a link" },
-    { value: "phone", label: "Phone call", hint: "Lionel calls you" },
+    { value: "zoom", label: "Zoom", hint: "I'll email a link" },
+    { value: "phone", label: "Phone call", hint: "I'll call you" },
     { value: "whatsapp", label: "WhatsApp", hint: "Voice call" },
 ];
 
@@ -67,12 +67,12 @@ export function CallRequestForm({
         return (
             <div className="border border-emerald-400/30 bg-emerald-400/[0.06] rounded-xl p-8 text-center">
                 <h2 className="font-serif text-2xl mb-3">
-                    {done ? "You are on Lionel's call list." : "Your call request is already in."}
+                    {done ? "Great, I'll be in touch." : "You're already on my list."}
                 </h2>
                 <p className="font-sans text-sm text-white/60 leading-relaxed max-w-md mx-auto">
-                    Lionel will email you within a few days to lock in a time on one of your preferred days.
-                    {showReward && " After the call, $10 of store credit is added to your account."}{" "}
-                    Need to change anything? Just reply to the email that brought you here.
+                    I&rsquo;ll email you in the next few days to sort out an actual time on one of the days you picked.
+                    {showReward && " After we talk, $10 of store credit goes into your account."}{" "}
+                    Need to change anything? Just reply to my email.
                 </p>
             </div>
         );
@@ -82,7 +82,7 @@ export function CallRequestForm({
         <div className="space-y-10">
             {/* HOW */}
             <div>
-                <h2 className="font-sans text-xs uppercase tracking-[0.25em] text-blue-400 font-bold mb-4">How should we call you?</h2>
+                <h2 className="font-sans text-xs uppercase tracking-[0.25em] text-blue-400 font-bold mb-4">How should I reach you?</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {METHODS.map((m) => (
                         <button
@@ -116,7 +116,7 @@ export function CallRequestForm({
 
             {/* WHICH DAYS */}
             <div>
-                <h2 className="font-sans text-xs uppercase tracking-[0.25em] text-blue-400 font-bold mb-4">Which days usually work?</h2>
+                <h2 className="font-sans text-xs uppercase tracking-[0.25em] text-blue-400 font-bold mb-4">Which days generally work?</h2>
                 <div className="flex flex-wrap gap-2">
                     {dayOptions.map((d) => (
                         <button
@@ -167,7 +167,7 @@ export function CallRequestForm({
 
             {/* NOTES */}
             <div>
-                <h2 className="font-sans text-xs uppercase tracking-[0.25em] text-blue-400 font-bold mb-4">Anything Lionel should know beforehand? (optional)</h2>
+                <h2 className="font-sans text-xs uppercase tracking-[0.25em] text-blue-400 font-bold mb-4">Anything I should know beforehand? (optional)</h2>
                 <textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
@@ -184,7 +184,7 @@ export function CallRequestForm({
                     onClick={submit}
                     className="inline-flex items-center justify-center border border-white bg-white px-8 py-4 font-sans text-xs font-bold uppercase tracking-widest text-black transition-all hover:bg-neutral-200 rounded-full disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                    {pending ? "Sending..." : "Yes, I Can Call"}
+                    {pending ? "Sending..." : "Yes, Let's Talk"}
                 </button>
                 {error && <p className="font-sans text-sm text-red-400 mt-4">{error}</p>}
             </div>

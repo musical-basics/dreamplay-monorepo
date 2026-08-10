@@ -35,7 +35,7 @@ function InvalidLink() {
         <section className="max-w-2xl mx-auto px-6 pt-40 pb-32 text-center">
             <h1 className="font-serif text-3xl md:text-4xl font-semibold mb-6">This link is not valid.</h1>
             <p className="font-sans text-base text-white/60 leading-relaxed">
-                Please use the personal link from your DreamPlay email, or write to{" "}
+                Please use the personal link from my email, or just write to{" "}
                 <a href="mailto:support@dreamplaypianos.com" className="text-white/80 underline">support@dreamplaypianos.com</a>.
             </p>
         </section>
@@ -70,26 +70,25 @@ export default async function FounderCallPage({
             content = (
                 <div className="max-w-2xl mx-auto px-6 pt-36 pb-28">
                     <p className="font-sans text-[10px] uppercase tracking-[0.3em] text-blue-400 font-bold mb-4">
-                        15 minutes with the founder
+                        A quick call
                         {withCredit && <> &nbsp;&middot;&nbsp; ${CALL_REWARD_USD} store credit</>}
                     </p>
                     <h1 className="font-serif text-3xl md:text-5xl font-semibold tracking-tight mb-6">
-                        Talk to Lionel about your DreamPlay One.
+                        Glad you&rsquo;re up for it.
                     </h1>
                     <p className="font-sans text-base text-white/60 leading-relaxed mb-3">
-                        You ordered an instrument that does not exist anywhere else, and Lionel wants to hear the story
-                        behind that decision directly from you: what you play, what made you order, and what you are
-                        hoping for. Fifteen minutes, no preparation needed, no sales pitch.
+                        Nothing formal, about 15 minutes. I mostly want to hear about you, what you play, how you came
+                        across DreamPlay, and what made you decide to order one.
                     </p>
                     {withCredit ? (
                         <p className="font-sans text-base text-white/60 leading-relaxed mb-12">
-                            As a thank you for your time, <strong className="text-white">${CALL_REWARD_USD} of
-                            DreamPlay store credit</strong> is added to your account after the call. Two taps below and
-                            you are booked.
+                            Just let me know how to reach you and roughly when you&rsquo;re free. As a thank you for
+                            taking the time, <strong className="text-white">${CALL_REWARD_USD} of DreamPlay store
+                            credit</strong> goes into your account after we talk.
                         </p>
                     ) : (
                         <p className="font-sans text-base text-white/60 leading-relaxed mb-12">
-                            Two taps below and you are booked.
+                            Just let me know how to reach you and roughly when you&rsquo;re free.
                         </p>
                     )}
                     <CallRequestForm
@@ -100,11 +99,11 @@ export default async function FounderCallPage({
                         showReward={withCredit}
                     />
                     <p className="font-sans text-sm text-white/50 leading-relaxed mt-12 border-t border-white/10 pt-8">
-                        Don&apos;t feel like calling?{" "}
+                        Would you rather not do a call? That&rsquo;s completely fine. You can{" "}
                         <a href={buildSurveyFallbackPath(buyerId)} className="text-blue-400 underline hover:text-blue-300">
-                            Fill out this survey
+                            fill out the short survey
                         </a>{" "}
-                        instead. We would love to hear from you!
+                        instead.
                     </p>
                 </div>
             );
