@@ -11,26 +11,41 @@ const METHODS = [
 
 export function CallRequestForm({
     token,
-    timeOptions,
+    dayOptions,
+    dayPartOptions,
     alreadyRequested,
     showReward,
 }: {
     token: string;
-    timeOptions: readonly string[];
+    dayOptions: readonly string[];
+    dayPartOptions: readonly string[];
     alreadyRequested: boolean;
     showReward: boolean;
 }) {
     const [method, setMethod] = useState("zoom");
     const [contact, setContact] = useState("");
-    const [times, setTimes] = useState<string[]>([]);
-    const [timezone, setTimezone] = useState("");
+    const [days, setDays] = useState<string[]>([]);
+    const [parts, setParts] = useState<string[]>([]);
+    // Auto-detected from the browser; editable in case it guesses wrong.
+    const [timezone, setTimezone] = useState(() => {
+        try {
+            return Intl.DateTimeFormat().resolvedOptions().timeZone ?? "";
+        } catch {
+            return "";
+        }
+    });
     const [notes, setNotes] = useState("");
     const [done, setDone] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [pending, startTransition] = useTransition();
 
     const needsContact = method !== "zoom";
-    const ready = times.length > 0 && (!needsContact || contact.trim().length > 0);
+    const ready = days.length > 0 && parts.length > 0 && (!needsContact || contact.trim().length > 0);
+
+    const toggle = (list: string[], set: (v: string[]) => void, value: string) => {
+        set(list.includes(value) ? list.filter((x) => x !== value) : [...list, value]);
+        setDone(false);
+    };
 
     function submit() {
         setError(null);
@@ -38,7 +53,8 @@ export function CallRequestForm({
             const result = await requestFounderCall(token, {
                 contactMethod: method,
                 contactValue: contact,
-                preferredTimes: times,
+                preferredDays: days,
+                dayParts: parts,
                 timezone,
                 notes,
             });
@@ -54,7 +70,7 @@ export function CallRequestForm({
                     {done ? "You are on Lionel's call list." : "Your call request is already in."}
                 </h2>
                 <p className="font-sans text-sm text-white/60 leading-relaxed max-w-md mx-auto">
-                    Lionel will email you within a few days to lock in a time that fits your preferences.
+                    Lionel will email you within a few days to lock in a time on one of your preferred days.
                     {showReward && " After the call, $10 of store credit is added to your account."}{" "}
                     Need to change anything? Just reply to the email that brought you here.
                 </p>
@@ -72,7 +88,10 @@ export function CallRequestForm({
                         <button
                             key={m.value}
                             type="button"
-                            onClick={() => setMethod(m.value)}
+                            onClick={() => {
+                                setMethod(m.value);
+                                setDone(false);
+                            }}
                             className={`border px-5 py-4 text-left rounded-lg transition-all ${
                                 method === m.value
                                     ? "border-blue-400 bg-blue-500/10 text-white"
@@ -95,34 +114,55 @@ export function CallRequestForm({
                 )}
             </div>
 
-            {/* WHEN */}
+            {/* WHICH DAYS */}
             <div>
-                <h2 className="font-sans text-xs uppercase tracking-[0.25em] text-blue-400 font-bold mb-4">When do calls usually work for you?</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {timeOptions.map((opt) => (
+                <h2 className="font-sans text-xs uppercase tracking-[0.25em] text-blue-400 font-bold mb-4">Which days usually work?</h2>
+                <div className="flex flex-wrap gap-2">
+                    {dayOptions.map((d) => (
                         <button
-                            key={opt}
+                            key={d}
                             type="button"
-                            onClick={() =>
-                                setTimes((prev) => (prev.includes(opt) ? prev.filter((x) => x !== opt) : [...prev, opt]))
-                            }
-                            className={`border px-4 py-3 text-left font-sans text-sm rounded-lg transition-all ${
-                                times.includes(opt)
+                            onClick={() => toggle(days, setDays, d)}
+                            className={`border px-4 py-2.5 font-sans text-sm rounded-full transition-all ${
+                                days.includes(d)
                                     ? "border-blue-400 bg-blue-500/10 text-white"
                                     : "border-white/15 bg-white/[0.03] text-white/70 hover:border-white/40"
                             }`}
                         >
-                            {opt}
+                            {d}
                         </button>
                     ))}
                 </div>
-                <input
-                    type="text"
-                    value={timezone}
-                    onChange={(e) => setTimezone(e.target.value)}
-                    placeholder="Your city or timezone (e.g. Chicago, London, Tokyo)"
-                    className="mt-3 w-full border border-white/15 bg-white/[0.03] rounded-lg p-4 font-sans text-sm text-white placeholder-white/30 focus:border-blue-400 focus:outline-none"
-                />
+            </div>
+
+            {/* PART OF DAY */}
+            <div>
+                <h2 className="font-sans text-xs uppercase tracking-[0.25em] text-blue-400 font-bold mb-4">What part of the day?</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {dayPartOptions.map((p) => (
+                        <button
+                            key={p}
+                            type="button"
+                            onClick={() => toggle(parts, setParts, p)}
+                            className={`border px-5 py-3.5 font-sans text-sm rounded-lg transition-all ${
+                                parts.includes(p)
+                                    ? "border-blue-400 bg-blue-500/10 text-white"
+                                    : "border-white/15 bg-white/[0.03] text-white/70 hover:border-white/40"
+                            }`}
+                        >
+                            {p}
+                        </button>
+                    ))}
+                </div>
+                <p className="font-sans text-xs text-white/40 mt-3">
+                    Your timezone, detected automatically:{" "}
+                    <input
+                        type="text"
+                        value={timezone}
+                        onChange={(e) => setTimezone(e.target.value)}
+                        className="inline-block border border-white/15 bg-white/[0.03] rounded px-2 py-1 text-xs text-white/80 w-56 focus:border-blue-400 focus:outline-none"
+                    />
+                </p>
             </div>
 
             {/* NOTES */}
@@ -144,7 +184,7 @@ export function CallRequestForm({
                     onClick={submit}
                     className="inline-flex items-center justify-center border border-white bg-white px-8 py-4 font-sans text-xs font-bold uppercase tracking-widest text-black transition-all hover:bg-neutral-200 rounded-full disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                    {pending ? "Sending..." : "Request My 15-Minute Call"}
+                    {pending ? "Sending..." : "Yes, I Can Call"}
                 </button>
                 {error && <p className="font-sans text-sm text-red-400 mt-4">{error}</p>}
             </div>

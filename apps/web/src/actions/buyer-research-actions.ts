@@ -2,14 +2,20 @@
 
 import { getAdminDb, getServerDb } from "@/lib/db";
 import {
+    ARMS,
+    ARM_OVERRIDES_SETTING,
+    AB_TEMPLATE_NAMES,
+    CALL_DAY_OPTIONS,
     CALL_REWARD_USD,
-    CALL_TIME_OPTIONS,
+    DAY_PART_OPTIONS,
     SURVEY_QUESTIONS,
     SURVEY_REWARD_USD,
     armHasIncentive,
     armMethod,
+    loadArmOverrides,
     parseResearchToken,
-    researchArm,
+    resolveArm,
+    type ResearchArm,
 } from "@/lib/buyer-research";
 import type { BuyerCallContactMethod, BuyerCallStatus } from "@dreamplay/db";
 
@@ -18,6 +24,18 @@ export interface ResearchActionResult {
     error?: string;
     /** Store credit granted by this action (0 for no-incentive arms). */
     creditGranted?: number;
+}
+
+/** Admin gate for server actions (they bypass the /admin layout). */
+async function requireAdmin(): Promise<string | null> {
+    const server = await getServerDb();
+    const { data: userData } = await server.auth.getUser();
+    const email = userData.user?.email?.toLowerCase();
+    if (!email) return null;
+    const db = getAdminDb();
+    const { data: setting } = await db.from("settings").select("value").eq("key", "admin_emails").maybeSingle();
+    const admins = Array.isArray(setting?.value) ? (setting.value as string[]) : [];
+    return admins.some((a) => typeof a === "string" && a.toLowerCase() === email) ? email : null;
 }
 
 /**
@@ -38,7 +56,6 @@ async function grantCredit(
         reason,
         source,
     });
-    // 23505 = unique violation: credit already granted earlier.
     return !error;
 }
 
@@ -73,36 +90,39 @@ export async function submitBuyerSurvey(
     if (error) return { ok: false, error: "Something went wrong saving your answers. Please try again." };
 
     let creditGranted = 0;
-    if (armHasIncentive(researchArm(buyerId))) {
+    const overrides = await loadArmOverrides(db);
+    if (armHasIncentive(resolveArm(buyerId, overrides))) {
         const granted = await grantCredit(
             buyerId,
             SURVEY_REWARD_USD,
             "survey-reward",
-            "Buyer research survey completed",
+            "Buyer research survey completed (AB Test August 10)",
         );
         if (granted) creditGranted = SURVEY_REWARD_USD;
     }
     return { ok: true, creditGranted };
 }
 
-/** Call request: call arms (B1/B2) only. */
+/** "Yes I can call": days + part of day + auto-detected timezone. Call arms only. */
 export async function requestFounderCall(
     token: string,
     input: {
         contactMethod: string;
         contactValue: string;
-        preferredTimes: string[];
+        preferredDays: string[];
+        dayParts: string[];
         timezone: string;
         notes: string;
     },
 ): Promise<ResearchActionResult> {
     const buyerId = parseResearchToken(token);
     if (!buyerId) return { ok: false, error: "This link is invalid. Please use the link from your email." };
-    if (armMethod(researchArm(buyerId)) !== "call") {
+    const db = getAdminDb();
+    const overrides = await loadArmOverrides(db);
+    if (armMethod(resolveArm(buyerId, overrides)) !== "call") {
         return { ok: false, error: "This link is not valid for the call invite." };
     }
 
-    const db = getAdminDb();
     const { data: buyer } = await db.from("buyers").select("id").eq("id", buyerId).maybeSingle();
     if (!buyer) return { ok: false, error: "We could not find your order. Please contact support." };
 
@@ -113,15 +133,18 @@ export async function requestFounderCall(
     if (input.contactMethod !== "zoom" && !contactValue) {
         return { ok: false, error: "Please add the number we should call." };
     }
-    const times = input.preferredTimes.filter((t) => (CALL_TIME_OPTIONS as readonly string[]).includes(t));
-    if (times.length === 0) return { ok: false, error: "Please pick at least one time that usually works." };
+    const days = input.preferredDays.filter((d) => (CALL_DAY_OPTIONS as readonly string[]).includes(d));
+    if (days.length === 0) return { ok: false, error: "Please pick at least one day that usually works." };
+    const parts = input.dayParts.filter((p) => (DAY_PART_OPTIONS as readonly string[]).includes(p));
+    if (parts.length === 0) return { ok: false, error: "Please pick morning, afternoon or evening." };
 
     const { error } = await db.from("buyer_call_requests").upsert(
         {
             buyer_id: buyerId,
             contact_method: input.contactMethod as BuyerCallContactMethod,
             contact_value: contactValue || null,
-            preferred_times: times,
+            preferred_days: days,
+            day_parts: parts,
             timezone: input.timezone.trim().slice(0, 100) || null,
             notes: input.notes.trim().slice(0, 2000) || null,
             status: "requested",
@@ -134,22 +157,14 @@ export async function requestFounderCall(
 
 /**
  * Admin-only: move a call request through its lifecycle. Marking it
- * completed grants the $10 store credit on credit arms (B1).
+ * completed grants the $10 store credit on credit arms.
  */
 export async function setCallRequestStatus(
     requestId: string,
     status: BuyerCallStatus,
 ): Promise<ResearchActionResult> {
-    const server = await getServerDb();
-    const { data: userData } = await server.auth.getUser();
-    const email = userData.user?.email?.toLowerCase();
-    if (!email) return { ok: false, error: "Not signed in." };
+    if (!(await requireAdmin())) return { ok: false, error: "Not authorized." };
     const db = getAdminDb();
-    const { data: setting } = await db.from("settings").select("value").eq("key", "admin_emails").maybeSingle();
-    const admins = Array.isArray(setting?.value) ? (setting.value as string[]) : [];
-    if (!admins.some((a) => typeof a === "string" && a.toLowerCase() === email)) {
-        return { ok: false, error: "Not authorized." };
-    }
 
     const { data: request, error } = await db
         .from("buyer_call_requests")
@@ -160,14 +175,53 @@ export async function setCallRequestStatus(
     if (error) return { ok: false, error: error.message };
 
     let creditGranted = 0;
-    if (status === "completed" && request && armHasIncentive(researchArm(request.buyer_id))) {
+    const overrides = await loadArmOverrides(db);
+    if (status === "completed" && request && armHasIncentive(resolveArm(request.buyer_id, overrides))) {
         const granted = await grantCredit(
             request.buyer_id,
             CALL_REWARD_USD,
             "call-reward",
-            "Buyer research founder call completed",
+            "Buyer research founder call completed (AB Test August 10)",
         );
         if (granted) creditGranted = CALL_REWARD_USD;
     }
     return { ok: true, creditGranted };
+}
+
+// --- AB Test August 10 admin GUI actions -----------------------------------------
+
+export async function saveAbTestTemplate(
+    arm: ResearchArm,
+    subject: string,
+    html: string,
+): Promise<ResearchActionResult> {
+    if (!(await requireAdmin())) return { ok: false, error: "Not authorized." };
+    if (!(ARMS as readonly string[]).includes(arm)) return { ok: false, error: "Unknown variant." };
+    if (!subject.trim() || !html.trim()) return { ok: false, error: "Subject and body are required." };
+
+    const db = getAdminDb();
+    const { error } = await db
+        .from("campaigns")
+        .update({ subject_line: subject.trim().slice(0, 300), html_content: html })
+        .eq("name", AB_TEMPLATE_NAMES[arm])
+        .eq("is_template", true);
+    if (error) return { ok: false, error: error.message };
+    return { ok: true };
+}
+
+export async function saveArmOverrides(map: Record<string, string>): Promise<ResearchActionResult> {
+    if (!(await requireAdmin())) return { ok: false, error: "Not authorized." };
+    const db = getAdminDb();
+
+    const clean: Record<string, ResearchArm> = {};
+    for (const [buyerId, arm] of Object.entries(map)) {
+        if (!(ARMS as readonly string[]).includes(arm)) return { ok: false, error: `Unknown variant for ${buyerId}.` };
+        clean[buyerId] = arm as ResearchArm;
+    }
+
+    const { error } = await db
+        .from("app_settings")
+        .upsert({ key: ARM_OVERRIDES_SETTING, value: clean }, { onConflict: "key" });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true };
 }

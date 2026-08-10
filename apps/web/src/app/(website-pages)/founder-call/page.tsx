@@ -3,14 +3,16 @@ import { Navbar } from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { getAdminDb } from "@/lib/db";
 import {
+    CALL_DAY_OPTIONS,
     CALL_REWARD_USD,
-    CALL_TIME_OPTIONS,
+    DAY_PART_OPTIONS,
     armHasIncentive,
     armMethod,
     buildResearchPath,
     buildSurveyFallbackPath,
+    loadArmOverrides,
     parseResearchToken,
-    researchArm,
+    resolveArm,
 } from "@/lib/buyer-research";
 import { CallRequestForm } from "./CallRequestForm";
 
@@ -51,10 +53,12 @@ export default async function FounderCallPage({
     let content: React.ReactNode;
     if (!buyerId) {
         content = <InvalidLink />;
-    } else if (armMethod(researchArm(buyerId)) !== "call") {
-        redirect(buildResearchPath(buyerId));
     } else {
         const db = getAdminDb();
+        const overrides = await loadArmOverrides(db);
+        if (armMethod(resolveArm(buyerId, overrides)) !== "call") {
+            redirect(buildResearchPath(buyerId, overrides));
+        }
         const [{ data: buyer }, { data: existing }] = await Promise.all([
             db.from("buyers").select("id").eq("id", buyerId).maybeSingle(),
             db.from("buyer_call_requests").select("id").eq("buyer_id", buyerId).maybeSingle(),
@@ -62,7 +66,7 @@ export default async function FounderCallPage({
         if (!buyer) {
             content = <InvalidLink />;
         } else {
-            const withCredit = armHasIncentive(researchArm(buyerId));
+            const withCredit = armHasIncentive(resolveArm(buyerId, overrides));
             content = (
                 <div className="max-w-2xl mx-auto px-6 pt-36 pb-28">
                     <p className="font-sans text-[10px] uppercase tracking-[0.3em] text-blue-400 font-bold mb-4">
@@ -90,7 +94,8 @@ export default async function FounderCallPage({
                     )}
                     <CallRequestForm
                         token={t!}
-                        timeOptions={CALL_TIME_OPTIONS}
+                        dayOptions={CALL_DAY_OPTIONS}
+                        dayPartOptions={DAY_PART_OPTIONS}
                         alreadyRequested={Boolean(existing)}
                         showReward={withCredit}
                     />

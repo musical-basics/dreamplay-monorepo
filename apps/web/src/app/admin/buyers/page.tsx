@@ -75,7 +75,8 @@ export default async function AdminBuyersPage({
                     <p className="font-sans text-sm text-white/40 mt-1">
                         Order details on file per buyer · preview the current update email before sending ·{" "}
                         <Link href="/admin/buyers/activity" className="text-amber-300 underline hover:text-amber-200">email activity</Link> ·{" "}
-                        <Link href="/admin/buyers/research" className="text-amber-300 underline hover:text-amber-200">research A/B</Link>
+                        <Link href="/admin/ab-test-august-10" className="text-amber-300 underline hover:text-amber-200">AB test editor</Link> ·{" "}
+                        <Link href="/admin/buyers/research" className="text-amber-300 underline hover:text-amber-200">AB results</Link>
                     </p>
                 </div>
                 <nav className="flex gap-2 flex-wrap">

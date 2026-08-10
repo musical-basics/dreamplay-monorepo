@@ -29,6 +29,7 @@
  *   20260810090000_buyer_research.sql — buyer_survey_responses,
  *                                   buyer_call_requests
  *   20260810150000_store_credit.sql — store_credits
+ *   20260810190000_ab_test_august_10.sql — call request days/parts columns
  *
  * Conventions mirroring `supabase gen types typescript`:
  *   - columns with defaults are optional in Insert
@@ -1741,6 +1742,8 @@ export interface Database {
           contact_method: BuyerCallContactMethod;
           contact_value: string | null;
           preferred_times: string[];
+          preferred_days: string[];
+          day_parts: string[];
           timezone: string | null;
           notes: string | null;
           status: BuyerCallStatus;
@@ -1754,6 +1757,8 @@ export interface Database {
           contact_method: BuyerCallContactMethod;
           contact_value?: string | null;
           preferred_times?: string[];
+          preferred_days?: string[];
+          day_parts?: string[];
           timezone?: string | null;
           notes?: string | null;
           status?: BuyerCallStatus;
@@ -1767,6 +1772,8 @@ export interface Database {
           contact_method?: BuyerCallContactMethod;
           contact_value?: string | null;
           preferred_times?: string[];
+          preferred_days?: string[];
+          day_parts?: string[];
           timezone?: string | null;
           notes?: string | null;
           status?: BuyerCallStatus;

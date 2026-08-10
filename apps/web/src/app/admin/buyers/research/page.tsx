@@ -3,9 +3,11 @@ import type { Tables } from "@dreamplay/db";
 import { getAdminDb } from "@/lib/db";
 import { CallStatusButtons } from "./CallStatusButtons";
 import {
+    AB_SEND_KEYS,
     SURVEY_QUESTIONS,
     armMethod,
-    researchArm,
+    loadArmOverrides,
+    resolveArm,
     type ResearchArm,
 } from "@/lib/buyer-research";
 
@@ -30,12 +32,7 @@ const ARM_LABEL: Record<ResearchArm, string> = {
     B1: "B1 · Call + $10",
     B2: "B2 · Call, no offer",
 };
-const SEND_KEYS: Record<ResearchArm, string> = {
-    A1: "buyer-research-2026-a1",
-    A2: "buyer-research-2026-a2",
-    B1: "buyer-research-2026-b1",
-    B2: "buyer-research-2026-b2",
-};
+const SEND_KEYS = AB_SEND_KEYS;
 
 function fmtWhen(iso: string | null): string {
     if (!iso) return "";
@@ -48,6 +45,7 @@ const zeros = (): ArmCounts => ({ A1: 0, A2: 0, B1: 0, B2: 0 });
 export default async function BuyerResearchPage() {
     const db = getAdminDb();
 
+    const overrides = await loadArmOverrides(db);
     const [{ data: buyers }, { data: campaigns }, { data: surveyRows }, { data: callRows }, { data: creditRows }] =
         await Promise.all([
             db.from("buyers").select("*").eq("kind", "buyer").limit(1000),
@@ -59,10 +57,10 @@ export default async function BuyerResearchPage() {
 
     const emailable = (buyers ?? []).filter((b) => !b.email.endsWith("@no-email.invalid"));
     const buyerById = new Map((buyers ?? []).map((b) => [b.id, b]));
-    const armByEmail = new Map(emailable.map((b) => [b.email.toLowerCase(), researchArm(b.id)]));
+    const armByEmail = new Map(emailable.map((b) => [b.email.toLowerCase(), resolveArm(b.id, overrides)]));
 
     const assigned = zeros();
-    for (const b of emailable) assigned[researchArm(b.id)]++;
+    for (const b of emailable) assigned[resolveArm(b.id, overrides)]++;
 
     // Email funnel per arm (zeros until the research emails go out).
     const sent = zeros(), opened = zeros(), clicked = zeros();
@@ -103,11 +101,11 @@ export default async function BuyerResearchPage() {
     const completed = zeros();
     for (const r of surveyRows ?? []) {
         const b = buyerById.get(r.buyer_id);
-        if (b) completed[researchArm(b.id)]++;
+        if (b) completed[resolveArm(b.id, overrides)]++;
     }
     for (const c of callRows ?? []) {
         const b = buyerById.get(c.buyer_id);
-        if (b) completed[researchArm(b.id)]++;
+        if (b) completed[resolveArm(b.id, overrides)]++;
     }
 
     const surveyDone = (surveyRows ?? []).length;
@@ -134,7 +132,7 @@ export default async function BuyerResearchPage() {
                 openAnswers.push({
                     question: q.label,
                     buyer: b?.email ?? r.buyer_id,
-                    arm: b ? researchArm(b.id) : "?",
+                    arm: b ? resolveArm(b.id, overrides) : "?",
                     text: v,
                     at: r.created_at,
                 });
@@ -158,9 +156,10 @@ export default async function BuyerResearchPage() {
                     <Link href="/admin/buyers" className="font-sans text-xs uppercase tracking-widest text-white/50 hover:text-white transition-colors">
                         &larr; All buyers
                     </Link>
-                    <h1 className="font-serif text-3xl tracking-tight mt-2">Buyer research 2x2</h1>
+                    <h1 className="font-serif text-3xl tracking-tight mt-2">AB Test August 10 · results</h1>
                     <p className="font-sans text-sm text-white/40 mt-1">
-                        Method (survey vs founder call) x incentive (store credit vs none) · deterministic 16/16/16/16 split ·
+                        Method (survey vs founder call) x incentive (store credit vs none) · groups managed on the{" "}
+                        <Link href="/admin/ab-test-august-10" className="text-amber-300 underline hover:text-amber-200">AB test editor</Link> ·
                         call arms get the survey as fallback
                     </p>
                 </div>
@@ -263,7 +262,7 @@ export default async function BuyerResearchPage() {
                     <table className="w-full font-sans text-sm">
                         <thead>
                             <tr className="border-b border-white/10 bg-white/[0.03] text-left">
-                                {["Buyer", "Arm", "Contact", "Preferred times", "Timezone", "Notes", "Status", "Actions"].map((h) => (
+                                {["Buyer", "Arm", "Contact", "Days", "Part of day", "Timezone", "Notes", "Status", "Actions"].map((h) => (
                                     <th key={h} className="px-3 py-2.5 font-sans text-[11px] uppercase tracking-widest text-white/40 whitespace-nowrap">{h}</th>
                                 ))}
                             </tr>
@@ -274,12 +273,13 @@ export default async function BuyerResearchPage() {
                                 return (
                                     <tr key={c.id} className="border-b border-white/5">
                                         <td className="px-3 py-2.5 text-white/90">{b?.email ?? c.buyer_id}</td>
-                                        <td className="px-3 py-2.5 text-white/70">{b ? researchArm(b.id) : "?"}</td>
+                                        <td className="px-3 py-2.5 text-white/70">{b ? resolveArm(b.id, overrides) : "?"}</td>
                                         <td className="px-3 py-2.5 text-white/70 whitespace-nowrap">
                                             {c.contact_method}
                                             {c.contact_value && <span className="text-white/50"> · {c.contact_value}</span>}
                                         </td>
-                                        <td className="px-3 py-2.5 text-white/70">{c.preferred_times.join(", ")}</td>
+                                        <td className="px-3 py-2.5 text-white/70">{(c.preferred_days.length ? c.preferred_days : c.preferred_times).map((d) => d.slice(0, 3)).join(", ")}</td>
+                                        <td className="px-3 py-2.5 text-white/70">{c.day_parts.join(", ")}</td>
                                         <td className="px-3 py-2.5 text-white/70">{c.timezone ?? ""}</td>
                                         <td className="px-3 py-2.5 text-white/50 max-w-[200px] truncate" title={c.notes ?? ""}>{c.notes ?? ""}</td>
                                         <td className="px-3 py-2.5">

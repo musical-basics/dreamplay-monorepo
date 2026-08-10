@@ -5,8 +5,9 @@ import {
     SURVEY_QUESTIONS,
     SURVEY_REWARD_USD,
     armHasIncentive,
+    loadArmOverrides,
     parseResearchToken,
-    researchArm,
+    resolveArm,
 } from "@/lib/buyer-research";
 import { SurveyForm } from "./SurveyForm";
 
@@ -56,7 +57,7 @@ export default async function BuyerSurveyPage({
         if (!buyer) {
             content = <InvalidLink />;
         } else {
-            const withCredit = armHasIncentive(researchArm(buyerId));
+            const withCredit = armHasIncentive(resolveArm(buyerId, await loadArmOverrides(db)));
             content = (
                 <div className="max-w-2xl mx-auto px-6 pt-36 pb-28">
                     <p className="font-sans text-[10px] uppercase tracking-[0.3em] text-blue-400 font-bold mb-4">

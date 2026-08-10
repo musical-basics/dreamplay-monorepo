@@ -1,5 +1,5 @@
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
-import type { Tables } from "@dreamplay/db";
+import type { AdminClient, Tables } from "@dreamplay/db";
 
 /**
  * Buyer research 2x2 test (2026-08): why did people buy the DreamPlay One?
@@ -23,10 +23,26 @@ export type Buyer = Tables<"buyers">;
 export type ResearchArm = "A1" | "A2" | "B1" | "B2";
 export type ResearchMethod = "survey" | "call";
 
+/** This whole experiment is named "AB Test August 10" (Lionel, 2026-08-10). */
+export const AB_TEST_KEY = "ab-test-august-10";
+export const ARM_OVERRIDES_SETTING = `${AB_TEST_KEY}:arm-overrides`;
+export const AB_SEND_KEYS: Record<ResearchArm, string> = {
+    A1: `${AB_TEST_KEY}-a1`,
+    A2: `${AB_TEST_KEY}-a2`,
+    B1: `${AB_TEST_KEY}-b1`,
+    B2: `${AB_TEST_KEY}-b2`,
+};
+export const AB_TEMPLATE_NAMES: Record<ResearchArm, string> = {
+    A1: "Buyer Research Survey Credit (A1)",
+    A2: "Buyer Research Survey NoCredit (A2)",
+    B1: "Buyer Research Call Credit (B1)",
+    B2: "Buyer Research Call NoCredit (B2)",
+};
+
 export const SURVEY_REWARD_USD = 5;
 export const CALL_REWARD_USD = 10;
 
-const ARMS: readonly ResearchArm[] = ["A1", "A2", "B1", "B2"];
+export const ARMS: readonly ResearchArm[] = ["A1", "A2", "B1", "B2"];
 
 /**
  * Deterministic assignment: sha256 over a fixed salt + buyer id, first byte
@@ -39,6 +55,28 @@ const ARMS: readonly ResearchArm[] = ["A1", "A2", "B1", "B2"];
 export function researchArm(buyerId: string): ResearchArm {
     const h = createHash("sha256").update(`buyer-research-4arm-v55:${buyerId}`).digest();
     return ARMS[h[0]! % 4]!;
+}
+
+// --- manual overrides (drag-and-drop on /admin/ab-test-august-10) ----------------
+
+export type ArmOverrides = Record<string, ResearchArm>;
+
+/** Lionel's manual group assignments, stored in app_settings. */
+export async function loadArmOverrides(db: AdminClient): Promise<ArmOverrides> {
+    const { data } = await db.from("app_settings").select("value").eq("key", ARM_OVERRIDES_SETTING).maybeSingle();
+    const raw = (data?.value ?? {}) as Record<string, unknown>;
+    const overrides: ArmOverrides = {};
+    for (const [buyerId, arm] of Object.entries(raw)) {
+        if (typeof arm === "string" && (ARMS as readonly string[]).includes(arm)) {
+            overrides[buyerId] = arm as ResearchArm;
+        }
+    }
+    return overrides;
+}
+
+/** The buyer's EFFECTIVE arm: manual override first, deterministic hash otherwise. */
+export function resolveArm(buyerId: string, overrides: ArmOverrides): ResearchArm {
+    return overrides[buyerId] ?? researchArm(buyerId);
 }
 
 export function armMethod(arm: ResearchArm): ResearchMethod {
@@ -65,9 +103,9 @@ export function researchToken(buyerId: string): string {
     return createHmac("sha256", getSecret()).update(`buyer-research-link:${buyerId}`).digest("hex").slice(0, 32);
 }
 
-/** The buyer's primary research page (their arm's method). */
-export function buildResearchPath(buyerId: string): string {
-    return `${researchPagePath(armMethod(researchArm(buyerId)))}?t=${encodeURIComponent(`${buyerId}.${researchToken(buyerId)}`)}`;
+/** The buyer's primary research page (their EFFECTIVE arm's method). */
+export function buildResearchPath(buyerId: string, overrides: ArmOverrides = {}): string {
+    return `${researchPagePath(armMethod(resolveArm(buyerId, overrides)))}?t=${encodeURIComponent(`${buyerId}.${researchToken(buyerId)}`)}`;
 }
 
 /** The survey page for ANY buyer (used as the call arms' fallback). */
@@ -178,9 +216,14 @@ export const SURVEY_QUESTIONS: SurveyQuestion[] = [
     },
 ];
 
-export const CALL_TIME_OPTIONS = [
-    "Weekday mornings",
-    "Weekday afternoons",
-    "Weekday evenings",
-    "Weekends",
+export const CALL_DAY_OPTIONS = [
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday",
 ] as const;
+
+export const DAY_PART_OPTIONS = ["Morning", "Afternoon", "Evening"] as const;
