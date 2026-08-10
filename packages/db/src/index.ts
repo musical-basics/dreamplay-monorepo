@@ -12,6 +12,8 @@ export type {
   TablesUpdate,
   BuyerSource,
   BuyerKind,
+  BuyerCallContactMethod,
+  BuyerCallStatus,
   ReservationDecision,
   SubscriberStatus,
   CampaignStatus,

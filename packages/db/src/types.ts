@@ -26,6 +26,8 @@
  *   20260806150000_buyer_preferences.sql — buyer_preference_changes,
  *                                   buyers.pro_upgrade_requested
  *   20260806190000_buyers_unit_count.sql — buyers.unit_count
+ *   20260810090000_buyer_research.sql — buyer_survey_responses,
+ *                                   buyer_call_requests
  *
  * Conventions mirroring `supabase gen types typescript`:
  *   - columns with defaults are optional in Insert
@@ -64,6 +66,8 @@ export type PostStatus = "draft" | "published";
 export type MediaAssetType = "image" | "video" | "document";
 export type MediaAssetRole = "master" | "derivative";
 export type BuyerUpdateEmailStatus = "draft" | "scheduled" | "sent";
+export type BuyerCallContactMethod = "zoom" | "phone" | "whatsapp";
+export type BuyerCallStatus = "requested" | "scheduled" | "completed" | "cancelled";
 
 // --- Database ------------------------------------------------------------------
 
@@ -1697,6 +1701,75 @@ export interface Database {
           website_url?: string | null;
           video_url?: string | null;
           summary?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      buyer_survey_responses: {
+        Row: {
+          id: string;
+          buyer_id: string;
+          answers: Json;
+          reward_usd: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          buyer_id: string;
+          answers?: Json;
+          reward_usd?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          buyer_id?: string;
+          answers?: Json;
+          reward_usd?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      buyer_call_requests: {
+        Row: {
+          id: string;
+          buyer_id: string;
+          contact_method: BuyerCallContactMethod;
+          contact_value: string | null;
+          preferred_times: string[];
+          timezone: string | null;
+          notes: string | null;
+          status: BuyerCallStatus;
+          reward_usd: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          buyer_id: string;
+          contact_method: BuyerCallContactMethod;
+          contact_value?: string | null;
+          preferred_times?: string[];
+          timezone?: string | null;
+          notes?: string | null;
+          status?: BuyerCallStatus;
+          reward_usd?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          buyer_id?: string;
+          contact_method?: BuyerCallContactMethod;
+          contact_value?: string | null;
+          preferred_times?: string[];
+          timezone?: string | null;
+          notes?: string | null;
+          status?: BuyerCallStatus;
+          reward_usd?: number;
           created_at?: string;
           updated_at?: string;
         };
