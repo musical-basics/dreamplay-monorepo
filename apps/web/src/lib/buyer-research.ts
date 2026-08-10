@@ -2,38 +2,55 @@ import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import type { Tables } from "@dreamplay/db";
 
 /**
- * Buyer research A/B test (2026-08): why did people buy the DreamPlay One?
+ * Buyer research 2x2 test (2026-08): why did people buy the DreamPlay One?
  *
- * Variant A "survey": short questionnaire on /buyer-survey, $5 off on
- * completion. Variant B "call": 15-minute call with Lionel requested on
- * /founder-call, $10 off after the call happens.
+ * Method dimension:    survey (/buyer-survey) vs founder call (/founder-call)
+ * Incentive dimension: store credit vs no incentive
  *
- * Goals: (1) which collection method performs better, (2) demographics and
- * the deepest motivations behind purchases, to sharpen DreamPlay marketing.
+ *   A1 survey + $5 store credit     A2 survey, no incentive
+ *   B1 call   + $10 store credit    B2 call,   no incentive
+ *
+ * Call-arm buyers who would rather not talk are offered the survey as a
+ * fallback (their email links to it), so /buyer-survey accepts every arm;
+ * /founder-call stays exclusive to the call arms. Store credit is granted
+ * on the credit arms only, into the store_credits ledger.
+ *
+ * Goals: (1) which collection method and incentive level converts best,
+ * (2) demographics and the deepest motivations behind purchases.
  */
 
 export type Buyer = Tables<"buyers">;
-export type ResearchVariant = "survey" | "call";
+export type ResearchArm = "A1" | "A2" | "B1" | "B2";
+export type ResearchMethod = "survey" | "call";
 
 export const SURVEY_REWARD_USD = 5;
 export const CALL_REWARD_USD = 10;
 
+const ARMS: readonly ResearchArm[] = ["A1", "A2", "B1", "B2"];
+
 /**
  * Deterministic assignment: sha256 over a fixed salt + buyer id, first byte
- * parity. Stable across processes and time; no assignment storage.
+ * mod 4. Stable across processes and time; no assignment storage.
  *
- * The salt is "v8" because it was chosen (2026-08-10, BEFORE any research
- * email went out) as the first salt that splits the fixed 64-buyer cohort
- * exactly 32/32; the plain salt happened to split 44/20. Do not change it
- * once the research emails have been sent.
+ * Salt "4arm-v55" was chosen (2026-08-10, BEFORE any research email went
+ * out) as the first salt splitting the fixed 64-buyer cohort exactly
+ * 16/16/16/16. Do not change it once the research emails have been sent.
  */
-export function researchVariant(buyerId: string): ResearchVariant {
-    const h = createHash("sha256").update(`buyer-research-v8:${buyerId}`).digest();
-    return h[0]! % 2 === 0 ? "survey" : "call";
+export function researchArm(buyerId: string): ResearchArm {
+    const h = createHash("sha256").update(`buyer-research-4arm-v55:${buyerId}`).digest();
+    return ARMS[h[0]! % 4]!;
 }
 
-export function researchPagePath(variant: ResearchVariant): string {
-    return variant === "survey" ? "/buyer-survey" : "/founder-call";
+export function armMethod(arm: ResearchArm): ResearchMethod {
+    return arm.startsWith("A") ? "survey" : "call";
+}
+
+export function armHasIncentive(arm: ResearchArm): boolean {
+    return arm.endsWith("1");
+}
+
+export function researchPagePath(method: ResearchMethod): string {
+    return method === "survey" ? "/buyer-survey" : "/founder-call";
 }
 
 // --- signed per-buyer links (same shape as /order-preferences tokens) -----------
@@ -48,9 +65,14 @@ export function researchToken(buyerId: string): string {
     return createHmac("sha256", getSecret()).update(`buyer-research-link:${buyerId}`).digest("hex").slice(0, 32);
 }
 
+/** The buyer's primary research page (their arm's method). */
 export function buildResearchPath(buyerId: string): string {
-    const variant = researchVariant(buyerId);
-    return `${researchPagePath(variant)}?t=${encodeURIComponent(`${buyerId}.${researchToken(buyerId)}`)}`;
+    return `${researchPagePath(armMethod(researchArm(buyerId)))}?t=${encodeURIComponent(`${buyerId}.${researchToken(buyerId)}`)}`;
+}
+
+/** The survey page for ANY buyer (used as the call arms' fallback). */
+export function buildSurveyFallbackPath(buyerId: string): string {
+    return `/buyer-survey?t=${encodeURIComponent(`${buyerId}.${researchToken(buyerId)}`)}`;
 }
 
 export function parseResearchToken(t: string | null | undefined): string | null {

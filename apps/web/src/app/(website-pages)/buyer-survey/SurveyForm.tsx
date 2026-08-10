@@ -8,10 +8,12 @@ export function SurveyForm({
     token,
     questions,
     alreadySubmitted,
+    showReward,
 }: {
     token: string;
     questions: SurveyQuestion[];
     alreadySubmitted: boolean;
+    showReward: boolean;
 }) {
     const [answers, setAnswers] = useState<Record<string, string>>({});
     const [done, setDone] = useState(false);
@@ -33,12 +35,16 @@ export function SurveyForm({
         return (
             <div className="border border-emerald-400/30 bg-emerald-400/[0.06] rounded-xl p-8 text-center">
                 <h2 className="font-serif text-2xl mb-3">
-                    {done ? "Thank you. Your $5 discount is locked in." : "You have already completed this survey."}
+                    {done
+                        ? showReward
+                            ? "Thank you. Your $5 store credit is in your account."
+                            : "Thank you. Your answers are in."
+                        : "You have already completed this survey."}
                 </h2>
                 <p className="font-sans text-sm text-white/60 leading-relaxed max-w-md mx-auto">
                     {done
-                        ? "Your answers are saved and $5 off will be applied to your order balance before it ships. Every answer directly shapes how we build and talk about the DreamPlay One."
-                        : "Your $5 discount is already locked in. Submitting again would simply update your answers, so if anything has changed, reply to the email instead."}
+                        ? "Every answer directly shapes how we build and talk about the DreamPlay One. Lionel reads each one personally."
+                        : "Submitting again would simply update your answers, so if anything has changed, reply to the email instead."}
                 </p>
             </div>
         );
@@ -88,7 +94,7 @@ export function SurveyForm({
                     onClick={submit}
                     className="inline-flex items-center justify-center border border-white bg-white px-8 py-4 font-sans text-xs font-bold uppercase tracking-widest text-black transition-all hover:bg-neutral-200 rounded-full disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                    {pending ? "Submitting..." : "Submit and Claim My $5 Off"}
+                    {pending ? "Submitting..." : showReward ? "Submit and Claim My $5 Credit" : "Submit My Answers"}
                 </button>
                 {missing > 0 && (
                     <p className="font-sans text-xs text-white/40 mt-3">

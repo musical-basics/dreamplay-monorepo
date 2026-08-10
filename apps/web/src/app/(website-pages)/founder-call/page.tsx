@@ -3,17 +3,22 @@ import { Navbar } from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { getAdminDb } from "@/lib/db";
 import {
+    CALL_REWARD_USD,
     CALL_TIME_OPTIONS,
+    armHasIncentive,
+    armMethod,
     buildResearchPath,
+    buildSurveyFallbackPath,
     parseResearchToken,
-    researchVariant,
+    researchArm,
 } from "@/lib/buyer-research";
 import { CallRequestForm } from "./CallRequestForm";
 
 /**
- * /founder-call?t=<signed token>: research variant B. Invite to a
- * 15-minute call with Lionel; $10 off after the call happens. The CTA is
- * deliberately minimal: pick how and roughly when, one tap each, submit.
+ * /founder-call?t=<signed token>: the founder call invite (arms B1/B2 only;
+ * survey-arm visitors are redirected to their survey). B1 earns $10 store
+ * credit after the call; B2 sees no reward copy. Buyers who would rather
+ * not talk get the survey as a fallback link.
  */
 
 export const dynamic = "force-dynamic";
@@ -46,7 +51,7 @@ export default async function FounderCallPage({
     let content: React.ReactNode;
     if (!buyerId) {
         content = <InvalidLink />;
-    } else if (researchVariant(buyerId) !== "call") {
+    } else if (armMethod(researchArm(buyerId)) !== "call") {
         redirect(buildResearchPath(buyerId));
     } else {
         const db = getAdminDb();
@@ -57,10 +62,12 @@ export default async function FounderCallPage({
         if (!buyer) {
             content = <InvalidLink />;
         } else {
+            const withCredit = armHasIncentive(researchArm(buyerId));
             content = (
                 <div className="max-w-2xl mx-auto px-6 pt-36 pb-28">
                     <p className="font-sans text-[10px] uppercase tracking-[0.3em] text-blue-400 font-bold mb-4">
-                        15 minutes with the founder &nbsp;&middot;&nbsp; $10 off
+                        15 minutes with the founder
+                        {withCredit && <> &nbsp;&middot;&nbsp; ${CALL_REWARD_USD} store credit</>}
                     </p>
                     <h1 className="font-serif text-3xl md:text-5xl font-semibold tracking-tight mb-6">
                         Talk to Lionel about your DreamPlay One.
@@ -70,11 +77,30 @@ export default async function FounderCallPage({
                         behind that decision directly from you: what you play, what made you order, and what you are
                         hoping for. Fifteen minutes, no preparation needed, no sales pitch.
                     </p>
-                    <p className="font-sans text-base text-white/60 leading-relaxed mb-12">
-                        As a thank you for your time, <strong className="text-white">$10 off your order</strong> is
-                        applied after the call. Two taps below and you are booked.
+                    {withCredit ? (
+                        <p className="font-sans text-base text-white/60 leading-relaxed mb-12">
+                            As a thank you for your time, <strong className="text-white">${CALL_REWARD_USD} of
+                            DreamPlay store credit</strong> is added to your account after the call. Two taps below and
+                            you are booked.
+                        </p>
+                    ) : (
+                        <p className="font-sans text-base text-white/60 leading-relaxed mb-12">
+                            Two taps below and you are booked.
+                        </p>
+                    )}
+                    <CallRequestForm
+                        token={t!}
+                        timeOptions={CALL_TIME_OPTIONS}
+                        alreadyRequested={Boolean(existing)}
+                        showReward={withCredit}
+                    />
+                    <p className="font-sans text-sm text-white/50 leading-relaxed mt-12 border-t border-white/10 pt-8">
+                        Don&apos;t feel like calling?{" "}
+                        <a href={buildSurveyFallbackPath(buyerId)} className="text-blue-400 underline hover:text-blue-300">
+                            Fill out this survey
+                        </a>{" "}
+                        instead. We would love to hear from you!
                     </p>
-                    <CallRequestForm token={t!} timeOptions={CALL_TIME_OPTIONS} alreadyRequested={Boolean(existing)} />
                 </div>
             );
         }

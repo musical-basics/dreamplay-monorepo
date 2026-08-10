@@ -3,6 +3,7 @@ import type { BuyerKind, Tables } from "@dreamplay/db";
 import { getAdminDb } from "@/lib/db";
 import { formatPricePaid, formatShipMonth } from "@/lib/buyer-update-email";
 import { buildPreferencesPath, canUpgradeToPro } from "@/lib/buyer-preferences";
+import { getStoreCreditBalances } from "@/lib/store-credit";
 
 /**
  * /admin/buyers — every row in the buyers table with the order details we
@@ -45,6 +46,7 @@ export default async function AdminBuyersPage({
     const kind = (KINDS as readonly string[]).includes(params.kind ?? "") ? (params.kind as BuyerKind | "all") : "buyer";
 
     let buyers: Buyer[] = [];
+    let credits = new Map<string, number>();
     let loadError: string | null = null;
     try {
         const db = getAdminDb();
@@ -55,6 +57,7 @@ export default async function AdminBuyersPage({
             .limit(1000);
         if (error) throw new Error(error.message);
         buyers = data ?? [];
+        credits = await getStoreCreditBalances(db);
     } catch (error) {
         loadError = error instanceof Error ? error.message : "Failed to load buyers.";
     }
@@ -159,7 +162,12 @@ export default async function AdminBuyersPage({
                                         )}
                                     </td>
                                     <td className="px-3 py-2.5 whitespace-nowrap text-white/70">{fmtDate(b.purchase_date)}</td>
-                                    <td className="px-3 py-2.5 whitespace-nowrap text-white/70">{b.price_paid_usd != null ? formatPricePaid(b.price_paid_usd) : ""}</td>
+                                    <td className="px-3 py-2.5 whitespace-nowrap text-white/70">
+                                        {b.price_paid_usd != null ? formatPricePaid(b.price_paid_usd) : ""}
+                                        {(credits.get(b.id) ?? 0) > 0 && (
+                                            <p className="text-xs text-emerald-300">+${credits.get(b.id)} credit</p>
+                                        )}
+                                    </td>
                                     <td className="px-3 py-2.5 text-white/70 max-w-[220px] truncate" title={b.product_line ?? ""}>{b.product_line ?? ""}</td>
                                     <td className={`px-3 py-2.5 whitespace-nowrap ${missing && !b.size_variant ? "text-amber-300" : "text-white/70"}`}>{b.size_variant ?? (missing ? "missing" : "")}</td>
                                     <td className={`px-3 py-2.5 whitespace-nowrap ${missing && !b.finish ? "text-amber-300" : "text-white/70"}`}>{b.finish ?? (missing ? "missing" : "")}</td>

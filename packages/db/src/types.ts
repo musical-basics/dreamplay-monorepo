@@ -28,6 +28,7 @@
  *   20260806190000_buyers_unit_count.sql — buyers.unit_count
  *   20260810090000_buyer_research.sql — buyer_survey_responses,
  *                                   buyer_call_requests
+ *   20260810150000_store_credit.sql — store_credits
  *
  * Conventions mirroring `supabase gen types typescript`:
  *   - columns with defaults are optional in Insert
@@ -1772,6 +1773,33 @@ export interface Database {
           reward_usd?: number;
           created_at?: string;
           updated_at?: string;
+        };
+        Relationships: [];
+      };
+      store_credits: {
+        Row: {
+          id: string;
+          buyer_id: string;
+          amount_usd: number;
+          reason: string;
+          source: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          buyer_id: string;
+          amount_usd: number;
+          reason: string;
+          source?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          buyer_id?: string;
+          amount_usd?: number;
+          reason?: string;
+          source?: string;
+          created_at?: string;
         };
         Relationships: [];
       };

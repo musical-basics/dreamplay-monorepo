@@ -11,6 +11,7 @@ import {
     parsePreferencesToken,
 } from "@/lib/buyer-preferences";
 import { formatPricePaid, formatShipMonth } from "@/lib/buyer-update-email";
+import { getStoreCreditBalance } from "@/lib/store-credit";
 import { PreferencesForm } from "./PreferencesForm";
 
 /**
@@ -64,6 +65,7 @@ export default async function OrderPreferencesPage({
         } else {
             const alreadyPro = boughtPro(buyer);
             const upgradeEligible = canUpgradeToPro(buyer);
+            const credit = await getStoreCreditBalance(db, buyer.id);
             content = (
                 <div className="max-w-2xl mx-auto px-6 pt-36 pb-28">
                     <p className="font-sans text-[10px] uppercase tracking-[0.3em] text-blue-400 font-bold mb-4">
@@ -103,6 +105,11 @@ export default async function OrderPreferencesPage({
                                 </p>
                             </div>
                         </div>
+                        {credit > 0 && (
+                            <p className="font-sans text-sm text-emerald-300 mt-4 pt-4 border-t border-white/10">
+                                Store credit: ${credit.toFixed(credit % 1 ? 2 : 0)} (applied to your balance before your order ships)
+                            </p>
+                        )}
                     </div>
 
                     {buyer.unit_count > 1 ? (

@@ -13,10 +13,12 @@ export function CallRequestForm({
     token,
     timeOptions,
     alreadyRequested,
+    showReward,
 }: {
     token: string;
     timeOptions: readonly string[];
     alreadyRequested: boolean;
+    showReward: boolean;
 }) {
     const [method, setMethod] = useState("zoom");
     const [contact, setContact] = useState("");
@@ -52,9 +54,9 @@ export function CallRequestForm({
                     {done ? "You are on Lionel's call list." : "Your call request is already in."}
                 </h2>
                 <p className="font-sans text-sm text-white/60 leading-relaxed max-w-md mx-auto">
-                    Lionel will email you within a few days to lock in a time that fits your preferences. After the
-                    call, $10 off is applied to your order balance. Need to change anything? Just reply to the email
-                    that brought you here.
+                    Lionel will email you within a few days to lock in a time that fits your preferences.
+                    {showReward && " After the call, $10 of store credit is added to your account."}{" "}
+                    Need to change anything? Just reply to the email that brought you here.
                 </p>
             </div>
         );

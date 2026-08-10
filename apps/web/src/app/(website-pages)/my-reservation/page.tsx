@@ -8,6 +8,7 @@ import { getReservationDecision, isBuyer } from "@/actions/reservation-actions";
 import { getLatestOrderForEmail, sizeLabel } from "@/lib/shopify/admin";
 import { getAdminDb } from "@/lib/db";
 import { buildPreferencesPath } from "@/lib/buyer-preferences";
+import { getStoreCreditBalance } from "@/lib/store-credit";
 
 export const metadata = {
     title: "My Reservation | DreamPlay Pianos",
@@ -43,6 +44,7 @@ export default async function MyReservationPage() {
         .eq("email", user.email)
         .maybeSingle();
     const preferencesPath = buyerRow ? buildPreferencesPath(buyerRow.id) : null;
+    const storeCredit = buyerRow ? await getStoreCreditBalance(getAdminDb(), buyerRow.id) : 0;
 
     return (
         <div className="min-h-screen bg-[#050505] text-white font-sans selection:bg-white/20">
@@ -60,6 +62,11 @@ export default async function MyReservationPage() {
                             Your Reservation
                         </h1>
                         <p className="font-sans text-sm text-white/40">{user.email}</p>
+                        {storeCredit > 0 && (
+                            <p className="font-sans text-sm text-emerald-300 mt-2">
+                                Store credit: ${storeCredit.toFixed(storeCredit % 1 ? 2 : 0)} (applied before your order ships)
+                            </p>
+                        )}
                     </div>
 
                     {/* ── Your Order (live from Shopify) ── */}

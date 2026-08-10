@@ -1,18 +1,20 @@
-import { redirect } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { getAdminDb } from "@/lib/db";
 import {
     SURVEY_QUESTIONS,
-    buildResearchPath,
+    SURVEY_REWARD_USD,
+    armHasIncentive,
     parseResearchToken,
-    researchVariant,
+    researchArm,
 } from "@/lib/buyer-research";
 import { SurveyForm } from "./SurveyForm";
 
 /**
- * /buyer-survey?t=<signed token>: research variant A. A short questionnaire
- * about who the buyer is and why they ordered; $5 off on completion.
+ * /buyer-survey?t=<signed token>: the research survey. Primary page for the
+ * survey arms (A1/A2) and the fallback for call-arm buyers (B1/B2) who
+ * would rather not talk. Credit arms (A1, B1) earn $5 store credit on
+ * completion; no-incentive arms see no reward copy.
  */
 
 export const dynamic = "force-dynamic";
@@ -45,9 +47,6 @@ export default async function BuyerSurveyPage({
     let content: React.ReactNode;
     if (!buyerId) {
         content = <InvalidLink />;
-    } else if (researchVariant(buyerId) !== "survey") {
-        // Wrong page for this buyer's variant: send them to their own.
-        redirect(buildResearchPath(buyerId));
     } else {
         const db = getAdminDb();
         const [{ data: buyer }, { data: existing }] = await Promise.all([
@@ -57,10 +56,12 @@ export default async function BuyerSurveyPage({
         if (!buyer) {
             content = <InvalidLink />;
         } else {
+            const withCredit = armHasIncentive(researchArm(buyerId));
             content = (
                 <div className="max-w-2xl mx-auto px-6 pt-36 pb-28">
                     <p className="font-sans text-[10px] uppercase tracking-[0.3em] text-blue-400 font-bold mb-4">
-                        DreamPlay Buyer Survey &nbsp;&middot;&nbsp; 2 minutes &nbsp;&middot;&nbsp; $5 off
+                        DreamPlay Buyer Survey &nbsp;&middot;&nbsp; 2 minutes
+                        {withCredit && <> &nbsp;&middot;&nbsp; ${SURVEY_REWARD_USD} store credit</>}
                     </p>
                     <h1 className="font-serif text-3xl md:text-5xl font-semibold tracking-tight mb-6">
                         Help us build this right.
@@ -70,11 +71,22 @@ export default async function BuyerSurveyPage({
                         perspective priceless. These few questions tell us who this instrument is really for and what
                         matters most to you.
                     </p>
-                    <p className="font-sans text-base text-white/60 leading-relaxed mb-12">
-                        As a thank you, <strong className="text-white">$5 off your order</strong> is applied
-                        automatically when you submit.
-                    </p>
-                    <SurveyForm token={t!} questions={SURVEY_QUESTIONS} alreadySubmitted={Boolean(existing)} />
+                    {withCredit ? (
+                        <p className="font-sans text-base text-white/60 leading-relaxed mb-12">
+                            As a thank you, <strong className="text-white">${SURVEY_REWARD_USD} of DreamPlay store
+                            credit</strong> is added to your account the moment you submit.
+                        </p>
+                    ) : (
+                        <p className="font-sans text-base text-white/60 leading-relaxed mb-12">
+                            It takes about two minutes, and every answer is read personally.
+                        </p>
+                    )}
+                    <SurveyForm
+                        token={t!}
+                        questions={SURVEY_QUESTIONS}
+                        alreadySubmitted={Boolean(existing)}
+                        showReward={withCredit}
+                    />
                 </div>
             );
         }
