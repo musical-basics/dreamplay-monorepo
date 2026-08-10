@@ -1,8 +1,10 @@
 # AB Test August 10 — Test Design and Full Copy Inventory
 
-> **Purpose of this document:** hand every word of this test to a copy editor (human or AI) for a rewrite. The current wording is functional but reads too direct and too "AI written". Everything below is the live copy as of 2026-08-10, exactly as buyers will see it.
+> **Purpose of this document:** the test design plus every word of copy in it, in one place.
 >
-> **Hard house rule for any rewrite: no em dashes anywhere.** Use commas, colons or periods instead. The existing copy already follows this rule, so keep it that way.
+> **Status (2026-08-10):** the copy below is the **rewritten** version, warmer and less self-explanatory than the first draft. It is not yet pushed to the database or the page components. Applying it is the next step, see section 6.
+>
+> **Hard house rule: no em dashes anywhere.** Use commas, colons or periods instead.
 
 ---
 
@@ -41,7 +43,7 @@ Per arm: open rate, click rate, and completion (survey submitted, or call reques
 - Does store credit lift response enough to justify paying for it?
 - Is there an interaction, for example does credit matter far more for the call ask than for the survey ask?
 
-### Mechanics worth knowing before rewriting copy
+### Mechanics worth knowing before touching copy
 
 - Every buyer gets **one email** with a personal signed link. No login.
 - **Call-arm buyers get a survey escape hatch.** Both call emails and the call landing page offer "fill out the survey instead" for people who do not want to talk. So the survey page has to accept visitors from all four arms.
@@ -49,77 +51,98 @@ Per arm: open rate, click rate, and completion (survey submitted, or call reques
 - **Credit is granted automatically:** $5 the moment an A1 buyer submits the survey; $10 once Lionel marks a B1 call completed. Credit is a real ledger balance shown on their reservation and order pages.
 - Nothing has been sent yet. The emails go out only when Lionel gives the word.
 
-### The copy problem to solve
+### The voice, and why it was rewritten
 
-Across all four arms the current voice has the same tells: it explains its own logic out loud, it flatters in a slightly generic way ("that makes your perspective priceless"), it repeats the same setup line in all four variants, and the structure is very evenly balanced, so every paragraph is roughly the same length and shape. It should sound like one person who builds pianos wrote a short note to 64 people he is grateful for, not like a well-optimized campaign.
+The first draft of this copy had the usual tells: it explained its own logic out loud ("your answers directly shape what we build next"), it flattered in a generic way ("that makes your perspective priceless"), and every paragraph was the same length and shape, which reads as optimized rather than written.
 
-Constraints a rewrite must respect:
+The rewrite fixes that by taking things out. It no longer tells the buyer why their answer is strategically valuable to DreamPlay. Lionel obviously wants the research for positioning and product decisions, but a normal person writing personally would not explain all of that. "I realized I'd really like to understand what made you decide to take a chance on us" does the same job and sounds like a human.
 
-- The A/B contrast has to survive. A1 vs A2 must differ **only** by the credit mention. Same for B1 vs B2. If the rewrite changes the base pitch in one arm, the test is confounded.
+Deliberately kept, and worth protecting in any future edit:
+
+- Slightly inefficient phrases: "or anything to set up", "Nothing formal", "I've been wanting to", "that's completely fine", "once you finally have it in front of you". The small inefficiency is exactly what makes them sound spoken.
+- "Would you be up for a quick call?" instead of "Can I call you?". The second one sounds like an acquisition email, the first sounds like a person asking another person.
+- Uneven paragraph lengths, including the one-line "Would you be up for talking with me for about 15 minutes?" sitting alone.
+
+Constraints any further edit must respect:
+
+- The A/B contrast has to survive. A1 vs A2 must differ **only** by the credit mention. Same for B1 vs B2. If an edit changes the base pitch in one arm, the test is confounded.
 - The two credit arms should present the credit the same way relative to each other, at $5 and $10 respectively.
 - Merge tags must stay intact: `{{first_name}}`, `{{research_url}}`, `{{survey_url}}`.
+- The emails and the landing pages must move together. If only the emails get edited, clicking through drops the buyer into a different voice, which is the exact problem this rewrite set out to solve.
 - No em dashes.
 
 ---
 
 ## 2. Email copy (four variants)
 
-Stored as campaign templates in the database, editable at `/admin/ab-test-august-10`. All four share the same dark, gold-accented layout: a `D R E A M P L A Y` wordmark, a small uppercase eyebrow line, a headline, two body paragraphs, a gold button, a closing paragraph, then the signature.
+Stored as campaign templates in the database, editable at `/admin/ab-test-august-10`. All four share the same dark, gold-accented layout: a `D R E A M P L A Y` wordmark, a small uppercase eyebrow line, a headline, body paragraphs, a gold button, a closing paragraph, then the signature.
 
 Every email signs off:
 
 > Lionel Yu
 > Founder, DreamPlay Pianos
 
+Note the body is now three or four short paragraphs rather than two even blocks. The uneven rhythm is deliberate.
+
 ### A1 — Survey + $5 credit
 
-- **Subject:** Two minutes of your time, $5 store credit
-- **Preheader (hidden preview text):** Nine quick questions about why you ordered, and $5 of DreamPlay store credit as a thank you.
-- **Eyebrow:** Two minutes · $5 store credit
-- **Headline:** Why did you say yes, {{first_name}}?
-- **Body paragraph 1:** You ordered an instrument that did not exist until you and a small group of believers made it real. Before we lock in how the DreamPlay One reaches the rest of the world, I want to understand one thing deeply: why you said yes.
-- **Body paragraph 2:** I put together a short survey: nine questions, about two minutes. Your answers directly shape what we build next and how we talk about it. As a thank you, **$5 of DreamPlay store credit** is added to your account the moment you submit.
-- **Button:** Take the 2-Minute Survey → `{{research_url}}`
-- **Closing:** It is your personal link, no login needed, and it works on your phone. Thank you for being part of this from the start.
+- **Subject:** {{first_name}}, I'd love to hear from you
+- **Preheader (hidden preview text):** I'd love to know a little more about why you decided to order one. I'll add $5 of DreamPlay credit as a thank you.
+- **Eyebrow:** A quick question · $5 store credit
+- **Headline:** {{first_name}}, I'd love to hear from you
+- **Body paragraph 1:** You were one of the first people to order a DreamPlay One, long before most people have even had a chance to see one in person.
+- **Body paragraph 2:** I've been thinking a lot lately about those first orders, and I realized I'd really like to understand what made you decide to take a chance on us. So I put together a short survey. It's nine questions and should only take a couple of minutes.
+- **Body paragraph 3 (credit):** As a thank you for doing it, I'll add **$5 of DreamPlay store credit** to your account as soon as you submit it.
+- **Button:** Share Your Thoughts → `{{research_url}}`
+- **Closing:** There's no login or anything to set up. The link is just for you, and I'll personally be reading the responses.
+- **Sign-off line:** Thanks again for being here this early. It really does mean a lot to me.
 
 ### A2 — Survey, no incentive
 
-Identical to A1 except the credit is gone. This is the control for the incentive dimension.
+Identical to A1 with the credit paragraph removed and the credit dropped from the subject, preheader and eyebrow. Nothing else changes, which is what keeps the incentive comparison clean.
 
-- **Subject:** A quick question about your DreamPlay One
-- **Preheader:** Nine quick questions about why you ordered. Lionel reads every answer personally.
-- **Eyebrow:** Two minutes
-- **Headline:** Why did you say yes, {{first_name}}?
-- **Body paragraph 1:** *(same as A1)* You ordered an instrument that did not exist until you and a small group of believers made it real. Before we lock in how the DreamPlay One reaches the rest of the world, I want to understand one thing deeply: why you said yes.
-- **Body paragraph 2:** I put together a short survey: nine questions, about two minutes. Your answers directly shape what we build next and how we talk about it. Every answer is read personally, and it takes about two minutes.
-- **Button:** Take the 2-Minute Survey → `{{research_url}}`
-- **Closing:** *(same as A1)* It is your personal link, no login needed, and it works on your phone. Thank you for being part of this from the start.
-
-> Note for the editor: A2's paragraph 2 currently says "about two minutes" twice in a row, once in each sentence. Worth fixing.
+- **Subject:** {{first_name}}, I'd love to hear from you
+- **Preheader:** I'd love to know a little more about why you decided to order one.
+- **Eyebrow:** A quick question
+- **Headline:** {{first_name}}, I'd love to hear from you
+- **Body paragraph 1:** *(same as A1)* You were one of the first people to order a DreamPlay One, long before most people have even had a chance to see one in person.
+- **Body paragraph 2:** *(same as A1)* I've been thinking a lot lately about those first orders, and I realized I'd really like to understand what made you decide to take a chance on us. So I put together a short survey. It's nine questions and should only take a couple of minutes.
+- **Body paragraph 3:** *(omitted, this is the credit paragraph)*
+- **Button:** Share Your Thoughts → `{{research_url}}`
+- **Closing:** *(same as A1)* There's no login or anything to set up. The link is just for you, and I'll personally be reading the responses.
+- **Sign-off line:** *(same as A1)* Thanks again for being here this early. It really does mean a lot to me.
 
 ### B1 — Call + $10 credit
 
-- **Subject:** 15 minutes with me, $10 store credit
-- **Preheader:** A 15-minute call with Lionel about your DreamPlay One, and $10 of DreamPlay store credit as a thank you.
-- **Eyebrow:** 15 minutes · $10 store credit
-- **Headline:** {{first_name}}, can I call you?
-- **Body paragraph 1:** You are one of the first people in the world to order a DreamPlay One. I am personally calling a small group of our earliest buyers, and I would love for you to be one of them.
-- **Body paragraph 2:** Fifteen minutes, whenever suits you: what you play, why you ordered, and what you are hoping for when it arrives. No preparation, no sales pitch, just a conversation between a builder and the person the instrument is for. As a thank you for your time, **$10 of DreamPlay store credit** is added to your account after we talk.
-- **Button:** Pick a Time That Suits You → `{{research_url}}`
-- **Closing:** Two taps: how to reach you and when you are usually free. I take care of the rest and confirm by email. Don't feel like calling? [Fill out this survey](`{{survey_url}}`) instead. We would love to hear from you!
+- **Subject:** {{first_name}}, would you be up for a quick call? + $10 credit
+- **Preheader:** I'm talking with a few of our earliest DreamPlay buyers and would love to talk with you too. I'll also add $10 of DreamPlay credit after the call.
+- **Eyebrow:** A quick call · $10 store credit
+- **Headline:** {{first_name}}, would you be up for a quick call?
+- **Body paragraph 1:** I've been wanting to get to know some of the people who ordered the DreamPlay One a little better, so I'm reaching out personally to a few of our earliest buyers.
+- **Body paragraph 2:** Would you be up for talking with me for about 15 minutes?
+- **Body paragraph 3:** Nothing formal. I mostly want to hear about you, what you play, how you came across DreamPlay, and what made you decide to order one. I'm also curious what you're hoping it'll be like once you finally have it in front of you.
+- **Body paragraph 4 (credit):** As a thank you for taking the time, I'll add **$10 of DreamPlay store credit** to your account after we talk.
+- **Button:** Let Me Know When You're Free → `{{research_url}}`
+- **Closing:** Just tell me how you'd like me to reach you and what days generally work. I'll email you myself to figure out an actual time.
+- **Escape hatch:** And if you'd rather not do a call, that's completely fine. You can [fill out the short survey](`{{survey_url}}`) instead.
+- **Sign-off line:** Thanks again,
 
 ### B2 — Call, no incentive
 
-Identical to B1 except the credit is gone.
+Identical to B1 with the credit paragraph removed and the credit dropped from the subject, preheader and eyebrow.
 
-- **Subject:** Can I call you about your DreamPlay One?
-- **Preheader:** A 15-minute conversation with Lionel about your DreamPlay One.
-- **Eyebrow:** 15 minutes with the founder
-- **Headline:** {{first_name}}, can I call you?
-- **Body paragraph 1:** *(same as B1)* You are one of the first people in the world to order a DreamPlay One. I am personally calling a small group of our earliest buyers, and I would love for you to be one of them.
-- **Body paragraph 2:** Fifteen minutes, whenever suits you: what you play, why you ordered, and what you are hoping for when it arrives. No preparation, no sales pitch, just a conversation between a builder and the person the instrument is for.
-- **Button:** Pick a Time That Suits You → `{{research_url}}`
-- **Closing:** *(same as B1)* Two taps: how to reach you and when you are usually free. I take care of the rest and confirm by email. Don't feel like calling? [Fill out this survey](`{{survey_url}}`) instead. We would love to hear from you!
+- **Subject:** {{first_name}}, would you be up for a quick call?
+- **Preheader:** I'm talking with a few of our earliest DreamPlay buyers and would love to talk with you too.
+- **Eyebrow:** A quick call
+- **Headline:** {{first_name}}, would you be up for a quick call?
+- **Body paragraph 1:** *(same as B1)* I've been wanting to get to know some of the people who ordered the DreamPlay One a little better, so I'm reaching out personally to a few of our earliest buyers.
+- **Body paragraph 2:** *(same as B1)* Would you be up for talking with me for about 15 minutes?
+- **Body paragraph 3:** *(same as B1)* Nothing formal. I mostly want to hear about you, what you play, how you came across DreamPlay, and what made you decide to order one. I'm also curious what you're hoping it'll be like once you finally have it in front of you.
+- **Body paragraph 4:** *(omitted, this is the credit paragraph)*
+- **Button:** Let Me Know When You're Free → `{{research_url}}`
+- **Closing:** *(same as B1)* Just tell me how you'd like me to reach you and what days generally work. I'll email you myself to figure out an actual time.
+- **Escape hatch:** *(same as B1)* And if you'd rather not do a call, that's completely fine. You can [fill out the short survey](`{{survey_url}}`) instead.
+- **Sign-off line:** *(same as B1)* Thanks again,
 
 ---
 
@@ -129,23 +152,23 @@ Reached by A1 and A2 buyers, and by B1/B2 buyers who take the escape hatch. Page
 
 ### Header
 
-- **Eyebrow:** DreamPlay Buyer Survey · 2 minutes · $5 store credit *(the credit segment only shows for credit arms)*
-- **Headline:** Help us build this right.
-- **Intro paragraph:** You are one of the first people in the world to order a DreamPlay One, and that makes your perspective priceless. These few questions tell us who this instrument is really for and what matters most to you.
-- **Second paragraph, credit arms:** As a thank you, **$5 of DreamPlay store credit** is added to your account the moment you submit.
-- **Second paragraph, no-incentive arms:** It takes about two minutes, and every answer is read personally.
+- **Eyebrow:** A quick question · 2 minutes · $5 store credit *(the credit segment only shows for credit arms)*
+- **Headline:** I'd love to hear from you.
+- **Intro paragraph:** You ordered a DreamPlay One long before most people have even had a chance to see one in person. I'd really like to understand what made you decide to take a chance on us.
+- **Second paragraph, credit arms:** Nine questions, a couple of minutes. As a thank you for doing it, **$5 of DreamPlay store credit** goes into your account as soon as you submit.
+- **Second paragraph, no-incentive arms:** Nine questions, a couple of minutes. I'll personally be reading the responses.
 
 ### The nine questions
 
 All are required except the last. The first seven are multiple choice, the last two are free text.
 
-1. **Who is the DreamPlay One for?** — Myself / My child / A student I teach / A family member or partner / It is a gift
-2. **Your age range** — Under 18 / 18 to 29 / 30 to 44 / 45 to 59 / 60 or older / Prefer not to say
-3. **Your piano experience** — Just starting / Returning after years away / Intermediate / Advanced / Professional or teacher
-4. **On a standard keyboard, can you comfortably reach a full octave?** — Easily / With some strain / Barely / No / Not sure
-5. **What was the biggest reason you ordered?** — Narrow keys that finally fit my hands / Relief from pain or strain while playing / The LED guided learning system / It is for someone with smaller hands / I believe in the mission and wanted to support it / The look and design / Other
-6. **What almost stopped you from ordering?** — The price / The wait for delivery / Not being able to try it first / Doubts that a new company could deliver / Nothing, it was an easy yes / Other
-7. **Where did you first hear about DreamPlay?** — Lionel's YouTube channel (MusicalBasics) / Another YouTube channel or video / Google search / Social media / A friend, family member or teacher / Other
+1. **Who is the DreamPlay One for?** → Myself / My child / A student I teach / A family member or partner / It is a gift
+2. **Your age range** → Under 18 / 18 to 29 / 30 to 44 / 45 to 59 / 60 or older / Prefer not to say
+3. **Your piano experience** → Just starting / Returning after years away / Intermediate / Advanced / Professional or teacher
+4. **On a standard keyboard, can you comfortably reach a full octave?** → Easily / With some strain / Barely / No / Not sure
+5. **What was the biggest reason you ordered?** → Narrow keys that finally fit my hands / Relief from pain or strain while playing / The LED guided learning system / It is for someone with smaller hands / I believe in the mission and wanted to support it / The look and design / Other
+6. **What almost stopped you from ordering?** → The price / The wait for delivery / Not being able to try it first / Doubts that a new company could deliver / Nothing, it was an easy yes / Other
+7. **Where did you first hear about DreamPlay?** → Lionel's YouTube channel (MusicalBasics) / Another YouTube channel or video / Google search / Social media / A friend, family member or teacher / Other
 8. **In your own words: what made you decide the DreamPlay One was worth pre-ordering?** *(free text)*
 9. **Anything else you want Lionel to know? (optional)** *(free text)*
 
@@ -153,23 +176,23 @@ Free-text placeholder: `Type your answer here...`
 
 ### Buttons and states
 
-- **Submit button, credit arms:** Submit and Claim My $5 Credit
-- **Submit button, no-incentive arms:** Submit My Answers
-- **While submitting:** Submitting...
+- **Submit button, credit arms:** Send My Answers and Claim $5
+- **Submit button, no-incentive arms:** Send My Answers
+- **While submitting:** Sending...
 - **Validation hint:** `N questions left to answer.` (singular "question" when one remains)
 - **Error:** Something went wrong. Please try again.
 
 ### Confirmation states
 
-- **Just submitted, credit arm:** "Thank you. Your $5 store credit is in your account."
-- **Just submitted, no-incentive arm:** "Thank you. Your answers are in."
-- **Body for both:** Every answer directly shapes how we build and talk about the DreamPlay One. Lionel reads each one personally.
-- **Returning after already submitting:** "You have already completed this survey." / Submitting again would simply update your answers, so if anything has changed, reply to the email instead.
+- **Just submitted, credit arm:** "Thank you. Your $5 credit is in your account."
+- **Just submitted, no-incentive arm:** "Thank you, this is really helpful."
+- **Body for both:** I'll be reading these myself. Thanks again for being here this early, it really does mean a lot to me.
+- **Returning after already submitting:** "You have already filled this out." / Sending it again would just update your answers, so if something has changed, reply to my email instead.
 
 ### Bad or missing link
 
 - **Headline:** This link is not valid.
-- **Body:** Please use the personal link from your DreamPlay email, or write to support@dreamplaypianos.com.
+- **Body:** Please use the personal link from my email, or just write to support@dreamplaypianos.com.
 
 ---
 
@@ -179,70 +202,87 @@ B1 and B2 only. Page title: `A Call with Lionel | DreamPlay Pianos`. Not indexed
 
 ### Header
 
-- **Eyebrow:** 15 minutes with the founder · $10 store credit *(credit segment only for B1)*
-- **Headline:** Talk to Lionel about your DreamPlay One.
-- **Intro paragraph:** You ordered an instrument that does not exist anywhere else, and Lionel wants to hear the story behind that decision directly from you: what you play, what made you order, and what you are hoping for. Fifteen minutes, no preparation needed, no sales pitch.
-- **Second paragraph, B1:** As a thank you for your time, **$10 of DreamPlay store credit** is added to your account after the call. Two taps below and you are booked.
-- **Second paragraph, B2:** Two taps below and you are booked.
+- **Eyebrow:** A quick call · $10 store credit *(credit segment only for B1)*
+- **Headline:** Glad you're up for it.
+- **Intro paragraph:** Nothing formal, about 15 minutes. I mostly want to hear about you, what you play, how you came across DreamPlay, and what made you decide to order one.
+- **Second paragraph, B1:** Just let me know how to reach you and roughly when you're free. As a thank you for taking the time, **$10 of DreamPlay store credit** goes into your account after we talk.
+- **Second paragraph, B2:** Just let me know how to reach you and roughly when you're free.
 
 ### The booking form
 
-**Section 1 heading:** How should we call you?
+**Section 1 heading:** How should I reach you?
 
 | Option     | Sub-label            |
 | ---------- | -------------------- |
-| Zoom       | We email you a link  |
-| Phone call | Lionel calls you     |
+| Zoom       | I'll email a link    |
+| Phone call | I'll call you        |
 | WhatsApp   | Voice call           |
 
 Phone and WhatsApp reveal a number field. Placeholders: `Your phone number (with country code)` and `Your WhatsApp number`.
 
-**Section 2 heading:** Which days usually work?
+**Section 2 heading:** Which days generally work?
 Chips: Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday (multi-select)
 
 **Section 3 heading:** What part of the day?
 Options: Morning, Afternoon, Evening (multi-select)
 Below it: `Your timezone, detected automatically:` followed by an editable timezone field.
 
-**Section 4 heading:** Anything Lionel should know beforehand? (optional)
+**Section 4 heading:** Anything I should know beforehand? (optional)
 Placeholder: `Totally optional...`
 
-**Submit button:** Yes, I Can Call (`Sending...` while in flight)
+**Submit button:** Yes, Let's Talk (`Sending...` while in flight)
 
 ### Confirmation states
 
-- **Just booked:** "You are on Lionel's call list."
-- **Returning after already booking:** "Your call request is already in."
-- **Body for both:** Lionel will email you within a few days to lock in a time on one of your preferred days. *(B1 only, appended:)* After the call, $10 of store credit is added to your account. Need to change anything? Just reply to the email that brought you here.
+- **Just booked:** "Great, I'll be in touch."
+- **Returning after already booking:** "You're already on my list."
+- **Body for both:** I'll email you in the next few days to sort out an actual time on one of the days you picked. *(B1 only, appended:)* After we talk, $10 of store credit goes into your account. Need to change anything? Just reply to my email.
 
 ### Survey escape hatch (footer of the call page)
 
-> Don't feel like calling? [Fill out this survey](/buyer-survey) instead. We would love to hear from you!
+> Would you rather not do a call? That's completely fine. You can [fill out the short survey](/buyer-survey) instead.
 
 ### Bad or missing link
 
-Same as the survey page: "This link is not valid." / Please use the personal link from your DreamPlay email, or write to support@dreamplaypianos.com.
+Same as the survey page: "This link is not valid." / Please use the personal link from my email, or just write to support@dreamplaypianos.com.
 
 ---
 
-## 5. Quick reference for the editor
+## 5. Quick reference
 
-Every piece of user-facing copy in the test, in one list:
+The headline elements, old vs new:
 
-| Where | Element | Current text |
-| --- | --- | --- |
-| A1 email | Subject | Two minutes of your time, $5 store credit |
-| A2 email | Subject | A quick question about your DreamPlay One |
-| B1 email | Subject | 15 minutes with me, $10 store credit |
-| B2 email | Subject | Can I call you about your DreamPlay One? |
-| A1/A2 email | Headline | Why did you say yes, {{first_name}}? |
-| B1/B2 email | Headline | {{first_name}}, can I call you? |
-| A1/A2 email | Button | Take the 2-Minute Survey |
-| B1/B2 email | Button | Pick a Time That Suits You |
-| Survey page | Headline | Help us build this right. |
-| Call page | Headline | Talk to Lionel about your DreamPlay One. |
-| Survey page | Submit (credit) | Submit and Claim My $5 Credit |
-| Survey page | Submit (no credit) | Submit My Answers |
-| Call page | Submit | Yes, I Can Call |
+| Where | Element | Was | Now |
+| --- | --- | --- | --- |
+| A1 email | Subject | Two minutes of your time, $5 store credit | {{first_name}}, I'd love to hear from you |
+| A2 email | Subject | A quick question about your DreamPlay One | {{first_name}}, I'd love to hear from you |
+| B1 email | Subject | 15 minutes with me, $10 store credit | {{first_name}}, would you be up for a quick call? + $10 credit |
+| B2 email | Subject | Can I call you about your DreamPlay One? | {{first_name}}, would you be up for a quick call? |
+| A1/A2 email | Headline | Why did you say yes, {{first_name}}? | {{first_name}}, I'd love to hear from you |
+| B1/B2 email | Headline | {{first_name}}, can I call you? | {{first_name}}, would you be up for a quick call? |
+| A1/A2 email | Button | Take the 2-Minute Survey | Share Your Thoughts |
+| B1/B2 email | Button | Pick a Time That Suits You | Let Me Know When You're Free |
+| Survey page | Headline | Help us build this right. | I'd love to hear from you. |
+| Call page | Headline | Talk to Lionel about your DreamPlay One. | Glad you're up for it. |
+| Survey page | Submit (credit) | Submit and Claim My $5 Credit | Send My Answers and Claim $5 |
+| Survey page | Submit (no credit) | Submit My Answers | Send My Answers |
+| Call page | Submit | Yes, I Can Call | Yes, Let's Talk |
 
-Voice notes: Lionel writes as "I" in the emails and is referred to as "Lionel" in third person on the landing pages. That split is intentional, the emails are from him and the pages are the company speaking about him. Keep it unless there is a good reason not to.
+**Voice change worth flagging.** The old copy used "I" in the emails but third-person "Lionel" on the landing pages, on the theory that the pages were the company speaking about him. The rewrite drops that split and uses "I" everywhere. Once the email sounds like a personal note, arriving on a page that refers to Lionel in the third person breaks the spell, and third person is a large part of why the pages read as marketing. This is why the page copy above says "I'll email you" rather than "Lionel will email you", and why the form headings became "How should I reach you?" and "Anything I should know beforehand?".
+
+The subject line for A1 and A2 is now identical, as is the headline. That is intentional and correct for the test: the incentive dimension should be the only difference, and A1 still surfaces the credit in the preheader, the eyebrow and its own paragraph.
+
+---
+
+## 6. Applying this copy
+
+None of the above is live yet. Two places to change, and they should ship together:
+
+1. **The four emails** are rows in the `campaigns` table (`is_template = true`), named `Buyer Research Survey Credit (A1)`, `Buyer Research Survey NoCredit (A2)`, `Buyer Research Call Credit (B1)`, `Buyer Research Call NoCredit (B2)`. Edit them through `/admin/ab-test-august-10`, which has a live preview and writes straight to those rows. The layout, gold button and wordmark stay as they are, only the text changes. Note the body is now three or four paragraphs instead of two, so a paragraph block needs adding in the HTML.
+2. **The two landing pages** are code:
+   - `apps/web/src/app/(website-pages)/buyer-survey/page.tsx` and its `SurveyForm.tsx`
+   - `apps/web/src/app/(website-pages)/founder-call/page.tsx` and its `CallRequestForm.tsx`
+
+The nine survey questions and their answer options are unchanged by this rewrite, they live in `SURVEY_QUESTIONS` in `apps/web/src/lib/buyer-research.ts`.
+
+Before sending, send yourself the usual `[TEST A1/A2/B1/B2]` set and read all four on a phone.
