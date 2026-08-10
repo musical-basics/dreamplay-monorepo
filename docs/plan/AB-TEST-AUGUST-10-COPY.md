@@ -2,7 +2,9 @@
 
 > **Purpose of this document:** the test design plus every word of copy in it, in one place.
 >
-> **Status (2026-08-10): LIVE.** The copy below is the rewritten version, warmer and less self-explanatory than the first draft, and it has been applied to both the four campaign templates and the two landing pages. This document now matches what is actually deployed. Nothing has been sent to buyers yet.
+> **Status (2026-08-10): SENT.** The copy below is the rewritten version and it went out to 62 buyers on 2026-08-10. This document matches what was actually delivered. Do not edit the four templates now: the test is running, and changing an arm's wording mid-flight would make its results unreadable.
+>
+> **Delivered per arm:** A1 16 · A2 16 · B1 15 · B2 15. See "How the split ended up" below before interpreting any result.
 >
 > **Hard house rule: no em dashes anywhere.** Use commas, colons or periods instead.
 
@@ -31,9 +33,28 @@ Two dimensions crossed:
 | Survey | **A1** — survey + $5 credit     | **A2** — survey, no offer     |
 | Call   | **B1** — call + $10 credit      | **B2** — call, no offer       |
 
-- 64 buyers, split exactly **16 / 16 / 16 / 16**.
+- 64 buyers, assigned exactly **16 / 16 / 16 / 16** by the hash. What actually *delivered* was 16/16/15/15, see below.
 - Assignment is deterministic: `sha256("buyer-research-4arm-v55:" + buyerId)`, first byte mod 4. The salt `4arm-v55` was picked before any email went out because it produced the exact even split. It must not be changed now.
 - Lionel can hand-move individual buyers between groups on the admin page. Those manual moves are stored as overrides and win over the hash everywhere: page access, credit rules, reporting, the send itself.
+
+### How the split ended up (read this before interpreting results)
+
+The hash assigned 64 buyers 16/16/16/16, but **two suppressed addresses both happened to land in B1**, which would have sent B1 to 14 while every other arm got 16. Two suppressed buyers in one cell is bad luck, not a bug: suppression is checked at send time and is independent of arm assignment.
+
+62 deliverable buyers cannot split into four equal arms, so exact balance was not reachable. Lionel chose to even up the *pairs* rather than leave one cell short:
+
+| Arm | Assigned by hash | Delivered |
+| --- | --- | --- |
+| A1 survey + $5   | 16 | **16** |
+| A2 survey, no offer | 16 | **16** |
+| B1 call + $10    | 16 (2 suppressed) | **15** |
+| B2 call, no offer | 16 | **15** |
+
+This took **one manual override**: `krunja0wemail@gmail.com` moved B2 to B1, recorded in `app_settings` under `ab-test-august-10:arm-overrides`. It was picked deterministically (lowest SHA-256 rank within B2) rather than hand-chosen, so no human judgment entered the selection.
+
+The result is that each dimension compares equal-sized pairs: the two survey arms are 16 vs 16, the two call arms are 15 vs 15. The survey-vs-call comparison is 32 vs 30.
+
+**Compare arms by rate, not raw count.** The call arms have one fewer recipient each, so raw completion counts understate them by roughly 6%.
 
 ### What we are measuring
 
