@@ -4,15 +4,34 @@ import React, { useEffect, useState } from "react";
 import { LockKeyhole, Hammer, Package } from "lucide-react";
 import { AnimatedSection } from "@/components/animated-section";
 
+/**
+ * Anchor for the "reserve later, receive later" mechanic explained at the
+ * bottom of this component: an order placed on this date is targeted at
+ * TARGET_DELIVERY, and every day a visitor waits pushes their own estimate
+ * out by a day. Keep ANCHOR_ORDER_DATE current whenever TARGET_DELIVERY
+ * changes, otherwise the offset silently drifts away from the real schedule
+ * (it was a flat +6 months, which by August 2026 was quoting early 2027
+ * while the published target was August 2027).
+ *
+ * Target delivery is also stated statically in src/config/shop.ts; the two
+ * must agree.
+ */
+const ANCHOR_ORDER_DATE = new Date("2026-08-12T00:00:00Z");
+const TARGET_DELIVERY = new Date("2027-08-15T00:00:00Z");
+
 export function DynamicProductionTimeline() {
     const [dates, setDates] = useState({ today: "", delivery: "", year: "" });
 
     useEffect(() => {
         const today = new Date();
-        const delivery = new Date(today);
-        
-        // Add exactly 6 months to today's date
-        delivery.setMonth(delivery.getMonth() + 6);
+
+        // Slip the published target by however long the visitor has waited
+        // past the anchor. Never pull it earlier than the published target.
+        const daysWaited = Math.max(
+            0,
+            Math.floor((today.getTime() - ANCHOR_ORDER_DATE.getTime()) / 86_400_000),
+        );
+        const delivery = new Date(TARGET_DELIVERY.getTime() + daysWaited * 86_400_000);
 
         // eslint-disable-next-line react-hooks/set-state-in-effect -- dates are computed client-side to avoid hydration mismatch
         setDates({
@@ -62,7 +81,7 @@ export function DynamicProductionTimeline() {
                             Custom Tooling
                         </span>
                         <span className="font-sans text-[10px] text-white/50 mt-1">
-                            6 Month Build Phase
+                            Manufacturing Phase
                         </span>
                     </div>
 
@@ -101,7 +120,7 @@ export function DynamicProductionTimeline() {
                         </div>
                         <div>
                             <div className="font-sans text-xs font-bold uppercase tracking-widest text-white">Custom Tooling</div>
-                            <div className="font-sans text-[10px] text-white/50">6 Month Build Phase</div>
+                            <div className="font-sans text-[10px] text-white/50">Manufacturing Phase</div>
                         </div>
                     </div>
 

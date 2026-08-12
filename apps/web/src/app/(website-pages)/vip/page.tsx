@@ -116,7 +116,7 @@ export default async function VIPPage() {
                                         </div>
                                     </div>
                                     <div>
-                                        <p className="font-sans text-[10px] uppercase tracking-[0.2em] text-white/20 mb-1">Stage 4 — Target: October 2026</p>
+                                        <p className="font-sans text-[10px] uppercase tracking-[0.2em] text-white/20 mb-1">Stage 4 — Target: August 2027</p>
                                         <h4 className="font-sans font-bold text-white/50 text-sm">Shipping &amp; Delivery</h4>
                                         <p className="font-sans text-xs text-white/30 mt-1">Your DreamPlay One arrives at your door.</p>
                                     </div>

@@ -239,7 +239,7 @@ export function RecommendationSection({ profile }: RecommendationSectionProps) {
                             <div className="pt-4 border-t border-border space-y-2 text-sm text-muted-foreground">
                                 <p className="flex items-center gap-2">
                                     <Check className="w-4 h-4 text-accent" />
-                                    Ships October 2026
+                                    Ships August 2027
                                 </p>
                                 <p className="flex items-center gap-2">
                                     <Check className="w-4 h-4 text-accent" />

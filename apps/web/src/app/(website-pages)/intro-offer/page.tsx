@@ -887,7 +887,7 @@ export default function IntroOfferPage() {
                 <section className="h-screen relative bg-neutral-950 flex items-center justify-center overflow-hidden" style={{ scrollSnapAlign: "start" }}>
                     <div className="text-center px-6 max-w-5xl mx-auto">
                         <p className="font-sans text-xs uppercase tracking-[0.3em] text-white/50 mb-4">Expected Shipping</p>
-                        <h2 className="font-serif text-5xl md:text-7xl lg:text-8xl text-white">October 2026</h2>
+                        <h2 className="font-serif text-5xl md:text-7xl lg:text-8xl text-white">August 2027</h2>
                         <div className="mt-8 mx-auto max-w-3xl">
                             <img src="/images/stock/Worldmap.png" alt="World Map showing shipping regions" className="w-full h-auto object-contain opacity-70" />
                         </div>
@@ -1112,7 +1112,7 @@ export default function IntroOfferPage() {
                         >
                             Order Your DreamPlay One <ArrowRight className="w-5 h-5" />
                         </Link>
-                        <p className="mt-6 font-sans text-sm text-white/50">Receive it by October 2026</p>
+                        <p className="mt-6 font-sans text-sm text-white/50">Receive it by August 2027</p>
                     </div>
                     <ScrollIndicator onNav={scrollToSlide} next={14} />
                 </section>

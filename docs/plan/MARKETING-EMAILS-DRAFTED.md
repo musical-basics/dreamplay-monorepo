@@ -182,7 +182,9 @@ The ninth email is not on the calendar. It fires automatically for anyone who op
 - **Button:** Build Your DreamPlay One → `/customize`
 - **Closing:** Still unsure about sizing, shipping, or anything else? Reply to this email. I answer these myself and I would rather talk it through than have you guess.
 
-> **Corrected before sending.** A draft said "$499 down", which reads as the whole price. The shop config prices the keyboard at $999 total: "Pay $499 today, then $500 when your piano is boxed and ready to ship", with a "Founder price lock" in the included list, so the copy now states the split. The unverifiable claim that reservations "are filled in order" was removed rather than guessed at. **One thing still to confirm:** the shop lists target delivery as **October 2026**, while our internal ship-date rule is purchase date plus 12 months floored at 2027-01-31. If a prospect reserves now, which date should they be told? The email deliberately does not state one.
+> **Corrected before sending.** A draft said "$499 down", which reads as the whole price. The shop config prices the keyboard at $999 total: "Pay $499 today, then $500 when your piano is boxed and ready to ship", with a "Founder price lock" in the included list, so the copy now states the split. The unverifiable claim that reservations "are filled in order" was removed rather than guessed at.
+
+> **Delivery date, resolved 2026-08-12.** The public target is **August 2027**, with **January 2027** the earliest for early backers. Stale "October 2026" strings on secondary pages were corrected sitewide. This email still deliberately states no date, so an editor may add "August 2027" if they want the specificity, but it must be that date and not one invented to sound nearer.
 
 ---
 
@@ -256,6 +258,6 @@ Details that matter for reviewing the copy:
 3. **Cadence.** Eight emails in 18 days, Thursday / Sunday / Tuesday and around. Still too much from a piano manufacturer, or about right now that each one has a reason to exist?
 4. **Is email 08 commercial enough?** It is the only scheduled email that asks for the sale. It now states the full $999 price and the deposit split.
 5. **The coupon email.** It is now deliberately plain, four short sentences. Too plain, given it is giving away $100?
-6. **The delivery-date question in email 08's note.** The shop says October 2026, the internal rule implies 2027. Worth resolving before any of these send, since prospects will ask.
+6. **Should email 08 state the delivery date at all?** It currently does not. The real answer is August 2027 for a new reservation (January 2027 was only ever the early-backer date). That is eleven months out, which is honest but a long wait to put in writing next to a "reserve now" button. Editor's judgement: state it plainly, or let the configurator page do it?
 
 **On factual claims.** Four passages in revision 2 were caught and corrected against the real product pages before anything sent: the DS5.5 interval comparison (was overstated by a full diatonic step), a graded-action claim that actually describes the Pro model, a "two years" that is fourteen months, and a "$499 down" that hid the $999 total. Each is documented in a note under its email in section 3. The lesson worth carrying: this copy is persuasive enough that a wrong number reads as confidently as a right one, so every figure needs checking against `/product-information`, `/production-timeline` or `config/shop.ts` rather than trusted because it sounds plausible.

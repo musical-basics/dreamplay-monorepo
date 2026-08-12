@@ -12,7 +12,7 @@ export function RisksSection() {
                         90 days. We have built a 2-month buffer into our timeline to account for any tooling adjustments.
                     </p>
                     <p>
-                        <strong>Logistics:</strong> Global shipping is volatile. While we aim to ship in October 2026,
+                        <strong>Logistics:</strong> Global shipping is volatile. While we aim to ship in August 2027,
                         ocean freight delays (port congestion, customs) can sometimes add 2-4 weeks to delivery times.
                     </p>
                     <p>
