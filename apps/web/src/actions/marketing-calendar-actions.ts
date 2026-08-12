@@ -1,6 +1,7 @@
 "use server";
 
 import { getAdminDb, getServerDb } from "@/lib/db";
+import { COUPON_SETTING, COUPON_TEMPLATE_NAME, parseCouponSetting } from "@/lib/coupon-trigger";
 import {
     AUDIENCE_SETTING,
     MARKETING_CALENDAR_CATEGORY,
@@ -97,5 +98,56 @@ export async function saveAudienceRemovals(removedIds: string[]): Promise<Market
         .from("app_settings")
         .upsert({ key: AUDIENCE_SETTING, value: { ...setting, removedIds: clean } }, { onConflict: "key" });
     if (error) return { ok: false, error: "Could not save. Please try again." };
+    return { ok: true };
+}
+
+/**
+ * Save the coupon trigger's master switch and discount code.
+ *
+ * The code is written in two places on purpose: app_settings (what the sweep
+ * checks before sending) and the coupon template's variable_values.discount_code
+ * (what sendCampaign substitutes into {{discount_code}}). Keeping them in sync
+ * here means the GUI is the only place Lionel has to touch.
+ */
+export async function saveCouponSetting(input: {
+    enabled: boolean;
+    discountCode: string;
+    codeNote: string;
+}): Promise<MarketingActionResult> {
+    if (!(await requireAdmin())) return { ok: false, error: "Not authorized." };
+
+    const code = input.discountCode.trim().toUpperCase().slice(0, 64);
+    if (code && !/^[A-Z0-9._-]+$/.test(code)) {
+        return { ok: false, error: "Discount codes can only contain letters, numbers, dots, dashes and underscores." };
+    }
+    if (input.enabled && !code) {
+        return { ok: false, error: "Add the Shopify discount code before switching the automation on." };
+    }
+
+    const db = getAdminDb();
+    const value = parseCouponSetting({ enabled: input.enabled, discountCode: code, codeNote: input.codeNote.trim() });
+
+    const { error } = await db
+        .from("app_settings")
+        .upsert({ key: COUPON_SETTING, value: { ...value } }, { onConflict: "key" });
+    if (error) return { ok: false, error: "Could not save. Please try again." };
+
+    // Mirror the code onto the template so {{discount_code}} renders.
+    const { data: template } = await db
+        .from("campaigns")
+        .select("id, variable_values")
+        .eq("name", COUPON_TEMPLATE_NAME)
+        .eq("is_template", true)
+        .maybeSingle();
+    if (template) {
+        const vv = {
+            ...(typeof template.variable_values === "object" && template.variable_values !== null
+                ? (template.variable_values as Record<string, unknown>)
+                : {}),
+            discount_code: code,
+        };
+        await db.from("campaigns").update({ variable_values: vv }).eq("id", template.id);
+    }
+
     return { ok: true };
 }

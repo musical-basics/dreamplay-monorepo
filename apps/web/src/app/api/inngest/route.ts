@@ -1,5 +1,6 @@
 import { serve } from "inngest/next";
 import { inngest } from "@/inngest/client";
+import { couponFunctions } from "@/inngest/coupon-functions";
 import { emailFunctions } from "@/inngest/functions";
 import { reportFunctions } from "@/inngest/report-functions";
 
@@ -15,5 +16,5 @@ export const dynamic = "force-dynamic";
 
 export const { GET, POST, PUT } = serve({
     client: inngest,
-    functions: [...emailFunctions, ...reportFunctions],
+    functions: [...emailFunctions, ...reportFunctions, ...couponFunctions],
 });

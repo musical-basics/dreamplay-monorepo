@@ -109,9 +109,28 @@ const TEST_EMAILS = new Set([
 // ---------------------------------------------------------------------------
 const SITE = "https://www.dreamplaypianos.com";
 
-function emailHtml({ title, preheader, eyebrow, headline, paragraphs, ctaLabel, ctaUrl, closing }) {
+/**
+ * `codeBox` (optional) renders a gold-bordered discount-code panel between the
+ * body copy and the button. {{discount_code}} is a standard merge tag filled
+ * from the campaign's variable_values at send time.
+ */
+function emailHtml({ title, preheader, eyebrow, headline, paragraphs, ctaLabel, ctaUrl, closing, codeBox }) {
   const para = (t) => `            <p class="muted" style="margin:0 0 16px 0; font-size:16px; line-height:1.85;">${t}</p>`;
   const closePara = (t) => `            <p class="muted" style="margin:0 0 16px 0; font-size:15px; line-height:1.8;">${t}</p>`;
+  const codeBlock = codeBox
+    ? `        <tr>
+          <td class="pad" style="padding:8px 56px 4px 56px;">
+            <table role="presentation" width="100%" style="border:1px solid #d8b25c; background:#161309;"><tr>
+              <td align="center" style="padding:22px 16px;">
+                <p class="muted" style="margin:0 0 8px 0; font-size:12px; letter-spacing:2px; text-transform:uppercase;">${codeBox.label}</p>
+                <p style="margin:0; font-size:30px; letter-spacing:5px; font-weight:bold; color:#d8b25c;">{{discount_code}}</p>
+                <p class="muted" style="margin:10px 0 0 0; font-size:13px;">${codeBox.note}</p>
+              </td>
+            </tr></table>
+          </td>
+        </tr>
+`
+    : "";
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -141,7 +160,7 @@ function emailHtml({ title, preheader, eyebrow, headline, paragraphs, ctaLabel, 
 ${paragraphs.map(para).join("\n")}
           </td>
         </tr>
-        <tr>
+${codeBlock}        <tr>
           <td align="center" style="padding:20px 56px 12px 56px;">
             <table role="presentation" cellpadding="0" cellspacing="0"><tr>
               <td align="center" bgcolor="#d8b25c" style="border-radius:2px;">
@@ -327,6 +346,34 @@ const EMAILS = [
   },
 ];
 
+/**
+ * The behavioral trigger email (NOT on the calendar). Sent automatically to
+ * anyone who opened 3+ calendar emails and has not purchased after 3 days.
+ * Stored as a TEMPLATE campaign: each send clones a child keyed on
+ * send_key marketing-coupon-100:<subscriberId>, so one person can only ever
+ * receive it once. {{discount_code}} is filled from variable_values at send
+ * time; the code itself is created by hand in the Shopify admin because this
+ * app's API token has no write_discounts scope.
+ */
+const COUPON_EMAIL = {
+  name: "Marketing Calendar 2026 - Engaged Non-Buyer $100 Coupon",
+  topic: "Engaged non-buyer $100 coupon (automatic trigger)",
+  subject: "$100 off, because you have been paying attention",
+  preheader: "A thank you for following along, and $100 off your DreamPlay One if you are ready.",
+  eyebrow: "$100 off, just for you",
+  headline: "I saved you $100, {{first_name}}",
+  paragraphs: [
+    "You have been opening my emails and reading about the DreamPlay One, which tells me something about it is speaking to you. You just have not pulled the trigger yet, and honestly, I get it. This is a new instrument from a small company, and that takes a leap.",
+    "So let me make the leap smaller. Here is $100 off your DreamPlay One, from me. Use it whenever you are ready.",
+  ],
+  codeBox: { label: "Your discount code", note: "Enter it at checkout, or use the button below and it applies itself." },
+  ctaLabel: "Use My $100 Off",
+  ctaUrl: `${SITE}/customize`,
+  closing: [
+    "If something is holding you back that $100 will not fix, reply and tell me what it is. Sizing, shipping, whether it will suit your hands: I answer these myself and I would rather help you decide than have you wonder.",
+  ],
+};
+
 // 9:00 AM ET on these dates is EDT (-04:00) throughout Aug + early Sep 2026.
 const DEFAULT_SEND_TIME_UTC = "T13:00:00.000Z";
 const sendKey = (slot) => `marketing-calendar-2026-${String(slot).padStart(2, "0")}`;
@@ -372,6 +419,43 @@ async function seedCampaigns() {
     inserted++;
   }
   console.log(`Campaigns: ${inserted} inserted, ${EMAILS.length - inserted} already present.`);
+
+  // The coupon trigger template, matched by NAME (it has no send_key of its
+  // own: each send mints a child keyed on the subscriber).
+  const couponExisting = await sb(
+    `campaigns?name=eq.${encodeURIComponent(COUPON_EMAIL.name)}&select=id,name&limit=1`
+  );
+  if (couponExisting.length > 0) {
+    console.log(`  = exists, untouched: coupon template (${couponExisting[0].id})`);
+    return;
+  }
+  const couponRow = {
+    name: COUPON_EMAIL.name,
+    subject_line: COUPON_EMAIL.subject,
+    html_content: emailHtml({ title: COUPON_EMAIL.subject, ...COUPON_EMAIL }),
+    category: CATEGORY,
+    email_type: "campaign",
+    workspace: "dreamplay_marketing",
+    status: "draft",
+    is_template: true,
+    is_ready: false,
+    send_key: null,
+    scheduled_at: null,
+    scheduled_status: null,
+    variable_values: {
+      preview_text: COUPON_EMAIL.preheader,
+      topic: COUPON_EMAIL.topic,
+      // Filled in by /admin/marketing-calendar/coupon once Lionel creates the
+      // code in Shopify. The trigger refuses to send while it is empty.
+      discount_code: "",
+    },
+  };
+  if (DRY_RUN) {
+    console.log(`  + would insert: coupon template "${COUPON_EMAIL.subject}"`);
+  } else {
+    await sb("campaigns", { method: "POST", body: JSON.stringify(couponRow), headers: { Prefer: "return=minimal" } });
+    console.log(`  + inserted: coupon template "${COUPON_EMAIL.subject}"`);
+  }
 }
 
 async function buildAudience() {

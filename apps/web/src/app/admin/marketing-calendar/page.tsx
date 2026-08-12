@@ -54,12 +54,20 @@ export default async function MarketingCalendarPage() {
         <div>
             <div className="flex items-end justify-between gap-6 mb-2">
                 <h1 className="font-serif text-3xl tracking-tight">Marketing Calendar</h1>
-                <Link
-                    href="/admin/marketing-calendar/audience"
-                    className="font-sans text-xs uppercase tracking-widest text-amber-300 underline hover:text-amber-200"
-                >
-                    Review audience · {audienceCount} people
-                </Link>
+                <div className="flex items-center gap-5">
+                    <Link
+                        href="/admin/marketing-calendar/coupon"
+                        className="font-sans text-xs uppercase tracking-widest text-amber-300 underline hover:text-amber-200"
+                    >
+                        $100 coupon trigger
+                    </Link>
+                    <Link
+                        href="/admin/marketing-calendar/audience"
+                        className="font-sans text-xs uppercase tracking-widest text-amber-300 underline hover:text-amber-200"
+                    >
+                        Review audience · {audienceCount} people
+                    </Link>
+                </div>
             </div>
             <p className="font-sans text-sm text-white/40 mb-8 max-w-3xl">
                 Ten high-intent nurture emails, Tuesdays, Thursdays and Sundays. Click a card to edit its subject,
