@@ -185,9 +185,9 @@ describe("parseCouponSetting", () => {
     });
 
     it("reads a configured setting and trims the code", () => {
-        expect(parseCouponSetting({ enabled: true, discountCode: "  DREAMPLAY100 ", codeNote: "one use" })).toEqual({
+        expect(parseCouponSetting({ enabled: true, discountCode: "  DREAMPLAY50 ", codeNote: "one use" })).toEqual({
             enabled: true,
-            discountCode: "DREAMPLAY100",
+            discountCode: "DREAMPLAY50",
             codeNote: "one use",
         });
     });
@@ -195,7 +195,7 @@ describe("parseCouponSetting", () => {
 
 describe("couponSendKey", () => {
     it("is stable and per-subscriber", () => {
-        expect(couponSendKey("abc")).toBe("marketing-coupon-100:abc");
+        expect(couponSendKey("abc")).toBe("marketing-coupon-offer:abc");
         expect(couponSendKey("abc")).toBe(couponSendKey("abc"));
         expect(couponSendKey("abc")).not.toBe(couponSendKey("abd"));
     });

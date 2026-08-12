@@ -352,7 +352,7 @@ const EMAILS = [
  * The behavioral trigger email (NOT on the calendar). Sent automatically to
  * anyone who opened 3+ calendar emails and has not purchased after 3 days.
  * Stored as a TEMPLATE campaign: each send clones a child keyed on
- * send_key marketing-coupon-100:<subscriberId>, so one person can only ever
+ * send_key marketing-coupon-offer:<subscriberId>, so one person can only ever
  * receive it once. {{discount_code}} is filled from variable_values at send
  * time; the code itself is created by hand in the Shopify admin because this
  * app's API token has no write_discounts scope.
@@ -366,18 +366,18 @@ const EMAILS = [
  * any reference to their engagement, open counts, or "because you...".
  */
 const COUPON_EMAIL = {
-  name: "Marketing Calendar 2026 - Engaged Non-Buyer $100 Coupon",
-  topic: "Engaged non-buyer $100 coupon (automatic trigger)",
-  subject: "{{first_name}}, here is $100 off",
+  name: "Marketing Calendar 2026 - Engaged Non-Buyer $50 Coupon",
+  topic: "Engaged non-buyer $50 coupon (automatic trigger)",
+  subject: "{{first_name}}, here is $50 off",
   preheader: "In case you have been thinking about a DreamPlay One.",
-  eyebrow: "$100 off",
-  headline: "{{first_name}}, here is $100 off",
+  eyebrow: "$50 off",
+  headline: "{{first_name}}, here is $50 off",
   paragraphs: [
     "I wanted to send you something in case you have been thinking about getting a DreamPlay One.",
-    "Here is $100 off. No promotion, no countdown, and it does not expire on you.",
+    "Here is $50 off. No promotion, no countdown, and it does not expire on you.",
   ],
   codeBox: { label: "Your discount code", note: "Enter it at checkout, or use the button below and it applies itself." },
-  ctaLabel: "Use My $100 Off",
+  ctaLabel: "Use My $50 Off",
   ctaUrl: `${SITE}/customize`,
   closing: [
     "And if the thing holding you back is not the price, reply and tell me what it is. I answer these myself.",

@@ -2,6 +2,8 @@
 
 > **Purpose:** hand every word of the August 2026 nurture sequence to a copy editor (human or AI) for review. This is the live copy as of 2026-08-12, revision 2. Nothing here has been sent yet.
 >
+> **The trigger offer is $50** (reduced from $100 on 2026-08-12, before anything sent).
+>
 > **Hard house rule for any rewrite: no em dashes anywhere.** Use commas, colons or periods instead. The existing copy follows this rule, so keep it that way.
 
 ---
@@ -28,7 +30,7 @@ Revision 1 was reviewed externally. The verdict was that the strategy was sound 
 
 ## 1. Context the editor needs
 
-**The company.** DreamPlay Pianos builds the DreamPlay One, a digital piano with narrower-than-standard keys and an LED guided learning system. The founder is Lionel Yu, who is also the face of the MusicalBasics YouTube channel. The instrument does not ship yet: 64 people have pre-ordered, first prototypes exist, and manufacturing is scheduled for late 2026 with deliveries from early 2027.
+**The company.** DreamPlay Pianos builds the DreamPlay One, a digital piano with narrower-than-standard keys and an LED guided learning system. The founder is Lionel Yu, who is also the face of the MusicalBasics YouTube channel. The instrument does not ship yet: 64 people have pre-ordered and the first prototypes exist. The public delivery target is **August 2027**; January 2027 is the earliest date, and applies only to the earliest backers.
 
 **The offer.** Entry price is $499 (keyboard only, deposit today) up to $1,999 for the Pro bundle. Three key widths, sold by hand span:
 
@@ -74,7 +76,7 @@ Eight emails, Tuesdays / Thursdays / Sundays, all at 9:00 AM Eastern by default.
 | 06 | 2026-08-25 | Tue | LED guided learning | I was skeptical about the light-up keys |
 | 07 | 2026-08-27 | Thu | Production progress | The first prototypes are finally here |
 | 08 | 2026-08-30 | Sun | Reserve yours | Ready to pick yours? |
-| — | automatic | — | **$100 coupon (behavioral trigger)** | {{first_name}}, here is $100 off |
+| — | automatic | — | **$50 coupon (behavioral trigger)** | {{first_name}}, here is $50 off |
 
 The ninth email is not on the calendar. It fires automatically for anyone who opens 3 or more of the above but has not purchased 3 days later. See section 5.
 
@@ -188,23 +190,23 @@ The ninth email is not on the calendar. It fires automatically for anyone who op
 
 ---
 
-## 4. The $100 coupon email (automatic trigger)
+## 4. The $50 coupon email (automatic trigger)
 
 Sent automatically, not on the calendar. See section 5 for the rule that fires it. Contains a gold-bordered code panel between the body copy and the button.
 
-**This email was rewritten from scratch in revision 2.** The old version was subject-lined "$100 off, because you have been paying attention" and opened "You have been opening my emails and reading about the DreamPlay One". The reviewer's verdict was blunt and correct: that reads as surveillance. People vaguely know email tracking exists, but they do not want a company to turn around and announce that it counted their opens. **The trigger is behavioral; the email must not say so.**
+**This email was rewritten from scratch in revision 2.** The old version was subject-lined "$50 off, because you have been paying attention" and opened "You have been opening my emails and reading about the DreamPlay One". The reviewer's verdict was blunt and correct: that reads as surveillance. People vaguely know email tracking exists, but they do not want a company to turn around and announce that it counted their opens. **The trigger is behavioral; the email must not say so.**
 
-- **Subject:** {{first_name}}, here is $100 off
+- **Subject:** {{first_name}}, here is $50 off
 - **Preheader:** In case you have been thinking about a DreamPlay One.
-- **Eyebrow:** $100 off
-- **Headline:** {{first_name}}, here is $100 off
+- **Eyebrow:** $50 off
+- **Headline:** {{first_name}}, here is $50 off
 - **Body 1:** I wanted to send you something in case you have been thinking about getting a DreamPlay One.
-- **Body 2:** Here is $100 off. No promotion, no countdown, and it does not expire on you.
+- **Body 2:** Here is $50 off. No promotion, no countdown, and it does not expire on you.
 - **Code panel:**
   - Label: Your discount code
   - Code: `{{discount_code}}`
   - Note: Enter it at checkout, or use the button below and it applies itself.
-- **Button:** Use My $100 Off → `/customize`
+- **Button:** Use My $50 Off → `/customize`
 - **Closing:** And if the thing holding you back is not the price, reply and tell me what it is. I answer these myself.
 
 **Standing rule for anyone editing this email:** do not reintroduce any reference to the recipient's engagement, open counts, or any "because you..." construction explaining why they received it. It must read as a spontaneous offer. This rule is also written into the code comments above the template.
@@ -215,7 +217,7 @@ One open question: "it does not expire on you" is a promise. It is true as writt
 
 ## 5. How the coupon trigger works
 
-The rule: **if someone opens 3 or more of the marketing emails above but has not purchased, wait 3 days, then send them the $100 coupon once.** They keep receiving every scheduled calendar email as well. The coupon is additive, never a replacement.
+The rule: **if someone opens 3 or more of the marketing emails above but has not purchased, wait 3 days, then send them the $50 coupon once.** They keep receiving every scheduled calendar email as well. The coupon is additive, never a replacement.
 
 Details that matter for reviewing the copy:
 
@@ -231,7 +233,7 @@ Details that matter for reviewing the copy:
 **Two gates, both required, and it ships with both closed:**
 
 1. A master switch, which ships **off**.
-2. A discount code. The Shopify code must be created by hand in the Shopify admin (Discounts → amount off order → $100) and pasted into `/admin/marketing-calendar/coupon`. Our Shopify API token has no `write_discounts` scope, so nothing in the code can mint codes. **The trigger refuses to send while no code is saved.** Recommendation: limit the code to one use per customer in Shopify so it cannot be shared around.
+2. A discount code. The Shopify code must be created by hand in the Shopify admin (Discounts → amount off order → $50) and pasted into `/admin/marketing-calendar/coupon`. Our Shopify API token has no `write_discounts` scope, so nothing in the code can mint codes. **The trigger refuses to send while no code is saved.** Recommendation: limit the code to one use per customer in Shopify so it cannot be shared around.
 
 ---
 
@@ -247,7 +249,7 @@ Details that matter for reviewing the copy:
 | 06 | I was skeptical about the light-up keys | See How Guided Learning Works |
 | 07 | The first prototypes are finally here | Follow the Production Timeline |
 | 08 | Ready to pick yours? | Build Your DreamPlay One |
-| Coupon | {{first_name}}, here is $100 off | Use My $100 Off |
+| Coupon | {{first_name}}, here is $50 off | Use My $50 Off |
 
 ---
 
@@ -257,7 +259,7 @@ Details that matter for reviewing the copy:
 2. **Email 06 needs Lionel's sign-off, not an editor's.** It has him confessing he was skeptical of light-up keys. That was the previous reviewer's own suggested angle and it is the most human email in the set, but it is only usable if it is actually true of him. If it is not, it is a fabricated conversion story and has to be rewritten.
 3. **Cadence.** Eight emails in 18 days, Thursday / Sunday / Tuesday and around. Still too much from a piano manufacturer, or about right now that each one has a reason to exist?
 4. **Is email 08 commercial enough?** It is the only scheduled email that asks for the sale. It now states the full $999 price and the deposit split.
-5. **The coupon email.** It is now deliberately plain, four short sentences. Too plain, given it is giving away $100?
+5. **The coupon email.** It is now deliberately plain, four short sentences. Too plain, given it is giving away $50?
 6. **Should email 08 state the delivery date at all?** It currently does not. The real answer is August 2027 for a new reservation (January 2027 was only ever the early-backer date). That is eleven months out, which is honest but a long wait to put in writing next to a "reserve now" button. Editor's judgement: state it plainly, or let the configurator page do it?
 
 **On factual claims.** Four passages in revision 2 were caught and corrected against the real product pages before anything sent: the DS5.5 interval comparison (was overstated by a full diatonic step), a graded-action claim that actually describes the Pro model, a "two years" that is fourteen months, and a "$499 down" that hid the $999 total. Each is documented in a note under its email in section 3. The lesson worth carrying: this copy is persuasive enough that a wrong number reads as confidently as a right one, so every figure needs checking against `/product-information`, `/production-timeline` or `config/shop.ts` rather than trusted because it sounds plausible.

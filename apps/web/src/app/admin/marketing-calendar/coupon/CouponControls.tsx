@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { saveCouponSetting } from "@/actions/marketing-calendar-actions";
+import { COUPON_AMOUNT_USD } from "@/lib/coupon-trigger";
 
 /**
  * The two gates on the automatic coupon: the master switch and the Shopify
@@ -74,12 +75,12 @@ export function CouponControls({
                     <input
                         value={code}
                         onChange={(e) => setCode(e.target.value.toUpperCase())}
-                        placeholder="DREAMPLAY100"
+                        placeholder="DREAMPLAY50"
                         className="w-full border border-white/15 bg-black/40 rounded px-3 py-2 font-mono text-sm tracking-widest text-amber-200 focus:border-amber-300 focus:outline-none"
                     />
                     <p className="font-sans text-[11px] text-white/35 mt-1.5 leading-relaxed">
-                        Create this by hand in Shopify (Discounts, amount off order, $100). Our API token has no
-                        write_discounts scope, so nothing here can create it for you.
+                        Create this by hand in Shopify (Discounts, amount off order, ${COUPON_AMOUNT_USD}). Our API
+                        token has no write_discounts scope, so nothing here can create it for you.
                     </p>
                 </div>
                 <div>

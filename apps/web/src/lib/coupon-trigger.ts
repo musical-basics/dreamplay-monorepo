@@ -1,8 +1,9 @@
 /**
- * $100 coupon trigger — the behavioral follow-up for engaged non-buyers.
+ * $50 coupon trigger — the behavioral follow-up for engaged non-buyers.
  *
- * Rule (Lionel, 2026-08-11): a subscriber who opened 3 or more DreamPlay
- * marketing emails but has not purchased gets a one-time $100-off email,
+ * Rule (Lionel, 2026-08-11, amount reduced to $50 on 2026-08-12): a
+ * subscriber who opened 3 or more DreamPlay marketing emails but has not
+ * purchased gets a one-time $50-off email,
  * sent no earlier than 3 days after the open that crossed the threshold.
  * This is IN ADDITION to the marketing calendar: it never replaces or
  * cancels a scheduled nurture email.
@@ -26,10 +27,17 @@
  * testable without a database.
  */
 
-export const COUPON_TEMPLATE_NAME = "Marketing Calendar 2026 - Engaged Non-Buyer $100 Coupon";
-export const COUPON_SEND_KEY_PREFIX = "marketing-coupon-100";
+export const COUPON_TEMPLATE_NAME = "Marketing Calendar 2026 - Engaged Non-Buyer $50 Coupon";
+/**
+ * Per-subscriber idempotency prefix. Deliberately amount-agnostic: if the
+ * offer amount changes again, this must NOT change with it, or everyone who
+ * already received a coupon becomes eligible for another one (the
+ * already-sent check reads these keys). Renamed once, on 2026-08-12, while
+ * nothing had been sent; it is frozen from here.
+ */
+export const COUPON_SEND_KEY_PREFIX = "marketing-coupon-offer";
 export const COUPON_SETTING = "marketing-calendar:coupon-trigger";
-export const COUPON_AMOUNT_USD = 100;
+export const COUPON_AMOUNT_USD = 50;
 
 /** Distinct marketing emails a subscriber must open to qualify. */
 export const COUPON_MIN_OPENS = 3;
@@ -52,7 +60,7 @@ export const COUPON_OPEN_LOOKBACK_DAYS = 45;
 export interface CouponTriggerSetting {
     /** Master switch. Off until Lionel turns it on in the admin GUI. */
     enabled: boolean;
-    /** The Shopify discount code, e.g. "DREAMPLAY100". Empty = not ready. */
+    /** The Shopify discount code, e.g. "DREAMPLAY50". Empty = not ready. */
     discountCode: string;
     /** Optional human note about the code (expiry, usage limits). */
     codeNote: string;

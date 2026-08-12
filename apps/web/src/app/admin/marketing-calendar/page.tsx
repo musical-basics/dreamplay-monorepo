@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { COUPON_AMOUNT_USD } from "@/lib/coupon-trigger";
 import { getAdminDb } from "@/lib/db";
 import {
     AUDIENCE_SETTING,
@@ -59,7 +60,7 @@ export default async function MarketingCalendarPage() {
                         href="/admin/marketing-calendar/coupon"
                         className="font-sans text-xs uppercase tracking-widest text-amber-300 underline hover:text-amber-200"
                     >
-                        $100 coupon trigger
+                        ${COUPON_AMOUNT_USD} coupon trigger
                     </Link>
                     <Link
                         href="/admin/marketing-calendar/audience"

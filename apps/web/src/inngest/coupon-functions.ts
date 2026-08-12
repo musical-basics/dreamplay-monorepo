@@ -1,7 +1,7 @@
 /**
- * The $100 coupon trigger (Lionel, 2026-08-11): subscribers who opened 3 or
+ * The $50 coupon trigger (Lionel, 2026-08-11): subscribers who opened 3 or
  * more marketing-calendar emails but have not purchased get a one-time
- * $100-off email, 3 days after the open that qualified them. It is additive:
+ * $50-off email, 3 days after the open that qualified them. It is additive:
  * they keep receiving every scheduled nurture email as well.
  *
  * Runs as a daily cron rather than reacting to each open, because the rule is
@@ -13,7 +13,7 @@
  *   1. Kill switch: app_settings["marketing-calendar:coupon-trigger"].enabled
  *      must be true. Ships OFF.
  *   2. A discount code must be configured. No code, no send.
- *   3. Per-subscriber send_key "marketing-coupon-100:<id>" means a retry (or
+ *   3. Per-subscriber send_key "marketing-coupon-offer:<id>" means a retry (or
  *      tomorrow's run) reuses the same child campaign, and sent_history's
  *      UNIQUE (campaign_id, subscriber_id) turns any double attempt into a
  *      no-op. One coupon per person, forever.

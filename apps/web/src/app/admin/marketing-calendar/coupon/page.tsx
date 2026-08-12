@@ -11,7 +11,7 @@ import { CouponControls } from "./CouponControls";
 
 /**
  * /admin/marketing-calendar/coupon — control room for the automatic
- * $100-off trigger. Shows the live pipeline (who qualified, who is waiting
+ * $50-off trigger. Shows the live pipeline (who qualified, who is waiting
  * out the 3 days, who was held back and why) and holds the two things that
  * gate it: the master switch and the Shopify discount code.
  */

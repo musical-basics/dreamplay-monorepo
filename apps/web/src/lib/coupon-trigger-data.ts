@@ -1,5 +1,5 @@
 /**
- * Data access for the $100 coupon trigger. Shared by the Inngest cron
+ * Data access for the $50 coupon trigger. Shared by the Inngest cron
  * (send path) and /admin/marketing-calendar/coupon (review path) so both
  * always agree about who is eligible.
  *
