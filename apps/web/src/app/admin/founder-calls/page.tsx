@@ -51,8 +51,9 @@ export default async function FounderCallsPage() {
     const now = new Date();
     const slots = candidateSlots(now, 21);
 
-    const prefs: { id: string; pref: CallPreference }[] = active.map((r) => ({
+    const prefs: { id: string; email: string; pref: CallPreference }[] = active.map((r) => ({
         id: r.id,
+        email: buyerById.get(r.buyer_id)?.email ?? "",
         pref: {
             timezone: r.timezone,
             preferredDays: r.preferred_days ?? [],

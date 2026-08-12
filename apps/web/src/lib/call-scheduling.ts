@@ -12,20 +12,46 @@
 
 export const LIONEL_TZ = "America/New_York";
 
-/** Lionel's stated availability: Friday and Saturday, 2pm to 5pm ET. */
+/**
+ * Lionel's availability: Friday and Saturday. The core window is 1pm to 5pm
+ * ET (1pm added 2026-08-11 to move a Denver call off a 3pm conflict), and he
+ * confirmed he can also take a 7pm ET call for the evening-only buyers.
+ */
 export const LIONEL_AVAILABILITY = {
     days: ["Friday", "Saturday"] as const,
-    startHour: 14,
-    /** Exclusive: the last meeting may START at 16:00 and end by 17:00. */
+    startHour: 13,
+    /** Exclusive: the last core-window meeting may START at 16:00. */
     endHour: 17,
 };
 
 /**
- * Two guests asked for evenings that do not exist inside 2-5pm ET. Slots
- * past endHour are still offered, flagged `outsidePreferred`, because
- * refusing them would mean not scheduling those buyers at all.
+ * Two guests asked for evenings that do not exist inside the core window.
+ * Lionel confirmed 7pm ET works for them, so slots run to 8pm. Anything at
+ * or past `endHour` is flagged `outsidePreferred` in the UI so an
+ * after-hours booking is always a visible choice, never a silent one.
  */
 export const EXTENDED_END_HOUR = 20;
+
+/**
+ * Hours (in LIONEL_TZ) Lionel is already busy, keyed by "YYYY-MM-DD" in that
+ * same zone. These are removed from the candidate list entirely, so a
+ * conflicting slot cannot be picked by the suggester or from the dropdown.
+ */
+export const BUSY_SLOTS: Record<string, number[]> = {
+    // Existing call at 3pm ET on Friday Aug 14 (Lionel, 2026-08-11).
+    "2026-08-14": [15],
+};
+
+/** Calendar date in LIONEL_TZ, as "YYYY-MM-DD", for BUSY_SLOTS lookups. */
+export function dateKeyIn(date: Date, timeZone: string): string {
+    const parts = new Intl.DateTimeFormat("en-CA", {
+        timeZone,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+    }).format(date);
+    return parts;
+}
 
 export const DAY_PART_RANGES: Record<string, [number, number]> = {
     Morning: [5, 12],
@@ -108,6 +134,8 @@ export function candidateSlots(from: Date, days = 21): Date[] {
                 if (hourIn(cand, LIONEL_TZ) !== h) continue;
                 const wd = weekdayIn(cand, LIONEL_TZ);
                 if (!(LIONEL_AVAILABILITY.days as readonly string[]).includes(wd)) break;
+                const busy = BUSY_SLOTS[dateKeyIn(cand, LIONEL_TZ)] ?? [];
+                if (busy.includes(h)) break;
                 if (cand > from) out.push(cand);
                 break;
             }
@@ -132,7 +160,13 @@ export function scoreSlot(slot: Date, pref: CallPreference): SlotScore {
 
     const lionelHour = hourIn(slot, LIONEL_TZ);
     const outsidePreferred = lionelHour >= LIONEL_AVAILABILITY.endHour;
-    if (outsidePreferred) reasons.push(`${lionelHour - 12}pm ET is past your 5pm cutoff`);
+    if (outsidePreferred) {
+        reasons.push(
+            lionelHour === 19
+                ? "7pm ET, the evening slot you approved"
+                : `${lionelHour - 12}pm ET is outside your 1pm to 5pm window`,
+        );
+    }
 
     if (dayOk && partOk && !outsidePreferred) reasons.push("fits both of you");
 
@@ -140,12 +174,40 @@ export function scoreSlot(slot: Date, pref: CallPreference): SlotScore {
 }
 
 /**
+ * A buyer's free-text note can be stricter than the chips they ticked (one
+ * said "Evening" but wrote "usually free weekdays after 7pm"). When a note
+ * names an hour, honour it: the chips are a coarse picker, the note is what
+ * they actually told us.
+ */
+export function earliestHourFromNote(notes: string | null): number | null {
+    if (!notes) return null;
+    const m = notes.match(/after\s+(\d{1,2})\s*(am|pm)?/i);
+    if (!m) return null;
+    let hour = Number(m[1]);
+    const meridiem = m[2]?.toLowerCase();
+    if (meridiem === "pm" && hour < 12) hour += 12;
+    // "after 7" with no am/pm, in an evening context, means 7pm.
+    if (!meridiem && hour <= 11) hour += 12;
+    return hour >= 0 && hour <= 23 ? hour : null;
+}
+
+/**
  * Best slot for a buyer: prefer slots that fit them AND sit inside Lionel's
  * window; fall back to fitting slots outside it; finally to the earliest
  * candidate. Ties break toward the earliest date so the calls happen soon.
+ *
+ * A minimum-hour hint from the buyer's note is applied first and only
+ * relaxed if it would leave them with nothing.
  */
 export function suggestSlot(slots: Date[], pref: CallPreference): SlotScore | null {
-    const scored = slots.map((s) => scoreSlot(s, pref));
+    const tz = pref.timezone || LIONEL_TZ;
+    const minHour = earliestHourFromNote(pref.notes);
+    const honoursNote = (s: Date) => minHour === null || hourIn(s, tz) >= minHour;
+
+    const preferred = slots.filter(honoursNote);
+    const pool = preferred.length ? preferred : slots;
+
+    const scored = pool.map((s) => scoreSlot(s, pref));
     return (
         scored.find((s) => s.fits && !s.outsidePreferred) ??
         scored.find((s) => s.fits) ??
@@ -155,22 +217,51 @@ export function suggestSlot(slots: Date[], pref: CallPreference): SlotScore | nu
 }
 
 /**
- * Assign slots across several buyers without double-booking. Buyers with
- * the fewest workable options are placed first, so the most constrained
- * person is not squeezed out by someone flexible.
+ * Slots Lionel has asked for by name, keyed by buyer email. These are placed
+ * before anything else is suggested, so a direct instruction always wins
+ * over the scoring heuristic.
  */
-export function suggestSchedule<T extends { id: string; pref: CallPreference }>(
+export const PINNED_SLOTS: Record<string, string> = {
+    // "move j hounds to 1pm my time" (Lionel, 2026-08-11). 1pm ET = 11am MDT,
+    // inside their stated availability.
+    "jhounds99@gmail.com": "2026-08-14T17:00:00.000Z",
+};
+
+/**
+ * Assign slots across several buyers without double-booking. Pinned buyers
+ * are placed first; the rest are ordered by how few workable options they
+ * have, so the most constrained person is not squeezed out by someone
+ * flexible.
+ */
+export function suggestSchedule<T extends { id: string; pref: CallPreference; email?: string }>(
     requests: T[],
     slots: Date[],
 ): Map<string, SlotScore | null> {
-    const optionCount = new Map<string, number>();
-    for (const r of requests) {
-        optionCount.set(r.id, slots.filter((s) => scoreSlot(s, r.pref).fits).length);
-    }
-    const order = [...requests].sort((a, b) => (optionCount.get(a.id) ?? 0) - (optionCount.get(b.id) ?? 0));
-
     const taken = new Set<number>();
     const out = new Map<string, SlotScore | null>();
+
+    const pinned: T[] = [];
+    const rest: T[] = [];
+    for (const r of requests) {
+        const key = r.email?.toLowerCase() ?? "";
+        if (PINNED_SLOTS[key]) pinned.push(r);
+        else rest.push(r);
+    }
+
+    for (const r of pinned) {
+        const iso = PINNED_SLOTS[r.email!.toLowerCase()]!;
+        const start = new Date(iso);
+        taken.add(start.getTime());
+        const score = scoreSlot(start, r.pref);
+        out.set(r.id, { ...score, reasons: ["you asked for this time", ...score.reasons] });
+    }
+
+    const optionCount = new Map<string, number>();
+    for (const r of rest) {
+        optionCount.set(r.id, slots.filter((s) => scoreSlot(s, r.pref).fits).length);
+    }
+    const order = [...rest].sort((a, b) => (optionCount.get(a.id) ?? 0) - (optionCount.get(b.id) ?? 0));
+
     for (const r of order) {
         const free = slots.filter((s) => !taken.has(s.getTime()));
         const pick = suggestSlot(free, r.pref);

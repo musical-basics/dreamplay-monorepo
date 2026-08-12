@@ -183,7 +183,7 @@ export function CallScheduler({
                                                 {formatIn(d, lionelTz)} ET → {formatIn(d, r.timezone)}{" "}
                                                 {tzAbbrev(d, r.timezone)}
                                                 {f.fits ? "" : "  (not their time)"}
-                                                {past ? "  (past your 5pm)" : ""}
+                                                {past ? "  (evening slot)" : ""}
                                             </option>
                                         );
                                     })}
@@ -214,8 +214,9 @@ export function CallScheduler({
                                 )}
                                 {outsideWindow && (
                                     <p className="font-sans text-xs text-amber-300">
-                                        This is past your 5pm ET cutoff. It is the only way to reach them in their
-                                        evening.
+                                        {hourIn(when!, lionelTz) === 19
+                                            ? "7pm ET, the evening slot you approved. It is the only way to reach them in their evening."
+                                            : "This is outside your 1pm to 5pm ET window."}
                                     </p>
                                 )}
                                 {fit?.fits && !outsideWindow && !clash && (
