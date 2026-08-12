@@ -13,11 +13,12 @@
 export const LIONEL_TZ = "America/New_York";
 
 /**
- * Lionel's availability: Friday and Saturday. The core window is 1pm to 5pm
- * ET (1pm added 2026-08-11 to move a Denver call off a 3pm conflict).
+ * Lionel's availability. The core window is 1pm to 5pm ET on his available
+ * days; evenings differ per day and live in EVENING_AVAILABILITY.
  */
 export const LIONEL_AVAILABILITY = {
-    days: ["Friday", "Saturday"] as const,
+    // Monday added 2026-08-12 for a buyer who can only do Mon/Tue/Thu.
+    days: ["Monday", "Friday", "Saturday"] as const,
     startHour: 13,
     /** Exclusive: the last core-window meeting may START at 16:00. */
     endHour: 17,
@@ -25,12 +26,13 @@ export const LIONEL_AVAILABILITY = {
 
 /**
  * Evening availability, which differs by day (Lionel, 2026-08-11): Saturday
- * night is free from 5pm, but Friday night is busy until 8pm ET. Buyers who
- * can only do evenings are placed here.
+ * night is free from 5pm, but Friday night is busy until 8pm ET. Monday
+ * evenings are open from 5pm.
  *
  * `from` is the first bookable hour, `to` is exclusive.
  */
 export const EVENING_AVAILABILITY: Record<string, { from: number; to: number }> = {
+    Monday: { from: 17, to: 22 },
     Friday: { from: 20, to: 22 },
     Saturday: { from: 17, to: 22 },
 };
@@ -259,6 +261,9 @@ export const PINNED_SLOTS: Record<string, string> = {
     // Friday 8pm ET is the earliest that clears Lionel's Friday-night
     // commitment while still being a weekday evening for them.
     "judehe45@gmail.com": "2026-08-15T00:00:00.000Z",
+    // "poly you can schedule for next monday" (Lionel, 2026-08-12).
+    // Mon Aug 17, 3pm ET = 12pm PDT, inside their Afternoon preference.
+    "polypseudonymz@gmail.com": "2026-08-17T19:00:00.000Z",
 };
 
 /**

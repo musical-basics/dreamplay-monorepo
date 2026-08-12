@@ -17,6 +17,7 @@ import {
     resolveArm,
     type ResearchArm,
 } from "@/lib/buyer-research";
+import { parseConfirmToken } from "@/lib/call-confirm-token";
 import type { BuyerCallContactMethod, BuyerCallStatus } from "@dreamplay/db";
 
 export interface ResearchActionResult {
@@ -273,5 +274,53 @@ export async function saveCallSchedules(
         const { error } = await db.from("buyer_call_requests").update({ scheduled_at: iso }).eq("id", id);
         if (error) return { ok: false, error: error.message };
     }
+    return { ok: true };
+}
+
+// --- buyer-facing call confirmation (/confirm-call) --------------------------------
+
+/**
+ * The buyer accepts the proposed time. This does NOT create the Zoom meeting
+ * or email the link: a separate sender picks up confirmed rows, so a slow or
+ * failing Zoom API can never block the buyer's own confirmation.
+ */
+export async function confirmCallTime(token: string): Promise<ResearchActionResult> {
+    const requestId = parseConfirmToken(token);
+    if (!requestId) return { ok: false, error: "This link is not valid." };
+
+    const db = getAdminDb();
+    const { data: row } = await db
+        .from("buyer_call_requests")
+        .select("id, scheduled_at, confirmed_at")
+        .eq("id", requestId)
+        .maybeSingle();
+    if (!row) return { ok: false, error: "This link is not valid." };
+    if (!row.scheduled_at) return { ok: false, error: "That time is no longer held. Please reply to the email." };
+    if (row.confirmed_at) return { ok: true };
+
+    const { error } = await db
+        .from("buyer_call_requests")
+        .update({ confirmed_at: new Date().toISOString(), declined_at: null, status: "scheduled" })
+        .eq("id", requestId);
+    if (error) return { ok: false, error: error.message };
+    return { ok: true };
+}
+
+/** The buyer asks for a different time. Lionel re-proposes by hand. */
+export async function declineCallTime(token: string, note: string): Promise<ResearchActionResult> {
+    const requestId = parseConfirmToken(token);
+    if (!requestId) return { ok: false, error: "This link is not valid." };
+
+    const db = getAdminDb();
+    const { error } = await db
+        .from("buyer_call_requests")
+        .update({
+            declined_at: new Date().toISOString(),
+            confirmed_at: null,
+            reschedule_note: note.trim().slice(0, 2000) || null,
+            status: "requested",
+        })
+        .eq("id", requestId);
+    if (error) return { ok: false, error: error.message };
     return { ok: true };
 }

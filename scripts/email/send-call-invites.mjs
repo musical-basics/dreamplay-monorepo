@@ -1,9 +1,15 @@
 /**
- * send-call-invites.mjs — "here is your time" emails for booked founder calls.
+ * send-call-invites.mjs — the two-step founder call booking emails.
  *
- * Reads the slots confirmed on /admin/founder-calls, creates a Zoom meeting
- * per call (Server-to-Server OAuth, so each buyer gets their own join URL),
- * and emails each buyer their time rendered in THEIR timezone.
+ * STEP 1 (--propose, default): email the buyer the time Lionel picked on
+ * /admin/founder-calls, rendered in THEIR timezone, linking to a signed
+ * /confirm-call page. No Zoom meeting exists yet and no join URL is in this
+ * email.
+ *
+ * STEP 2 (--send-links): for buyers who confirmed on that page, create the
+ * Zoom meeting and email them the join link. Splitting it this way means a
+ * meeting is only ever minted for a call somebody actually agreed to, and a
+ * forwarded proposal cannot leak a live room.
  *
  * Same pipeline guarantees as send-ab-test-august-10.mjs:
  *   - ONE child campaign resolved via campaigns.send_key -> idempotent reruns
@@ -17,9 +23,12 @@
  * is skipped, so a rerun can never tell a buyer their time twice.
  *
  * Usage:
- *   node send-call-invites.mjs                       dry run (no Zoom, no email)
- *   node send-call-invites.mjs --test <email>        full render to one address
- *   node send-call-invites.mjs --execute             REAL: creates Zoom + sends
+ *   node send-call-invites.mjs                            dry run of step 1
+ *   node send-call-invites.mjs --test <email>             step 1 render to one address
+ *   node send-call-invites.mjs --execute                  REAL step 1
+ *   node send-call-invites.mjs --send-links               dry run of step 2
+ *   node send-call-invites.mjs --send-links --test <em>   step 2 render to one address
+ *   node send-call-invites.mjs --send-links --execute     REAL step 2 (creates Zoom)
  */
 
 import { readFileSync } from "node:fs";
@@ -29,6 +38,7 @@ import { fileURLToPath } from "node:url";
 
 const argv = process.argv.slice(2);
 const EXECUTE = argv.includes("--execute");
+const SEND_LINKS = argv.includes("--send-links");
 const testIdx = argv.indexOf("--test");
 const TEST_EMAIL = testIdx === -1 ? null : argv[testIdx + 1];
 if (testIdx !== -1 && !TEST_EMAIL) { console.error("--test requires an email address"); process.exit(1); }
@@ -56,8 +66,11 @@ if (!SUPA_URL || !SVC || !RESEND_KEY || !UNSUB_SECRET) {
   process.exit(1);
 }
 
-const SEND_KEY = "founder-call-invite-1";
-const CAMPAIGN_NAME = "Founder Call Invite (AB Test August 10)";
+const SEND_KEY = SEND_LINKS ? "founder-call-link-1" : "founder-call-invite-1";
+const CAMPAIGN_NAME = SEND_LINKS
+  ? "Founder Call Zoom Link (AB Test August 10)"
+  : "Founder Call Proposed Time (AB Test August 10)";
+const APP_BASE = "https://www.dreamplaypianos.com";
 const FROM = "Lionel from DreamPlay <lionel@email.dreamplaypianos.com>";
 const REPLY_TO = "support@dreamplaypianos.com";
 const TRACKING_BASE = "https://email.dreamplaypianos.com";
@@ -67,7 +80,8 @@ const PACE_MS = 300;
 /** Lionel talks to these buyers already; never invite them from here. */
 const EXCLUDED = new Set(["jaydeireland@gmail.com"]);
 
-console.log(`>>> MODE: ${TEST_EMAIL ? `TEST -> ${TEST_EMAIL}` : EXECUTE ? "EXECUTE (Zoom + real send)" : "DRY-RUN"}`);
+const STEP = SEND_LINKS ? "STEP 2 (zoom links to confirmed buyers)" : "STEP 1 (propose a time)";
+console.log(`>>> ${STEP} | MODE: ${TEST_EMAIL ? `TEST -> ${TEST_EMAIL}` : EXECUTE ? "EXECUTE (real send)" : "DRY-RUN"}`);
 
 const H = { apikey: SVC, Authorization: `Bearer ${SVC}`, "Content-Type": "application/json" };
 async function rest(path, init) {
@@ -78,6 +92,15 @@ async function rest(path, init) {
 }
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const unsubToken = (sid, cid) => createHmac("sha256", UNSUB_SECRET).update(`${sid}:${cid ?? ""}`).digest("hex").slice(0, 32);
+
+/**
+ * Signed /confirm-call link. MUST match apps/web/src/lib/call-confirm-token.ts
+ * exactly, or the page will reject every link this script sends.
+ */
+const confirmToken = (requestId) =>
+  createHmac("sha256", UNSUB_SECRET).update(`call-confirm:${requestId}`).digest("hex").slice(0, 32);
+const confirmPath = (requestId) =>
+  `/confirm-call?t=${encodeURIComponent(`${requestId}.${confirmToken(requestId)}`)}`;
 
 const fmt = (date, tz) =>
   new Intl.DateTimeFormat("en-US", {
@@ -117,21 +140,17 @@ const UNSUB_FOOTER = `
   <p style="margin: 0;">No longer want to receive these emails? <a href="{{unsubscribe_url}}" style="color: #8d846c; text-decoration: underline;">Unsubscribe here</a>.</p>
 </div>`;
 
-function buildHtml({ firstName, theirTime, myTime, joinUrl, method, contactValue }) {
-  const isZoom = method === "zoom";
-  const howBlock = isZoom
-    ? `<p class="muted" style="margin:0 0 16px 0; font-size:16px; line-height:1.85;">Here is the link for our call. There is nothing to install if you would rather join from your browser.</p>`
-    : `<p class="muted" style="margin:0 0 16px 0; font-size:16px; line-height:1.85;">I will ${method === "whatsapp" ? "reach you on WhatsApp" : "call you"} at <strong style="color:#f7f3ea;">${contactValue ?? "the number you gave me"}</strong> at that time. If there is a better number, just reply and let me know.</p>`;
-  const button = isZoom
+/** Shared dark/gold shell so both emails look like everything else we send. */
+function shell({ preheader, eyebrow, headline, bodyHtml, buttonLabel, buttonUrl, tailHtml }) {
+  const button = buttonUrl
     ? `<tr><td align="center" style="padding:20px 56px 12px 56px;">
         <table role="presentation" cellpadding="0" cellspacing="0"><tr>
           <td align="center" bgcolor="#d8b25c" style="border-radius:2px;">
-            <a href="${joinUrl}" style="display:inline-block; padding:17px 44px; font-family: Arial, Helvetica, sans-serif; font-size:14px; font-weight:bold; letter-spacing:1.5px; text-transform:uppercase; color:#1a1505; text-decoration:none;">Join Our Call</a>
+            <a href="${buttonUrl}" style="display:inline-block; padding:17px 44px; font-family: Arial, Helvetica, sans-serif; font-size:14px; font-weight:bold; letter-spacing:1.5px; text-transform:uppercase; color:#1a1505; text-decoration:none;">${buttonLabel}</a>
           </td>
         </tr></table>
       </td></tr>`
     : "";
-
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -147,23 +166,19 @@ function buildHtml({ firstName, theirTime, myTime, joinUrl, method, contactValue
   </style>
 </head>
 <body>
-  <div style="display:none; max-height:0; overflow:hidden; opacity:0;">${theirTime}. Looking forward to it.</div>
+  <div style="display:none; max-height:0; overflow:hidden; opacity:0;">${preheader}</div>
   <table role="presentation" width="100%" style="background:#0b0b0b;">
     <tr><td align="center">
       <table role="presentation" width="640" style="max-width:640px; background:#111111;">
         <tr><td align="center" style="padding:28px 20px 18px 20px; background:#0b0b0b;" class="gold">D R E A M P L A Y</td></tr>
         <tr><td class="pad" style="padding:36px 56px 8px 56px;">
-          <p class="gold" style="margin:0 0 14px 0; font-size:11px; letter-spacing:4px; text-transform:uppercase;">Our call</p>
-          <h1 style="margin:0 0 20px 0; font-size:32px; line-height:1.25; font-weight:400; color:#f7f3ea;">${firstName}, does this time work?</h1>
-          <p class="muted" style="margin:0 0 16px 0; font-size:16px; line-height:1.85;">Thanks for being up for a chat. Going by the days you picked, how about:</p>
-          <p style="margin:0 0 16px 0; font-size:20px; line-height:1.5; color:#f7f3ea;"><strong>${theirTime}</strong></p>
-          <p class="muted" style="margin:0 0 16px 0; font-size:14px; line-height:1.7;">That is ${myTime} for me, so we should both be awake.</p>
-          ${howBlock}
-          <p class="muted" style="margin:0 0 16px 0; font-size:16px; line-height:1.85;">If that does not suit you, just reply with a better day and I will move it. No trouble at all.</p>
+          <p class="gold" style="margin:0 0 14px 0; font-size:11px; letter-spacing:4px; text-transform:uppercase;">${eyebrow}</p>
+          <h1 style="margin:0 0 20px 0; font-size:32px; line-height:1.25; font-weight:400; color:#f7f3ea;">${headline}</h1>
+          ${bodyHtml}
         </td></tr>
         ${button}
         <tr><td class="pad" style="padding:24px 56px 40px 56px;">
-          <p class="muted" style="margin:0 0 24px 0; font-size:15px; line-height:1.8;">It is only about 15 minutes and there is nothing to prepare. I just want to hear about you and your playing.</p>
+          ${tailHtml}
           <p style="margin:0; font-size:16px; line-height:1.8; color:#f7f3ea;">Lionel Yu<br/><span class="muted">Founder, DreamPlay Pianos</span></p>
         </td></tr>
       </table>
@@ -171,6 +186,54 @@ function buildHtml({ firstName, theirTime, myTime, joinUrl, method, contactValue
   </table>
 </body>
 </html>`;
+}
+
+const P = (t) => `<p class="muted" style="margin:0 0 16px 0; font-size:16px; line-height:1.85;">${t}</p>`;
+
+/** STEP 1: propose a time. Links to /confirm-call, carries no Zoom URL. */
+function buildProposalHtml({ firstName, theirTime, myTime, confirmUrl, method, contactValue }) {
+  const how =
+    method === "zoom"
+      ? P("It is on Zoom, and I will send the link over as soon as you confirm.")
+      : P(`I will ${method === "whatsapp" ? "reach you on WhatsApp" : "call you"} at <strong style="color:#f7f3ea;">${contactValue ?? "the number you gave me"}</strong>. If there is a better number, just reply and let me know.`);
+  return shell({
+    preheader: `${theirTime}. Let me know if that works and I will lock it in.`,
+    eyebrow: "Our call",
+    headline: `${firstName}, does this time work?`,
+    bodyHtml: [
+      P("Thanks for being up for a chat. Going by the days you picked, how about:"),
+      `<p style="margin:0 0 16px 0; font-size:20px; line-height:1.5; color:#f7f3ea;"><strong>${theirTime}</strong></p>`,
+      P(`That is ${myTime} for me, so we should both be awake.`),
+      how,
+    ].join("\n"),
+    buttonLabel: "Yes, That Works",
+    buttonUrl: confirmUrl,
+    tailHtml: [
+      P("If that day is no good, hit the same link and tell me what suits you better. No trouble at all."),
+      P("It is only about 15 minutes and there is nothing to prepare. I just want to hear about you and your playing."),
+    ].join("\n"),
+  });
+}
+
+/** STEP 2: they confirmed, so here is the actual join link. */
+function buildLinkHtml({ firstName, theirTime, myTime, joinUrl }) {
+  return shell({
+    preheader: `Your Zoom link for ${theirTime}.`,
+    eyebrow: "Our call",
+    headline: `${firstName}, we are booked in.`,
+    bodyHtml: [
+      P("Thanks for confirming. Here are the details:"),
+      `<p style="margin:0 0 16px 0; font-size:20px; line-height:1.5; color:#f7f3ea;"><strong>${theirTime}</strong></p>`,
+      P(`That is ${myTime} my time.`),
+      P("There is nothing to install if you would rather join from your browser."),
+    ].join("\n"),
+    buttonLabel: "Join Our Call",
+    buttonUrl: joinUrl,
+    tailHtml: [
+      P(`If the button does not work, this is the link: <a href="${joinUrl}" style="color:#d8b25c;">${joinUrl}</a>`),
+      P("If something comes up, just reply to this email and we will move it."),
+    ].join("\n"),
+  });
 }
 
 function rewriteLinksAppend(html, sid, cid) {
@@ -218,19 +281,31 @@ async function sendViaResend({ to, subject, html, qs }) {
 
 // --- load booked calls ------------------------------------------------------------
 const calls = await rest("buyer_call_requests?select=*&scheduled_at=not.is.null&order=scheduled_at.asc&limit=200");
-if (!calls.length) { console.log("No calls have a confirmed time yet. Schedule them at /admin/founder-calls first."); process.exit(0); }
+if (!calls.length) { console.log("No calls have a time yet. Pick one at /admin/founder-calls first."); process.exit(0); }
 
 const ids = [...new Set(calls.map((c) => c.buyer_id))];
 const buyers = await rest(`buyers?select=id,email,notes&id=in.(${ids.map((i) => `"${i}"`).join(",")})`);
 const buyerById = new Map(buyers.map((b) => [b.id, b]));
 
+/**
+ * Step 1 wants rows nobody has been told about yet. Step 2 wants rows the
+ * buyer confirmed but who have not received their link. Both skip anyone
+ * Lionel handles personally.
+ */
 const pending = calls.filter((c) => {
   const b = buyerById.get(c.buyer_id);
   if (!b || EXCLUDED.has(b.email.toLowerCase())) return false;
-  if (c.invite_sent_at) { console.log(`SKIP already invited: ${b.email}`); return false; }
+  if (SEND_LINKS) {
+    if (!c.confirmed_at) return false;
+    if (c.link_sent_at) { console.log(`SKIP link already sent: ${b.email}`); return false; }
+    if (c.contact_method !== "zoom") { console.log(`SKIP not a zoom call: ${b.email}`); return false; }
+    return true;
+  }
+  if (c.invite_sent_at) { console.log(`SKIP already proposed: ${b.email}`); return false; }
   return true;
 });
-console.log(`${pending.length} invite(s) to send (of ${calls.length} scheduled)`);
+console.log(`${pending.length} email(s) to send (of ${calls.length} scheduled)`);
+if (!pending.length) { console.log("nothing to do."); process.exit(0); }
 
 let child = (await rest(`campaigns?select=*&send_key=eq.${SEND_KEY}&limit=1`))?.[0] ?? null;
 if (!child && (EXECUTE || TEST_EMAIL)) {
@@ -249,7 +324,8 @@ if (!child && (EXECUTE || TEST_EMAIL)) {
 const cid = child?.id ?? "(created on execute)";
 
 const suppressed = new Set((await rest("suppressions?select=email&limit=10000")).map((s) => s.email.toLowerCase()));
-const token = EXECUTE ? await zoomToken() : null;
+// Only step 2 ever talks to Zoom, and only for a real send.
+const zoomAuth = SEND_LINKS && EXECUTE ? await zoomToken() : null;
 
 let sent = 0, failed = 0;
 for (const call of pending) {
@@ -269,38 +345,44 @@ for (const call of pending) {
   const myTime = fmt(startAt, LIONEL_TZ);
 
   if (!EXECUTE && !TEST_EMAIL) {
-    console.log(`WOULD INVITE ${email.padEnd(34)} ${call.contact_method.padEnd(9)} ${theirTime}  (me: ${myTime})`);
+    console.log(`WOULD ${SEND_LINKS ? "SEND LINK" : "PROPOSE"} ${email.padEnd(34)} ${call.contact_method.padEnd(9)} ${theirTime}  (me: ${myTime})`);
     sent++;
     continue;
   }
 
-  let joinUrl = call.meeting_url ?? "";
-  let meetingId = call.meeting_provider_id ?? null;
-  if (EXECUTE && call.contact_method === "zoom" && !joinUrl) {
-    const m = await createMeeting(token, {
-      topic: `DreamPlay: Lionel and ${firstName}`,
-      startAt,
-      agenda: "A short chat about your DreamPlay One pre-order.",
-    });
-    joinUrl = m.joinUrl;
-    meetingId = m.id;
-    console.log(`  zoom meeting ${m.id} for ${email}`);
-  }
-
   const sid = sub.id;
   const qs = `s=${encodeURIComponent(sid)}&c=${encodeURIComponent(cid)}&t=${unsubToken(sid, cid)}`;
-  let html = buildHtml({
-    firstName, theirTime, myTime,
-    joinUrl: joinUrl || "https://zoom.us",
-    method: call.contact_method,
-    contactValue: call.contact_value,
-  });
+
+  let html, subject, joinUrl = call.meeting_url ?? "", meetingId = call.meeting_provider_id ?? null;
+
+  if (SEND_LINKS) {
+    // Create the meeting only now, once they have actually said yes.
+    if (EXECUTE && !joinUrl) {
+      const m = await createMeeting(zoomAuth, {
+        topic: `DreamPlay: Lionel and ${firstName}`,
+        startAt,
+        agenda: "A short chat about your DreamPlay One pre-order.",
+      });
+      joinUrl = m.joinUrl;
+      meetingId = m.id;
+      console.log(`  zoom meeting ${m.id} for ${email}`);
+    }
+    html = buildLinkHtml({ firstName, theirTime, myTime, joinUrl: joinUrl || "https://zoom.us/j/preview" });
+    subject = `${firstName}, here is the link for our call`;
+  } else {
+    const confirmUrl = `${APP_BASE}${confirmPath(call.id)}`;
+    html = buildProposalHtml({
+      firstName, theirTime, myTime, confirmUrl,
+      method: call.contact_method, contactValue: call.contact_value,
+    });
+    subject = `${firstName}, does this time work?`;
+  }
+
   html = html.includes("{{unsubscribe_url}}") ? html : html.replace("</body>", `${UNSUB_FOOTER}</body>`);
   html = html.replaceAll("{{unsubscribe_url}}", `${TRACKING_BASE}/unsubscribe?${qs}`);
   html = rewriteLinksAppend(html, sid, cid);
   html = injectPixel(html, sid, cid);
 
-  const subject = `${firstName}, does this time work?`;
   const to = TEST_EMAIL ?? buyer.email;
   const resendId = await sendViaResend({ to, subject: TEST_EMAIL ? `[TEST] ${subject}` : subject, html, qs });
   if (!resendId) { failed++; continue; }
@@ -312,15 +394,10 @@ for (const call of pending) {
       headers: { ...H, Prefer: "resolution=ignore-duplicates" },
       body: JSON.stringify([{ campaign_id: cid, subscriber_id: sid, resend_email_id: resendId }]),
     });
-    await rest(`buyer_call_requests?id=eq.${call.id}`, {
-      method: "PATCH",
-      body: JSON.stringify({
-        invite_sent_at: new Date().toISOString(),
-        meeting_url: joinUrl || null,
-        meeting_provider_id: meetingId,
-        status: "scheduled",
-      }),
-    });
+    const patch = SEND_LINKS
+      ? { link_sent_at: new Date().toISOString(), meeting_url: joinUrl || null, meeting_provider_id: meetingId }
+      : { invite_sent_at: new Date().toISOString() };
+    await rest(`buyer_call_requests?id=eq.${call.id}`, { method: "PATCH", body: JSON.stringify(patch) });
   }
   sent++;
   await sleep(PACE_MS);

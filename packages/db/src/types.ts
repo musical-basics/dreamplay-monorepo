@@ -1753,6 +1753,10 @@ export interface Database {
           meeting_url: string | null;
           meeting_provider_id: string | null;
           invite_sent_at: string | null;
+          confirmed_at: string | null;
+          declined_at: string | null;
+          reschedule_note: string | null;
+          link_sent_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -1773,6 +1777,10 @@ export interface Database {
           meeting_url?: string | null;
           meeting_provider_id?: string | null;
           invite_sent_at?: string | null;
+          confirmed_at?: string | null;
+          declined_at?: string | null;
+          reschedule_note?: string | null;
+          link_sent_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -1793,6 +1801,10 @@ export interface Database {
           meeting_url?: string | null;
           meeting_provider_id?: string | null;
           invite_sent_at?: string | null;
+          confirmed_at?: string | null;
+          declined_at?: string | null;
+          reschedule_note?: string | null;
+          link_sent_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
