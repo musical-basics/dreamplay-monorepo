@@ -102,11 +102,39 @@ const confirmToken = (requestId) =>
 const confirmPath = (requestId) =>
   `/confirm-call?t=${encodeURIComponent(`${requestId}.${confirmToken(requestId)}`)}`;
 
-const fmt = (date, tz) =>
-  new Intl.DateTimeFormat("en-US", {
+/**
+ * Timezone abbreviations are locale-dependent, and en-US gets other
+ * countries wrong: it renders Europe/London as "GMT+1" when people there
+ * say "BST". So the zone LABEL comes from a locale that matches the zone,
+ * while the clock itself stays en-US everywhere so casing does not drift
+ * ("7:00 PM" not en-GB's "7:00 pm" or en-IE's "7:00 p.m.").
+ */
+const LOCALE_FOR_ZONE = [
+  [/^Europe\/(London|Belfast)$/, "en-GB"],
+  [/^Europe\/Dublin$/, "en-IE"],
+  [/^Australia\//, "en-AU"],
+  [/^Pacific\/(Auckland|Chatham)$/, "en-NZ"],
+  [/^Asia\/(Kolkata|Calcutta)$/, "en-IN"],
+];
+const localeForZone = (tz) => {
+  for (const [re, loc] of LOCALE_FOR_ZONE) if (re.test(tz)) return loc;
+  return "en-US";
+};
+
+/** "BST", "MDT", "PDT" as written where the buyer lives. */
+function zoneLabel(date, tz) {
+  const options = { timeZone: tz, hour: "numeric", timeZoneName: "short" };
+  const parts = new Intl.DateTimeFormat(localeForZone(tz), options).formatToParts(date);
+  return parts.find((x) => x.type === "timeZoneName")?.value ?? "";
+}
+
+const fmt = (date, tz) => {
+  const options = {
     timeZone: tz, weekday: "long", month: "long", day: "numeric",
-    hour: "numeric", minute: "2-digit", timeZoneName: "short",
-  }).format(date);
+    hour: "numeric", minute: "2-digit", hour12: true,
+  };
+  return `${new Intl.DateTimeFormat("en-US", options).format(date)} ${zoneLabel(date, tz)}`.trim();
+};
 
 // --- Zoom (S2S OAuth) -------------------------------------------------------------
 async function zoomToken() {
@@ -165,8 +193,8 @@ const longWhen = (date, tz) => fmt(date, tz);
 
 /** Time with no date, for the "X for me" line: "1:00 PM EDT". */
 function clockOnly(date, tz) {
-  const options = { timeZone: tz, hour: "numeric", minute: "2-digit", timeZoneName: "short" };
-  return new Intl.DateTimeFormat("en-US", options).format(date);
+  const options = { timeZone: tz, hour: "numeric", minute: "2-digit", hour12: true };
+  return `${new Intl.DateTimeFormat("en-US", options).format(date)} ${zoneLabel(date, tz)}`.trim();
 }
 
 /** Plain-text-looking HTML: default font, normal paragraphs, a real link. */

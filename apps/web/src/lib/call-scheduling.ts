@@ -120,10 +120,28 @@ export function formatIn(date: Date, zone: string, opts: Intl.DateTimeFormatOpti
     return new Intl.DateTimeFormat("en-US", options).format(date);
 }
 
+/**
+ * Timezone abbreviations are locale-dependent, and en-US gets other
+ * countries wrong: it renders Europe/London as "GMT+1" when people there
+ * say "BST". Take the label from a locale that matches the zone.
+ */
+const LOCALE_FOR_ZONE: [RegExp, string][] = [
+    [/^Europe\/(London|Belfast)$/, "en-GB"],
+    [/^Europe\/Dublin$/, "en-IE"],
+    [/^Australia\//, "en-AU"],
+    [/^Pacific\/(Auckland|Chatham)$/, "en-NZ"],
+    [/^Asia\/(Kolkata|Calcutta)$/, "en-IN"],
+];
+
+export function localeForZone(zone: string): string {
+    for (const [re, loc] of LOCALE_FOR_ZONE) if (re.test(zone)) return loc;
+    return "en-US";
+}
+
 /** A short, unambiguous timezone label, e.g. "EDT" or "BST". */
 export function tzAbbrev(date: Date, zone: string): string {
     const options: Intl.DateTimeFormatOptions = { timeZone: zone, timeZoneName: "short" };
-    const parts = new Intl.DateTimeFormat("en-US", options).formatToParts(date);
+    const parts = new Intl.DateTimeFormat(localeForZone(zone), options).formatToParts(date);
     return parts.find((p) => p.type === "timeZoneName")?.value ?? zone;
 }
 
