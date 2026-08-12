@@ -1748,6 +1748,11 @@ export interface Database {
           notes: string | null;
           status: BuyerCallStatus;
           reward_usd: number;
+          scheduled_at: string | null;
+          scheduled_minutes: number;
+          meeting_url: string | null;
+          meeting_provider_id: string | null;
+          invite_sent_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -1763,6 +1768,11 @@ export interface Database {
           notes?: string | null;
           status?: BuyerCallStatus;
           reward_usd?: number;
+          scheduled_at?: string | null;
+          scheduled_minutes?: number;
+          meeting_url?: string | null;
+          meeting_provider_id?: string | null;
+          invite_sent_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -1778,6 +1788,11 @@ export interface Database {
           notes?: string | null;
           status?: BuyerCallStatus;
           reward_usd?: number;
+          scheduled_at?: string | null;
+          scheduled_minutes?: number;
+          meeting_url?: string | null;
+          meeting_provider_id?: string | null;
+          invite_sent_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };

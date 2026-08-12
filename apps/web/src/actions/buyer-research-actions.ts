@@ -225,3 +225,53 @@ export async function saveArmOverrides(map: Record<string, string>): Promise<Res
     if (error) return { ok: false, error: error.message };
     return { ok: true };
 }
+
+// --- founder call scheduling (/admin/founder-calls) -------------------------------
+
+/**
+ * Save a proposed slot for a call request. Drafting only: this never emails
+ * the buyer. `scheduledAt` is an ISO string in UTC, or null to unschedule.
+ */
+export async function saveCallSchedule(
+    requestId: string,
+    scheduledAt: string | null,
+): Promise<ResearchActionResult> {
+    if (!(await requireAdmin())) return { ok: false, error: "Not authorized." };
+
+    if (scheduledAt !== null) {
+        const when = new Date(scheduledAt);
+        if (Number.isNaN(when.getTime())) return { ok: false, error: "Invalid date." };
+    }
+
+    const db = getAdminDb();
+    const { error } = await db
+        .from("buyer_call_requests")
+        .update({ scheduled_at: scheduledAt })
+        .eq("id", requestId);
+    if (error) return { ok: false, error: error.message };
+    return { ok: true };
+}
+
+/** Save every changed slot in one go (the page's "Save schedule" button). */
+export async function saveCallSchedules(
+    map: Record<string, string | null>,
+): Promise<ResearchActionResult> {
+    if (!(await requireAdmin())) return { ok: false, error: "Not authorized." };
+    const db = getAdminDb();
+
+    // A slot may only be held by one buyer: catch collisions before writing.
+    const taken = new Map<string, string>();
+    for (const [id, iso] of Object.entries(map)) {
+        if (!iso) continue;
+        if (Number.isNaN(new Date(iso).getTime())) return { ok: false, error: "Invalid date." };
+        const clash = taken.get(iso);
+        if (clash) return { ok: false, error: "Two buyers are on the same slot. Move one first." };
+        taken.set(iso, id);
+    }
+
+    for (const [id, iso] of Object.entries(map)) {
+        const { error } = await db.from("buyer_call_requests").update({ scheduled_at: iso }).eq("id", id);
+        if (error) return { ok: false, error: error.message };
+    }
+    return { ok: true };
+}
