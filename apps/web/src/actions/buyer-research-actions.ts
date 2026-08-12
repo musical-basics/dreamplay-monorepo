@@ -18,6 +18,7 @@ import {
     type ResearchArm,
 } from "@/lib/buyer-research";
 import { parseConfirmToken } from "@/lib/call-confirm-token";
+import { LIONEL_TZ, formatIn, tzAbbrev } from "@/lib/call-scheduling";
 import type { BuyerCallContactMethod, BuyerCallStatus } from "@dreamplay/db";
 
 export interface ResearchActionResult {
@@ -280,6 +281,69 @@ export async function saveCallSchedules(
 // --- buyer-facing call confirmation (/confirm-call) --------------------------------
 
 /**
+ * Tell support a buyer answered their call proposal. Non-blocking on purpose:
+ * a notification failure must never make the buyer's confirmation fail, since
+ * their click is the thing we actually care about recording.
+ */
+async function notifySupportOfCallReply(
+    requestId: string,
+    outcome: "confirmed" | "declined",
+    note?: string | null,
+): Promise<void> {
+    try {
+        const resendApiKey = process.env.RESEND_API_KEY;
+        if (!resendApiKey) return;
+
+        const db = getAdminDb();
+        const { data: row } = await db
+            .from("buyer_call_requests")
+            .select("buyer_id, scheduled_at, timezone, contact_method, contact_value")
+            .eq("id", requestId)
+            .maybeSingle();
+        if (!row) return;
+
+        const { data: buyer } = await db
+            .from("buyers")
+            .select("email, notes")
+            .eq("id", row.buyer_id)
+            .maybeSingle();
+
+        const when = row.scheduled_at ? new Date(row.scheduled_at) : null;
+        const theirTz = row.timezone || LIONEL_TZ;
+        const theirTime = when ? `${formatIn(when, theirTz)} ${tzAbbrev(when, theirTz)}` : "no time set";
+        const myTime = when ? `${formatIn(when, LIONEL_TZ)} ${tzAbbrev(when, LIONEL_TZ)}` : "no time set";
+        const who = buyer?.email ?? row.buyer_id;
+
+        const { Resend } = await import("resend");
+        const resend = new Resend(resendApiKey);
+        await resend.emails.send({
+            from: "DreamPlay <lionel@email.dreamplaypianos.com>",
+            to: "support@dreamplaypianos.com",
+            subject:
+                outcome === "confirmed"
+                    ? `[Call confirmed] ${who} — ${myTime}`
+                    : `[Call declined] ${who} wants a different time`,
+            html: [
+                `<h2>${outcome === "confirmed" ? "Buyer confirmed their call" : "Buyer asked for a different time"}</h2>`,
+                `<p><strong>Buyer:</strong> ${who}</p>`,
+                `<p><strong>Your time:</strong> ${myTime}</p>`,
+                `<p><strong>Their time:</strong> ${theirTime}</p>`,
+                `<p><strong>How:</strong> ${row.contact_method}${row.contact_value ? ` (${row.contact_value})` : ""}</p>`,
+                note ? `<p><strong>What they said:</strong> ${note}</p>` : "",
+                outcome === "confirmed" && row.contact_method === "zoom"
+                    ? `<p>Send the Zoom link with: <code>node scripts/email/send-call-invites.mjs --send-links --execute</code></p>`
+                    : `<p>Pick a new time at /admin/founder-calls.</p>`,
+            ]
+                .filter(Boolean)
+                .join("\n"),
+        });
+    } catch (error) {
+        console.error("Call reply notification failed (non-blocking):", error);
+    }
+}
+
+
+/**
  * The buyer accepts the proposed time. This does NOT create the Zoom meeting
  * or email the link: a separate sender picks up confirmed rows, so a slow or
  * failing Zoom API can never block the buyer's own confirmation.
@@ -303,6 +367,8 @@ export async function confirmCallTime(token: string): Promise<ResearchActionResu
         .update({ confirmed_at: new Date().toISOString(), declined_at: null, status: "scheduled" })
         .eq("id", requestId);
     if (error) return { ok: false, error: error.message };
+
+    await notifySupportOfCallReply(requestId, "confirmed");
     return { ok: true };
 }
 
@@ -322,5 +388,7 @@ export async function declineCallTime(token: string, note: string): Promise<Rese
         })
         .eq("id", requestId);
     if (error) return { ok: false, error: error.message };
+
+    await notifySupportOfCallReply(requestId, "declined", note.trim() || null);
     return { ok: true };
 }
