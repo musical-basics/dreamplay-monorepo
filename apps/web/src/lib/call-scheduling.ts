@@ -14,8 +14,7 @@ export const LIONEL_TZ = "America/New_York";
 
 /**
  * Lionel's availability: Friday and Saturday. The core window is 1pm to 5pm
- * ET (1pm added 2026-08-11 to move a Denver call off a 3pm conflict), and he
- * confirmed he can also take a 7pm ET call for the evening-only buyers.
+ * ET (1pm added 2026-08-11 to move a Denver call off a 3pm conflict).
  */
 export const LIONEL_AVAILABILITY = {
     days: ["Friday", "Saturday"] as const,
@@ -25,12 +24,27 @@ export const LIONEL_AVAILABILITY = {
 };
 
 /**
- * Two guests asked for evenings that do not exist inside the core window.
- * Lionel confirmed 7pm ET works for them, so slots run to 8pm. Anything at
- * or past `endHour` is flagged `outsidePreferred` in the UI so an
- * after-hours booking is always a visible choice, never a silent one.
+ * Evening availability, which differs by day (Lionel, 2026-08-11): Saturday
+ * night is free from 5pm, but Friday night is busy until 8pm ET. Buyers who
+ * can only do evenings are placed here.
+ *
+ * `from` is the first bookable hour, `to` is exclusive.
  */
-export const EXTENDED_END_HOUR = 20;
+export const EVENING_AVAILABILITY: Record<string, { from: number; to: number }> = {
+    Friday: { from: 20, to: 22 },
+    Saturday: { from: 17, to: 22 },
+};
+
+/** Latest hour any slot may start, across every day. */
+export const EXTENDED_END_HOUR = 22;
+
+/** Is this hour bookable on this weekday, given core + evening windows? */
+export function isBookableHour(weekday: string, hour: number): boolean {
+    if (!(LIONEL_AVAILABILITY.days as readonly string[]).includes(weekday)) return false;
+    const core = hour >= LIONEL_AVAILABILITY.startHour && hour < LIONEL_AVAILABILITY.endHour;
+    const evening = EVENING_AVAILABILITY[weekday];
+    return core || (evening !== undefined && hour >= evening.from && hour < evening.to);
+}
 
 /**
  * Hours (in LIONEL_TZ) Lionel is already busy, keyed by "YYYY-MM-DD" in that
@@ -126,6 +140,8 @@ export function candidateSlots(from: Date, days = 21): Date[] {
     cursor.setUTCHours(0, 0, 0, 0);
     for (let d = 0; d < days; d++) {
         const day = new Date(cursor.getTime() + d * 86400000);
+        // Scan every hour of the window; isBookableHour() decides which of
+        // them are actually open on this particular weekday.
         for (let h = LIONEL_AVAILABILITY.startHour; h < EXTENDED_END_HOUR; h++) {
             // Find the instant that reads as hour `h` in Lionel's timezone on
             // this calendar day. Probing avoids hardcoding a UTC offset.
@@ -133,7 +149,7 @@ export function candidateSlots(from: Date, days = 21): Date[] {
                 const cand = new Date(Date.UTC(day.getUTCFullYear(), day.getUTCMonth(), day.getUTCDate(), probe, 0, 0));
                 if (hourIn(cand, LIONEL_TZ) !== h) continue;
                 const wd = weekdayIn(cand, LIONEL_TZ);
-                if (!(LIONEL_AVAILABILITY.days as readonly string[]).includes(wd)) break;
+                if (!isBookableHour(wd, h)) break;
                 const busy = BUSY_SLOTS[dateKeyIn(cand, LIONEL_TZ)] ?? [];
                 if (busy.includes(h)) break;
                 if (cand > from) out.push(cand);
@@ -159,13 +175,10 @@ export function scoreSlot(slot: Date, pref: CallPreference): SlotScore {
     if (!partOk) reasons.push(`lands in their ${guestPart.toLowerCase()}, they asked for ${pref.dayParts.join("/").toLowerCase()}`);
 
     const lionelHour = hourIn(slot, LIONEL_TZ);
+    const lionelDay = weekdayIn(slot, LIONEL_TZ);
     const outsidePreferred = lionelHour >= LIONEL_AVAILABILITY.endHour;
     if (outsidePreferred) {
-        reasons.push(
-            lionelHour === 19
-                ? "7pm ET, the evening slot you approved"
-                : `${lionelHour - 12}pm ET is outside your 1pm to 5pm window`,
-        );
+        reasons.push(`${lionelHour - 12}pm ET, your ${lionelDay.toLowerCase()} evening slot`);
     }
 
     if (dayOk && partOk && !outsidePreferred) reasons.push("fits both of you");
@@ -225,6 +238,11 @@ export const PINNED_SLOTS: Record<string, string> = {
     // "move j hounds to 1pm my time" (Lionel, 2026-08-11). 1pm ET = 11am MDT,
     // inside their stated availability.
     "jhounds99@gmail.com": "2026-08-14T17:00:00.000Z",
+    // Jude wrote "usually free weekdays after 7pm" and ticked Friday but not
+    // Saturday, so a Saturday evening would break their own preference.
+    // Friday 8pm ET is the earliest that clears Lionel's Friday-night
+    // commitment while still being a weekday evening for them.
+    "judehe45@gmail.com": "2026-08-15T00:00:00.000Z",
 };
 
 /**
