@@ -3,13 +3,18 @@
  *
  * Two jobs, both idempotent:
  *
- * 1. EMAIL DRAFTS: inserts 10 nurture emails as `campaigns` rows
- *    (category "marketing-calendar", status "draft", scheduled_status NULL
- *    so the Inngest scheduler ignores them). Tue/Thu/Sun cadence starting
- *    Thu 2026-08-13, default send time 9:00 AM ET. Existing rows (matched
- *    by send_key) are NEVER overwritten: Lionel edits live in
- *    /admin/marketing-calendar and re-running this script must not clobber
- *    them.
+ * 1. EMAIL DRAFTS: inserts 8 nurture emails plus the coupon-trigger template
+ *    as `campaigns` rows (category "marketing-calendar", status "draft",
+ *    scheduled_status NULL so the Inngest scheduler ignores them). Tue/Thu/Sun
+ *    cadence starting Thu 2026-08-13, default send time 9:00 AM ET.
+ *
+ *    By default existing rows (matched by send_key) are NEVER overwritten:
+ *    Lionel edits live in /admin/marketing-calendar and a routine re-run must
+ *    not clobber him. Pass --rewrite to replace the copy from this file, which
+ *    is how a reviewed rewrite gets applied. --rewrite only ever touches rows
+ *    still in status 'draft'; anything sent is history and is skipped loudly.
+ *    Slots no longer present here are retired (status deleted, scheduled_at
+ *    cleared, category suffixed '-retired') rather than deleted.
  *
  * 2. AUDIENCE SNAPSHOT: builds the high-intent group and stores it in
  *    app_settings key "marketing-calendar:audience". High intent = active
@@ -21,6 +26,7 @@
  *
  * Usage:
  *   node setup-marketing-calendar.mjs                 seed drafts + audience
+ *   node setup-marketing-calendar.mjs --rewrite       replace draft copy from this file
  *   node setup-marketing-calendar.mjs --audience-only rebuild only the snapshot
  *   node setup-marketing-calendar.mjs --dry-run       report, write nothing
  */
@@ -32,6 +38,8 @@ import { fileURLToPath } from "node:url";
 const argv = process.argv.slice(2);
 const DRY_RUN = argv.includes("--dry-run");
 const AUDIENCE_ONLY = argv.includes("--audience-only");
+/** Replace the copy of existing DRAFT rows from this file. Off by default. */
+const REWRITE = argv.includes("--rewrite");
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 for (const f of [join(repoRoot, ".env.local"), join(repoRoot, "apps/web/.env.local")]) {
@@ -183,126 +191,52 @@ ${closing.map(closePara).join("\n")}
 `;
 }
 
+/**
+ * EIGHT emails, Tue/Thu/Sun starting Thu 2026-08-13, 9:00 AM ET.
+ *
+ * Rewritten 2026-08-12 after an external copy review. What changed and why:
+ *   - Cut from 10 to 8. The relaxation and generic-practice emails existed
+ *     because the calendar needed content, not because Lionel had something
+ *     to say. Fewer, better.
+ *   - Founder story moved from slot 8 to slot 2, so the reader meets the
+ *     person before being asked for anything.
+ *   - The printable hand guide email is gone: that guide does not exist yet.
+ *     Its job (answer "which size fits my hands?") now points at the live
+ *     hand span calculator on /how-it-works, which is real today.
+ *   - LED learning is rewritten as Lionel admitting he was a skeptic, and
+ *     sits next to the specs email.
+ *   - Removed throughout: tidy rule-of-three constructions, quotable closing
+ *     aphorisms, and "move the needle" style business vocabulary.
+ *
+ * The test any sentence has to pass: would Lionel spontaneously type this
+ * into Gmail if there were no marketing campaign? If not, it is cut.
+ */
 const EMAILS = [
   {
     slot: 1,
     date: "2026-08-13",
     topic: "Benefits of narrow keys",
-    subject: "What happens when the keys finally fit",
-    preheader: "Chords you could never reach become comfortable. Same music, without the fight.",
+    subject: "A ninth should not feel like a stretch",
+    preheader: "Why octave chords and tenths are hard on a standard keyboard, and what changes when they are not.",
     eyebrow: "The DreamPlay One",
-    headline: "What happens when the keys finally fit",
+    headline: "A ninth should not feel like a stretch",
     paragraphs: [
-      "Hi {{first_name}}, most pianos come in exactly one size. If your hands are on the smaller side, that has meant years of stretching, straining and leaving notes out, and probably blaming yourself for all of it.",
-      "The DreamPlay One is built around narrower keys, sized for real hands instead of the largest ones. Chords you could never reach become comfortable. Passages that always broke down start to flow. It is the same music, just without the fight.",
+      "Hi {{first_name}}, here is a thing almost nobody says out loud about piano. A standard octave is 6.5 inches wide. If your hand spans 7.5 inches, an octave chord is fine but a ninth is right at your limit, and a tenth is off the table unless you roll it. Broken octaves in the left hand start to ache after a page. None of that is a technique problem.",
+      "The DreamPlay One comes in narrower widths, so the same interval takes less reach. On a DS5.5 the octave is 5.54 inches, which is about what a seventh costs you on a standard keyboard. A whole diatonic step of reach, given back on every chord. The notes you have been rolling or leaving out are simply there.",
     ],
     ctaLabel: "See Why Narrow Keys Work",
     ctaUrl: `${SITE}/why-narrow`,
-    closing: ["If you have ever wondered whether the problem was you or the instrument, I can tell you now: it was never you."],
+    closing: [
+      "If you have spent years assuming you just needed to practice the stretch more, it is worth reading.",
+    ],
   },
   {
     slot: 2,
     date: "2026-08-16",
-    topic: "The research",
-    subject: "The research that started all of this",
-    preheader: "Hand span, key width, and why so many players struggle with an instrument made for someone else.",
-    eyebrow: "The science",
-    headline: "The research that started all of this",
-    paragraphs: [
-      "Before I built anything, I spent months in the research on hand span and key width. What I found honestly upset me: for a large share of players, especially women and children, a conventional keyboard is simply too wide to play in comfort.",
-      "That mismatch shows up as strain, missed notes and sometimes injury, and for a century the industry answer has been to practice harder. We took the other route and changed the instrument instead. I put the studies and the numbers on one page so you can see them for yourself.",
-    ],
-    ctaLabel: "Read the Research",
-    ctaUrl: `${SITE}/hidden-barrier`,
-    closing: ["Five minutes with this page explains the DreamPlay One better than anything else I could write."],
-  },
-  {
-    slot: 3,
-    date: "2026-08-18",
-    topic: "Hand guide download",
-    subject: "Print this, then place your hand on it",
-    preheader: "Our free 1:1 printable hand guide shows you exactly which key size fits your hands.",
-    eyebrow: "Free printable guide",
-    headline: "Print this, then place your hand on it",
-    paragraphs: [
-      "The question I get most, every single day: how do I know which key size fits my hand? So we made the answer physical. Our printable hand guide is a true 1:1 scale sheet. Print it, lay your hand flat on the paper, and it shows you which size matches your reach.",
-      "It takes two minutes and a regular printer, and it pairs with the hand span calculator on the same page. You will walk away knowing exactly which keyboard is the right home for your hands, before you spend a dollar.",
-    ],
-    ctaLabel: "Get the Hand Guide",
-    ctaUrl: `${SITE}/how-it-works`,
-    closing: ["Measure first. It is the most useful two minutes in this whole journey."],
-  },
-  {
-    slot: 4,
-    date: "2026-08-20",
-    topic: "Practice tips",
-    subject: "Practice less, improve more",
-    preheader: "The practice habits that actually move the needle, from years of playing and teaching.",
-    eyebrow: "Practice, better",
-    headline: "Practice less, improve more",
-    paragraphs: [
-      "The biggest practice myth is that more hours automatically mean more progress. They do not. After years of playing and teaching, I can tell you that focused, comfortable practice beats long, tense practice every single time.",
-      "I wrote up the habits that actually move the needle: shorter sessions, slower tempos, real goals for each sitting, and an instrument that does not wear your hands out in the first ten minutes. Small changes, dramatic difference.",
-    ],
-    ctaLabel: "Read the Practice Guide",
-    ctaUrl: `${SITE}/better-practice`,
-    closing: ["Try even one of these this week and you will feel the difference at the keyboard."],
-  },
-  {
-    slot: 5,
-    date: "2026-08-23",
-    topic: "Relaxation",
-    subject: "The twenty minutes that reset your whole day",
-    preheader: "Some of the best piano time has no goal at all.",
-    eyebrow: "Play to unwind",
-    headline: "The twenty minutes that reset your whole day",
-    paragraphs: [
-      "Not every session at the piano needs a goal. Some of the best time you will ever spend there is the kind where you sit down after a long day, play something slow, and feel your shoulders come down from your ears.",
-      "That only works when the instrument itself is comfortable: weighted keys that respond gently, a size that fits your hands, nothing pulling you out of the moment. That is the experience the DreamPlay One is built for. Music as a place to rest, not one more thing to fight with.",
-    ],
-    ctaLabel: "Meet the DreamPlay One",
-    ctaUrl: `${SITE}/`,
-    closing: ["Whatever first brought you to the piano, I hope it gives you that kind of quiet."],
-  },
-  {
-    slot: 6,
-    date: "2026-08-25",
-    topic: "Hardware specs",
-    subject: "Under the lid: the DreamPlay One, spec by spec",
-    preheader: "Weighted hammer action, three key sizes, LED guided learning. The full sheet.",
-    eyebrow: "Under the lid",
-    headline: "What the DreamPlay One is actually made of",
-    paragraphs: [
-      "A piano with narrower keys only matters if it still feels like a real piano. So we obsessed over the parts you touch: fully weighted hammer-action keys, custom steel tooling for the keybeds, and a cabinet that belongs in your living room, not a storage closet.",
-      "Every DreamPlay One carries the LED guided learning system and comes in three key sizes, including conventional width. I put the full specification on one page, from the key action to the dimensions, so you can inspect everything yourself.",
-    ],
-    ctaLabel: "See the Full Specs",
-    ctaUrl: `${SITE}/product-information`,
-    closing: ["If you are the kind of person who reads the spec sheet before the brochure, this page is for you."],
-  },
-  {
-    slot: 7,
-    date: "2026-08-27",
-    topic: "LED guided learning",
-    subject: "Learn songs with the lights on",
-    preheader: "How the LED guided learning system gets you playing real music on day one.",
-    eyebrow: "Guided learning",
-    headline: "Learn songs with the lights on",
-    paragraphs: [
-      "The fastest way to lose a new player is week one: staring at sheet music that might as well be another language, not sure which key to press. The DreamPlay One takes that wall down. The LED guided learning system lights the way, so you are playing real music on day one.",
-      "It is not a replacement for learning, it is a bridge to it. As you improve you lean on the lights less and read more. Beginners get momentum, returning players get their confidence back, and kids get hooked instead of frustrated.",
-    ],
-    ctaLabel: "See How Guided Learning Works",
-    ctaUrl: `${SITE}/learn`,
-    closing: ["Nobody ever quit piano because it was too fun on day one."],
-  },
-  {
-    slot: 8,
-    date: "2026-08-30",
     topic: "Founder story",
     subject: "Why I started building pianos",
-    preheader: "A note from Lionel about the people who inspired DreamPlay.",
-    eyebrow: "From Lionel",
+    preheader: "I taught piano for years before I ever thought about manufacturing one.",
+    eyebrow: "From me",
     headline: "Why I started building pianos",
     paragraphs: [
       "Hi {{first_name}}, if you have followed my channel for a while, you know the piano has been my whole life. What you may not know is how many people wrote to me over the years saying the same thing: I love this instrument, but my hands are too small for it.",
@@ -313,36 +247,104 @@ const EMAILS = [
     closing: ["Thank you for being here while we build it. It means more than you know."],
   },
   {
-    slot: 9,
-    date: "2026-09-01",
-    topic: "Production progress",
-    subject: "The first prototypes exist. I have held them.",
-    preheader: "A look inside DreamPlay production, delays and all.",
-    eyebrow: "Behind the scenes",
-    headline: "The first prototypes exist, and I have held them",
+    slot: 3,
+    date: "2026-08-18",
+    topic: "The research",
+    subject: "The research that convinced me",
+    preheader: "Hand span data, key width, and the studies I read before building anything.",
+    eyebrow: "The research",
+    headline: "The research that convinced me",
     paragraphs: [
-      "For everyone quietly watching and wondering whether this is real: the first DreamPlay One prototypes have come off the line, and holding one after all the drawings, tooling and testing was one of the best moments of my life.",
-      "From custom steel molds to electronics integration, the whole journey is documented on our production timeline: what is finished, what is in progress, and what still stands between us and your doorstep. I keep it honest, delays included.",
+      "Before I built anything, I spent months reading the research on hand span and key width. One study in Applied Ergonomics measured pianists moving from standard keys to a 5.5 inch octave and found lower muscular effort and less perceived strain. Another found that the internationally acclaimed women pianists tend to be the ones with larger hands, which says something uncomfortable about who the repertoire was written for.",
+      "So the strain is not a character flaw and it is not a technique problem. The standard advice for a century has been to practice harder or pick easier repertoire. I have put the studies on one page if you want to see what convinced me.",
+    ],
+    ctaLabel: "Read the Research",
+    ctaUrl: `${SITE}/hidden-barrier`,
+    closing: [
+      "The short version: the instrument was standardized around one hand size, and it was not the average one.",
+    ],
+  },
+  {
+    slot: 4,
+    date: "2026-08-20",
+    topic: "Which size fits your hands",
+    subject: "How to tell which key size fits your hand",
+    preheader: "Measure your span, then see which of the three key widths matches it.",
+    eyebrow: "Find your size",
+    headline: "How to tell which key size fits your hand",
+    paragraphs: [
+      "I get this question constantly, so I want to answer it properly. Measure your hand span: thumb tip to little finger tip, stretched out flat, in inches. That single number tells you most of what you need to know.",
+      "Under 7.6 inches and standard keys are genuinely too wide for you, which is what the DS5.5 is for. Between 7.6 and 8.5 the DS6.0 is the comfortable middle. Above that, your hands fit the historical standard and the DS6.5 gives you conventional width. There is a calculator on our site that walks through it and tells you which intervals open up at each size.",
+    ],
+    ctaLabel: "Check Your Hand Span",
+    ctaUrl: `${SITE}/how-it-works`,
+    closing: ["If your number is close to a boundary, reply and tell me what it is. I will give you my honest opinion."],
+  },
+  {
+    slot: 5,
+    date: "2026-08-23",
+    topic: "Hardware specs",
+    subject: "Under the lid: what it is made of",
+    preheader: "Weighted hammer action, three key widths, and the full specification.",
+    eyebrow: "Under the lid",
+    headline: "Under the lid: what it is made of",
+    paragraphs: [
+      "A piano with narrower keys only matters if it still feels like a real piano. So the action was the part we spent the most time on: fully weighted hammer action, on keybeds we had custom steel tooling made for. Narrow keys are not the hard part. Narrow keys that still feel right under your fingers is the hard part.",
+      "The rest of the specification is on one page: dimensions, the key action, connectivity, what comes in each bundle. Worth a look if you want to know what you are actually getting before you commit to anything.",
+    ],
+    ctaLabel: "See the Full Specs",
+    ctaUrl: `${SITE}/product-information`,
+    closing: ["If you are the kind of person who reads the spec sheet before the brochure, this page is for you."],
+  },
+  {
+    slot: 6,
+    date: "2026-08-25",
+    topic: "LED guided learning",
+    subject: "I was skeptical about the light-up keys",
+    preheader: "Why a piano teacher ended up putting LEDs in his own instrument.",
+    eyebrow: "Guided learning",
+    headline: "I was skeptical about the light-up keys",
+    paragraphs: [
+      "I will be honest, light-up keys were not my idea of a serious instrument. I taught piano for years and my instinct was that anything that tells you which note to press is a shortcut around actually learning to read.",
+      "What changed my mind was watching beginners quit. Not because piano is too hard, but because week one is spent decoding notation instead of making any music at all. The LEDs get you playing something recognisable on the first evening, and then you use them less and less as reading catches up. I would not have added them if they let you skip learning. They just get you past the part where most people give up.",
+    ],
+    ctaLabel: "See How Guided Learning Works",
+    ctaUrl: `${SITE}/learn`,
+    closing: ["Every DreamPlay One has it, and you can leave it switched off forever if you would rather."],
+  },
+  {
+    slot: 7,
+    date: "2026-08-27",
+    topic: "Production progress",
+    subject: "The first prototypes are finally here",
+    preheader: "Where production stands, including the parts that have taken longer than I expected.",
+    eyebrow: "Behind the scenes",
+    headline: "The first prototypes are finally here",
+    paragraphs: [
+      "For anyone quietly watching and wondering whether this is real: the first DreamPlay One prototypes have come off the line. We started with a factory partnership in June last year, and after fourteen months of drawings, tooling and revisions, sitting down at one and playing it was a strange feeling.",
+      "I have put the whole timeline on one page, including the parts that have taken longer than I expected. Custom steel molds, electronics integration, the revisions we did not plan for. If you are considering a reservation, you should be able to see exactly where things stand first.",
     ],
     ctaLabel: "Follow the Production Timeline",
     ctaUrl: `${SITE}/production-timeline`,
-    closing: ["Building an instrument company in public is terrifying and wonderful. Come look over my shoulder."],
+    closing: ["Manufacturing is where the schedule slips, so I would rather you hear it from me than wonder."],
   },
   {
-    slot: 10,
-    date: "2026-09-03",
-    topic: "Choosing your size",
-    subject: "Which DreamPlay One is yours?",
-    preheader: "DS5.5, DS6.0 or conventional width: two minutes in the configurator answers it.",
-    eyebrow: "Find your fit",
-    headline: "Which DreamPlay One is yours?",
+    slot: 8,
+    date: "2026-08-30",
+    topic: "Reserve yours",
+    subject: "Ready to pick yours?",
+    preheader: "Choose your key size and finish, and reserve with a deposit.",
+    eyebrow: "Reserve yours",
+    headline: "Ready to pick yours?",
     paragraphs: [
-      "Every DreamPlay One starts with one decision: your key size. DS5.5 for smaller hands, DS6.0 for players who feel cramped on conventional keys, and full conventional width if you simply want the guided learning and the build quality.",
-      "The configurator walks you through it in about two minutes: pick your size, pick your finish, and see exactly what your instrument will look like. Reserving now puts you in the earliest production run.",
+      "Over the last few weeks I have shown you why the keys are narrower, the research behind it, how to work out your size, what the action feels like, and where production actually stands. If it sounds like the instrument you have been waiting for, here is how to get one.",
+      "The configurator takes about two minutes: pick your key size, pick your finish, see what it looks like. The keyboard is $999 in total, split as $499 today and $500 when yours is boxed and ready to ship, and reserving now locks in the founder price.",
     ],
     ctaLabel: "Build Your DreamPlay One",
     ctaUrl: `${SITE}/customize`,
-    closing: ["Not sure about size? Reply to this email and I will help you decide personally."],
+    closing: [
+      "Still unsure about sizing, shipping, or anything else? Reply to this email. I answer these myself and I would rather talk it through than have you guess.",
+    ],
   },
 ];
 
@@ -354,23 +356,31 @@ const EMAILS = [
  * receive it once. {{discount_code}} is filled from variable_values at send
  * time; the code itself is created by hand in the Shopify admin because this
  * app's API token has no write_discounts scope.
+ *
+ * ── The copy rule for this email ────────────────────────────────────────────
+ * The TRIGGER is behavioral, the EMAIL must not say so. An earlier draft
+ * opened with "You have been opening my emails", which reads as surveillance:
+ * people know tracking exists but do not want to be told their opens were
+ * counted. Reviewed 2026-08-12 and rewritten to read as a spontaneous offer
+ * from Lionel with no explanation of why they received it. Do not reintroduce
+ * any reference to their engagement, open counts, or "because you...".
  */
 const COUPON_EMAIL = {
   name: "Marketing Calendar 2026 - Engaged Non-Buyer $100 Coupon",
   topic: "Engaged non-buyer $100 coupon (automatic trigger)",
-  subject: "$100 off, because you have been paying attention",
-  preheader: "A thank you for following along, and $100 off your DreamPlay One if you are ready.",
-  eyebrow: "$100 off, just for you",
-  headline: "I saved you $100, {{first_name}}",
+  subject: "{{first_name}}, here is $100 off",
+  preheader: "In case you have been thinking about a DreamPlay One.",
+  eyebrow: "$100 off",
+  headline: "{{first_name}}, here is $100 off",
   paragraphs: [
-    "You have been opening my emails and reading about the DreamPlay One, which tells me something about it is speaking to you. You just have not pulled the trigger yet, and honestly, I get it. This is a new instrument from a small company, and that takes a leap.",
-    "So let me make the leap smaller. Here is $100 off your DreamPlay One, from me. Use it whenever you are ready.",
+    "I wanted to send you something in case you have been thinking about getting a DreamPlay One.",
+    "Here is $100 off. No promotion, no countdown, and it does not expire on you.",
   ],
   codeBox: { label: "Your discount code", note: "Enter it at checkout, or use the button below and it applies itself." },
   ctaLabel: "Use My $100 Off",
   ctaUrl: `${SITE}/customize`,
   closing: [
-    "If something is holding you back that $100 will not fix, reply and tell me what it is. Sizing, shipping, whether it will suit your hands: I answer these myself and I would rather help you decide than have you wonder.",
+    "And if the thing holding you back is not the price, reply and tell me what it is. I answer these myself.",
   ],
 };
 
@@ -381,16 +391,14 @@ const campaignName = (e) => `Marketing Calendar 2026 - ${String(e.slot).padStart
 
 async function seedCampaigns() {
   const existing = await sb(
-    `campaigns?category=eq.${CATEGORY}&select=id,name,send_key&limit=100`
+    `campaigns?category=eq.${CATEGORY}&select=id,name,send_key,status&limit=100`
   );
   const bySendKey = new Map(existing.map((c) => [c.send_key, c]));
   let inserted = 0;
+  let updated = 0;
+  let retired = 0;
   for (const e of EMAILS) {
     const key = sendKey(e.slot);
-    if (bySendKey.has(key)) {
-      console.log(`  = exists, untouched: ${key} (${bySendKey.get(key).name})`);
-      continue;
-    }
     const row = {
       name: campaignName(e),
       subject_line: e.subject,
@@ -410,6 +418,33 @@ async function seedCampaigns() {
         audience_setting: AUDIENCE_SETTING,
       },
     };
+
+    const current = bySendKey.get(key);
+    if (current) {
+      // REWRITE only replaces DRAFTS, and only when asked. Anything already
+      // sent is history and must never be rewritten under it.
+      if (!REWRITE) {
+        console.log(`  = exists, untouched: ${key} (${current.name}) [use --rewrite to replace]`);
+        continue;
+      }
+      if (current.status !== "draft") {
+        console.log(`  ! SKIPPED (status=${current.status}, not a draft): ${key} (${current.name})`);
+        continue;
+      }
+      if (DRY_RUN) {
+        console.log(`  ~ would rewrite: ${key} "${e.subject}" @ ${row.scheduled_at}`);
+      } else {
+        await sb(`campaigns?id=eq.${current.id}`, {
+          method: "PATCH",
+          body: JSON.stringify(row),
+          headers: { Prefer: "return=minimal" },
+        });
+        console.log(`  ~ rewritten: ${key} "${e.subject}" @ ${row.scheduled_at}`);
+      }
+      updated++;
+      continue;
+    }
+
     if (DRY_RUN) {
       console.log(`  + would insert: ${key} "${e.subject}" @ ${row.scheduled_at}`);
     } else {
@@ -418,15 +453,69 @@ async function seedCampaigns() {
     }
     inserted++;
   }
-  console.log(`Campaigns: ${inserted} inserted, ${EMAILS.length - inserted} already present.`);
+
+  // Slots that no longer exist in EMAILS (the sequence shrank from 10 to 8).
+  // Retire rather than delete, so the row and any history survive, and clear
+  // scheduled_at so a retired draft can never look like it is due to send.
+  if (REWRITE) {
+    const liveKeys = new Set(EMAILS.map((e) => sendKey(e.slot)));
+    for (const c of existing) {
+      if (!c.send_key || !c.send_key.startsWith("marketing-calendar-2026-")) continue;
+      if (liveKeys.has(c.send_key)) continue;
+      if (c.status !== "draft") {
+        console.log(`  ! leaving non-draft orphan alone (status=${c.status}): ${c.send_key}`);
+        continue;
+      }
+      if (DRY_RUN) {
+        console.log(`  - would retire dropped slot: ${c.send_key} (${c.name})`);
+      } else {
+        await sb(`campaigns?id=eq.${c.id}`, {
+          method: "PATCH",
+          body: JSON.stringify({ status: "deleted", scheduled_at: null, category: `${CATEGORY}-retired` }),
+          headers: { Prefer: "return=minimal" },
+        });
+        console.log(`  - retired dropped slot: ${c.send_key} (${c.name})`);
+      }
+      retired++;
+    }
+  }
+
+  console.log(
+    `Campaigns: ${inserted} inserted, ${updated} rewritten, ${retired} retired, ` +
+      `${EMAILS.length - inserted - updated} left as-is.`
+  );
 
   // The coupon trigger template, matched by NAME (it has no send_key of its
   // own: each send mints a child keyed on the subscriber).
   const couponExisting = await sb(
-    `campaigns?name=eq.${encodeURIComponent(COUPON_EMAIL.name)}&select=id,name&limit=1`
+    `campaigns?name=eq.${encodeURIComponent(COUPON_EMAIL.name)}&select=id,name,variable_values&limit=1`
   );
   if (couponExisting.length > 0) {
-    console.log(`  = exists, untouched: coupon template (${couponExisting[0].id})`);
+    if (!REWRITE) {
+      console.log(`  = exists, untouched: coupon template (${couponExisting[0].id}) [use --rewrite to replace]`);
+      return;
+    }
+    // Preserve the configured discount code across a copy rewrite.
+    const keepCode = couponExisting[0].variable_values?.discount_code ?? "";
+    const patch = {
+      subject_line: COUPON_EMAIL.subject,
+      html_content: emailHtml({ title: COUPON_EMAIL.subject, ...COUPON_EMAIL }),
+      variable_values: {
+        preview_text: COUPON_EMAIL.preheader,
+        topic: COUPON_EMAIL.topic,
+        discount_code: keepCode,
+      },
+    };
+    if (DRY_RUN) {
+      console.log(`  ~ would rewrite coupon template (keeping code ${JSON.stringify(keepCode)})`);
+    } else {
+      await sb(`campaigns?id=eq.${couponExisting[0].id}`, {
+        method: "PATCH",
+        body: JSON.stringify(patch),
+        headers: { Prefer: "return=minimal" },
+      });
+      console.log(`  ~ rewritten: coupon template (kept code ${JSON.stringify(keepCode)})`);
+    }
     return;
   }
   const couponRow = {
