@@ -51,9 +51,13 @@ function EmailTrackerContent() {
             localStorage.setItem("dp_subscriber_id", sid)
             if (cid) localStorage.setItem("dp_campaign_id", cid)
 
-            // Safe click tracking: fire once per session when both sid and cid exist
-            if (cid && !sessionStorage.getItem("dp_click_tracked")) {
-                sessionStorage.setItem("dp_click_tracked", "1")
+            // Safe click tracking: once per campaign per session. The flag is
+            // keyed on the campaign id because a nurture SERIES lands the same
+            // browser tab on several different campaigns; a bare flag recorded
+            // the first email's click and silently dropped every later one.
+            const clickFlag = `dp_click_tracked:${cid}`
+            if (cid && !sessionStorage.getItem(clickFlag)) {
+                sessionStorage.setItem(clickFlag, "1")
                 fetch(EMAIL_TRACK_URL, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },

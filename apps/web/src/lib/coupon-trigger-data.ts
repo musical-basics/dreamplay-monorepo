@@ -63,16 +63,28 @@ export async function loadCouponPipeline(db: AdminClient, now = new Date()): Pro
     const audienceIds = new Set((audience?.subscriberIds ?? []).filter((id) => !removed.has(id)));
     const templateId = templateRow.data?.id ?? null;
 
-    // Campaigns whose opens count: every marketing-calendar campaign (the
-    // drafts and the child campaigns their sends mint), minus the coupon
-    // template itself so opening the coupon never re-qualifies anyone.
+    // Campaigns whose opens count toward the threshold: every
+    // marketing-calendar campaign (the nurture drafts and any child campaigns
+    // their sends mint), MINUS the coupon email itself in every form, so
+    // opening a coupon can never re-qualify someone for another coupon.
+    //
+    // The coupon is excluded three ways because each alone is fragile:
+    // by id (the template), by parent_template_id (its per-recipient
+    // children, which inherit the marketing-calendar category) and by name
+    // prefix (a belt-and-braces catch if a child is ever minted without the
+    // parent link).
     const { data: marketingCampaigns, error: campaignErr } = await db
         .from("campaigns")
-        .select("id, name")
+        .select("id, name, parent_template_id")
         .eq("category", MARKETING_CALENDAR_CATEGORY);
     if (campaignErr) throw new Error(`campaign fetch failed: ${campaignErr.message}`);
     const trackedCampaignIds = (marketingCampaigns ?? [])
-        .filter((c) => c.name !== COUPON_TEMPLATE_NAME && !c.name.startsWith(COUPON_TEMPLATE_NAME))
+        .filter(
+            (c) =>
+                c.id !== templateId &&
+                c.parent_template_id !== templateId &&
+                !c.name.startsWith(COUPON_TEMPLATE_NAME),
+        )
         .map((c) => c.id);
     const trackedSet = new Set(trackedCampaignIds);
 

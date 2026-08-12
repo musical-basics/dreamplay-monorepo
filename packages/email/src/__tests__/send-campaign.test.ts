@@ -155,6 +155,22 @@ describe("sendCampaign idempotency (the 2026-05-12 double-send scenario)", () =>
         // Exactly one child was created for the key.
         expect(db.rows("campaigns").filter((c) => c.send_key === "key-1")).toHaveLength(1);
     });
+
+    it("child campaigns inherit the parent's category", async () => {
+        // Stats and sends are recorded against the CHILD, so a child with a
+        // null category disappears from every category-scoped dashboard and
+        // query even though it holds the real data.
+        const db = makeDb();
+        db.rows("campaigns")[0]!.is_template = true;
+        db.rows("campaigns")[0]!.category = "marketing-calendar";
+        const { sender } = makeSender();
+
+        const result = await sendCampaign({ db: asAdminClient(db), sender }, baseOptions({ sendKey: "key-cat" }));
+
+        const child = db.rows("campaigns").find((c) => c.id === result.campaignId);
+        expect(child?.id).not.toBe("camp-1");
+        expect(child?.category).toBe("marketing-calendar");
+    });
 });
 
 describe("sendCampaign retry policy", () => {

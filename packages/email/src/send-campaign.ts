@@ -145,6 +145,11 @@ async function resolveTrackingCampaign(
             parent_template_id: campaign.id,
             workspace: campaign.workspace,
             email_type: campaign.email_type ?? "campaign",
+            // Inherit the parent's category. Without this a child lands with
+            // category NULL, which drops it out of every category-scoped
+            // dashboard and query even though it is the row the sends and
+            // stats are actually recorded against.
+            category: campaign.category ?? null,
             send_key: sendKey ?? null,
             variable_values: childVars as CampaignRow["variable_values"],
         })
