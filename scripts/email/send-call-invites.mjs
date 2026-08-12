@@ -135,105 +135,107 @@ async function createMeeting(token, { topic, startAt, agenda }) {
 }
 
 // --- email ------------------------------------------------------------------------
+/** Plain footer to match: no borders, no gold, just small grey text. */
 const UNSUB_FOOTER = `
-<div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #2a2418; text-align: center; font-size: 12px; color: #8d846c; font-family: sans-serif;">
-  <p style="margin: 0;">No longer want to receive these emails? <a href="{{unsubscribe_url}}" style="color: #8d846c; text-decoration: underline;">Unsubscribe here</a>.</p>
+<div style="margin-top:24px; font-family:Arial,Helvetica,sans-serif; font-size:11px; color:#888888;">
+  <a href="{{unsubscribe_url}}" style="color:#888888;">Unsubscribe</a>
 </div>`;
 
-/** Shared dark/gold shell so both emails look like everything else we send. */
-function shell({ preheader, eyebrow, headline, bodyHtml, buttonLabel, buttonUrl, tailHtml }) {
-  const button = buttonUrl
-    ? `<tr><td align="center" style="padding:20px 56px 12px 56px;">
-        <table role="presentation" cellpadding="0" cellspacing="0"><tr>
-          <td align="center" bgcolor="#d8b25c" style="border-radius:2px;">
-            <a href="${buttonUrl}" style="display:inline-block; padding:17px 44px; font-family: Arial, Helvetica, sans-serif; font-size:14px; font-weight:bold; letter-spacing:1.5px; text-transform:uppercase; color:#1a1505; text-decoration:none;">${buttonLabel}</a>
-          </td>
-        </tr></table>
-      </td></tr>`
-    : "";
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Our call</title>
-  <style>
-    body, html { margin:0; padding:0; background:#0b0b0b; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color:#f3efe7; }
-    table { border-collapse:collapse; }
-    .muted { color:#c8bea0; }
-    .gold { color:#d8b25c; }
-    @media only screen and (max-width:620px) { .pad { padding-left:24px !important; padding-right:24px !important; } }
-  </style>
-</head>
-<body>
-  <div style="display:none; max-height:0; overflow:hidden; opacity:0;">${preheader}</div>
-  <table role="presentation" width="100%" style="background:#0b0b0b;">
-    <tr><td align="center">
-      <table role="presentation" width="640" style="max-width:640px; background:#111111;">
-        <tr><td align="center" style="padding:28px 20px 18px 20px; background:#0b0b0b;" class="gold">D R E A M P L A Y</td></tr>
-        <tr><td class="pad" style="padding:36px 56px 8px 56px;">
-          <p class="gold" style="margin:0 0 14px 0; font-size:11px; letter-spacing:4px; text-transform:uppercase;">${eyebrow}</p>
-          <h1 style="margin:0 0 20px 0; font-size:32px; line-height:1.25; font-weight:400; color:#f7f3ea;">${headline}</h1>
-          ${bodyHtml}
-        </td></tr>
-        ${button}
-        <tr><td class="pad" style="padding:24px 56px 40px 56px;">
-          ${tailHtml}
-          <p style="margin:0; font-size:16px; line-height:1.8; color:#f7f3ea;">Lionel Yu<br/><span class="muted">Founder, DreamPlay Pianos</span></p>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`;
+/**
+ * These two emails are deliberately NOT in the dark/gold campaign template.
+ * They are one-to-one notes about a specific appointment, so they are plain
+ * text in the default Gmail font, the way a person actually writes. No
+ * wordmark, no gold button, no background colour.
+ */
+const ESC = (t) => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+/** "Friday at 11" / "Friday at 8:30" in the reader's own timezone. */
+function dayAtHour(date, tz) {
+  const weekday = new Intl.DateTimeFormat("en-US", { timeZone: tz, weekday: "long" }).format(date);
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: tz, hour: "numeric", minute: "2-digit", hour12: true,
+  }).formatToParts(date);
+  const hour = parts.find((x) => x.type === "hour").value;
+  const minute = parts.find((x) => x.type === "minute").value;
+  return `${weekday} at ${minute === "00" ? hour : `${hour}:${minute}`}`;
 }
 
-const P = (t) => `<p class="muted" style="margin:0 0 16px 0; font-size:16px; line-height:1.85;">${t}</p>`;
+/** Long form for the body line: "Friday, August 14 at 11:00 AM MDT". */
+const longWhen = (date, tz) => fmt(date, tz);
+
+/** Time with no date, for the "X for me" line: "1:00 PM EDT". */
+function clockOnly(date, tz) {
+  const options = { timeZone: tz, hour: "numeric", minute: "2-digit", timeZoneName: "short" };
+  return new Intl.DateTimeFormat("en-US", options).format(date);
+}
+
+/** Plain-text-looking HTML: default font, normal paragraphs, a real link. */
+function plain(lines) {
+  const body = lines
+    .filter((l) => l !== null && l !== undefined)
+    .map((l) => (l === "" ? "<div><br></div>" : `<div>${l}</div>`))
+    .join("\n");
+  return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /></head>
+<body>
+<div style="font-family:Arial,Helvetica,sans-serif; font-size:14px; line-height:1.5; color:#222222;">
+${body}
+</div>
+</body></html>`;
+}
 
 /** STEP 1: propose a time. Links to /confirm-call, carries no Zoom URL. */
-function buildProposalHtml({ firstName, theirTime, myTime, confirmUrl, method, contactValue }) {
+function buildProposalHtml({ firstName, theirTime, myClock, confirmUrl, confirmLabel, method, contactValue }) {
   const how =
     method === "zoom"
-      ? P("It is on Zoom, and I will send the link over as soon as you confirm.")
-      : P(`I will ${method === "whatsapp" ? "reach you on WhatsApp" : "call you"} at <strong style="color:#f7f3ea;">${contactValue ?? "the number you gave me"}</strong>. If there is a better number, just reply and let me know.`);
-  return shell({
-    preheader: `${theirTime}. Let me know if that works and I will lock it in.`,
-    eyebrow: "Our call",
-    headline: `${firstName}, does this time work?`,
-    bodyHtml: [
-      P("Thanks for being up for a chat. Going by the days you picked, how about:"),
-      `<p style="margin:0 0 16px 0; font-size:20px; line-height:1.5; color:#f7f3ea;"><strong>${theirTime}</strong></p>`,
-      P(`That is ${myTime} for me, so we should both be awake.`),
-      how,
-    ].join("\n"),
-    buttonLabel: "Yes, That Works",
-    buttonUrl: confirmUrl,
-    tailHtml: [
-      P("If that day is no good, hit the same link and tell me what suits you better. No trouble at all."),
-      P("It is only about 15 minutes and there is nothing to prepare. I just want to hear about you and your playing."),
-    ].join("\n"),
-  });
+      ? "It is on Zoom. I will send the link once you confirm."
+      : method === "whatsapp"
+        ? `I will reach you on WhatsApp at ${ESC(contactValue ?? "the number you gave me")}.`
+        : `I will call you at ${ESC(contactValue ?? "the number you gave me")}.`;
+  return plain([
+    "Our call",
+    "",
+    `${ESC(firstName)}, ${ESC(confirmLabel)}?`,
+    "",
+    "I have you down for:",
+    "",
+    `<b>${ESC(theirTime)}</b>`,
+    myClock ? `${ESC(myClock)} for me` : null,
+    "",
+    how,
+    "",
+    `<a href="${confirmUrl}">${ESC(confirmLabel)} works</a>`,
+    "",
+    "If you need a different time, you can use the same link to change it.",
+    "",
+    "Looking forward to talking.",
+    "",
+    "Lionel Yu",
+    "Founder, DreamPlay Pianos",
+  ]);
 }
 
 /** STEP 2: they confirmed, so here is the actual join link. */
-function buildLinkHtml({ firstName, theirTime, myTime, joinUrl }) {
-  return shell({
-    preheader: `Your Zoom link for ${theirTime}.`,
-    eyebrow: "Our call",
-    headline: `${firstName}, we are booked in.`,
-    bodyHtml: [
-      P("Thanks for confirming. Here are the details:"),
-      `<p style="margin:0 0 16px 0; font-size:20px; line-height:1.5; color:#f7f3ea;"><strong>${theirTime}</strong></p>`,
-      P(`That is ${myTime} my time.`),
-      P("There is nothing to install if you would rather join from your browser."),
-    ].join("\n"),
-    buttonLabel: "Join Our Call",
-    buttonUrl: joinUrl,
-    tailHtml: [
-      P(`If the button does not work, this is the link: <a href="${joinUrl}" style="color:#d8b25c;">${joinUrl}</a>`),
-      P("If something comes up, just reply to this email and we will move it."),
-    ].join("\n"),
-  });
+function buildLinkHtml({ firstName, theirTime, myClock, joinUrl }) {
+  return plain([
+    "Our call",
+    "",
+    `${ESC(firstName)}, we are set.`,
+    "",
+    "I have you down for:",
+    "",
+    `<b>${ESC(theirTime)}</b>`,
+    myClock ? `${ESC(myClock)} for me` : null,
+    "",
+    `Here is the Zoom link: <a href="${joinUrl}">${ESC(joinUrl)}</a>`,
+    "",
+    "Nothing to install if you would rather join from your browser.",
+    "",
+    "If something comes up, just reply and we will move it.",
+    "",
+    "Lionel Yu",
+    "Founder, DreamPlay Pianos",
+  ]);
 }
 
 function rewriteLinksAppend(html, sid, cid) {
@@ -341,8 +343,15 @@ for (const call of pending) {
   const noteName = /^csv import/i.test(rawNote) ? "" : rawNote.split(/\s+/)[0] ?? "";
   const firstName = sub.first_name?.trim() || noteName || "there";
   const startAt = new Date(call.scheduled_at);
-  const theirTime = fmt(startAt, call.timezone || LIONEL_TZ);
+  const theirTz = call.timezone || LIONEL_TZ;
+  const theirTime = longWhen(startAt, theirTz);
   const myTime = fmt(startAt, LIONEL_TZ);
+  // Subject and greeting use THEIR short local hour: "Friday at 11".
+  const shortWhen = dayAtHour(startAt, theirTz);
+  // Skip "X for me" when the buyer is already on Lionel's clock: printing
+  // the same time twice reads like a mistake.
+  const sameClock = clockOnly(startAt, theirTz) === clockOnly(startAt, LIONEL_TZ);
+  const myClock = sameClock ? null : clockOnly(startAt, LIONEL_TZ);
 
   if (!EXECUTE && !TEST_EMAIL) {
     console.log(`WOULD ${SEND_LINKS ? "SEND LINK" : "PROPOSE"} ${email.padEnd(34)} ${call.contact_method.padEnd(9)} ${theirTime}  (me: ${myTime})`);
@@ -367,15 +376,15 @@ for (const call of pending) {
       meetingId = m.id;
       console.log(`  zoom meeting ${m.id} for ${email}`);
     }
-    html = buildLinkHtml({ firstName, theirTime, myTime, joinUrl: joinUrl || "https://zoom.us/j/preview" });
-    subject = `${firstName}, here is the link for our call`;
+    html = buildLinkHtml({ firstName, theirTime, myClock, joinUrl: joinUrl || "https://zoom.us/j/preview" });
+    subject = `${firstName}, here is the link for ${shortWhen}`;
   } else {
     const confirmUrl = `${APP_BASE}${confirmPath(call.id)}`;
     html = buildProposalHtml({
-      firstName, theirTime, myTime, confirmUrl,
+      firstName, theirTime, myClock, confirmUrl, confirmLabel: shortWhen,
       method: call.contact_method, contactValue: call.contact_value,
     });
-    subject = `${firstName}, does this time work?`;
+    subject = `${firstName}, ${shortWhen}?`;
   }
 
   html = html.includes("{{unsubscribe_url}}") ? html : html.replace("</body>", `${UNSUB_FOOTER}</body>`);
