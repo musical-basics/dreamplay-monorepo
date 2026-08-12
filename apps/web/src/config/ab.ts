@@ -92,14 +92,18 @@ export const abFunnel = defineAbFunnel({
       ],
     },
     {
+      // Retired 2026-08-12: lowest avg points (6.0) over 38 sessions, zero
+      // email captures, and high time-on-page that never converted. Its
+      // history stays on the score sheet; /landing-page-1 still previewable
+      // at /4a. Reactivate by flipping active back to true.
       group: "4",
       name: "Direct-response PDP",
-      active: true,
+      active: false,
       variations: [
         {
           key: "4a",
           since: "2026-08-04T07:25:00Z",
-          label: "landing-page-1 direct-response PDP (Mar 11 2026 homepage A/B)",
+          label: "landing-page-1 direct-response PDP (Mar 11 2026 homepage A/B) — retired Aug 12 2026",
           route: "/landing-page-1",
           cta: "/customize",
           active: true,
