@@ -56,15 +56,22 @@ export const BUSY_SLOTS: Record<string, number[]> = {
     "2026-08-14": [15],
 };
 
-/** Calendar date in LIONEL_TZ, as "YYYY-MM-DD", for BUSY_SLOTS lookups. */
-export function dateKeyIn(date: Date, timeZone: string): string {
-    const parts = new Intl.DateTimeFormat("en-CA", {
-        timeZone,
+/**
+ * Calendar date in a given zone, as "YYYY-MM-DD", for BUSY_SLOTS lookups.
+ *
+ * The options object is built explicitly rather than with `{ timeZone, ... }`
+ * shorthand: the production minifier renamed the parameter and left the
+ * shorthand key pointing at a dead binding, which crashed the page with
+ * "ReferenceError: timeZone is not defined" while working fine locally.
+ */
+export function dateKeyIn(date: Date, zone: string): string {
+    const options: Intl.DateTimeFormatOptions = {
+        timeZone: zone,
         year: "numeric",
         month: "2-digit",
         day: "2-digit",
-    }).format(date);
-    return parts;
+    };
+    return new Intl.DateTimeFormat("en-CA", options).format(date);
 }
 
 export const DAY_PART_RANGES: Record<string, [number, number]> = {
@@ -81,32 +88,41 @@ export function partOfDay(hour: number): string {
     return "Evening";
 }
 
-/** Weekday name for an instant, in a given timezone. */
-export function weekdayIn(date: Date, timeZone: string): string {
-    return new Intl.DateTimeFormat("en-US", { timeZone, weekday: "long" }).format(date);
+/**
+ * Weekday name for an instant, in a given timezone.
+ *
+ * Note every helper here writes `timeZone: zone` in full. See dateKeyIn()
+ * for why the `{ timeZone }` shorthand must not be used in this file.
+ */
+export function weekdayIn(date: Date, zone: string): string {
+    const options: Intl.DateTimeFormatOptions = { timeZone: zone, weekday: "long" };
+    return new Intl.DateTimeFormat("en-US", options).format(date);
 }
 
 /** Hour (0-23) for an instant, in a given timezone. */
-export function hourIn(date: Date, timeZone: string): number {
-    return Number(new Intl.DateTimeFormat("en-US", { timeZone, hour: "numeric", hour12: false }).format(date));
+export function hourIn(date: Date, zone: string): number {
+    const options: Intl.DateTimeFormatOptions = { timeZone: zone, hour: "numeric", hour12: false };
+    return Number(new Intl.DateTimeFormat("en-US", options).format(date));
 }
 
-export function formatIn(date: Date, timeZone: string, opts: Intl.DateTimeFormatOptions = {}): string {
-    return new Intl.DateTimeFormat("en-US", {
-        timeZone,
+export function formatIn(date: Date, zone: string, opts: Intl.DateTimeFormatOptions = {}): string {
+    const options: Intl.DateTimeFormatOptions = {
+        timeZone: zone,
         weekday: "short",
         month: "short",
         day: "numeric",
         hour: "numeric",
         minute: "2-digit",
         ...opts,
-    }).format(date);
+    };
+    return new Intl.DateTimeFormat("en-US", options).format(date);
 }
 
 /** A short, unambiguous timezone label, e.g. "EDT" or "BST". */
-export function tzAbbrev(date: Date, timeZone: string): string {
-    const parts = new Intl.DateTimeFormat("en-US", { timeZone, timeZoneName: "short" }).formatToParts(date);
-    return parts.find((p) => p.type === "timeZoneName")?.value ?? timeZone;
+export function tzAbbrev(date: Date, zone: string): string {
+    const options: Intl.DateTimeFormatOptions = { timeZone: zone, timeZoneName: "short" };
+    const parts = new Intl.DateTimeFormat("en-US", options).formatToParts(date);
+    return parts.find((p) => p.type === "timeZoneName")?.value ?? zone;
 }
 
 export interface CallPreference {
