@@ -105,3 +105,27 @@ The last live tqhf consumer. Per Lionel's schema-hygiene rule it went into huv a
 - **Verification**: huv PostgREST with `Accept-Profile: asset_indexer` returns rows (`/rest/v1/assets` 200, count=exact → 967); deployed app serves asset queries from huv; storage objects fetchable from huv.
 - **⚠ Left for Lionel**: the Hermes VPS env (unreachable from this machine). If it only calls the deployed app's API it's already fine; if it holds a direct tqhf URL/service key it must be repointed to huv (schema `asset_indexer`, service key).
 - tqhf was left read-only/untouched throughout; huv changes were purely additive.
+
+## 🔍 One-week post-migration audit — 2026-08-11
+
+**Verdict: NOTHING wrote to either legacy DB in the week since migration. Both are idle and safe to delete.**
+
+Note: the projects were never actually paused (the 2026-08-04 pause attempt returned 400 "not free-tier"), so they stayed fully writable all week — which makes this clean result meaningful rather than trivially guaranteed.
+
+### tqhf (`tqhfpcdqxylrknwbrqqi`) — audited with its still-valid service key
+- **All 17 readable public tables: byte-identical row counts vs the 2026-08-04-final snapshot; zero rows with any timestamp ≥ 2026-08-04T19:00Z.** analytics_logs newest row still 2026-08-04T05:10:43Z (i.e. pre-migration).
+- 3 tables (checkout_ab_counter, contact_submissions, homepage_ab_counter) return 403 to the service key — all were 0-row at every snapshot; unchanged situation, no data at risk.
+- Storage: thumbnails 959 objects (newest 2026-04-09), assets 4 (2025-12-20), campaign-assets 36 (2026-02-14) — all pre-migration; no new uploads.
+- Hidden schemas (ads / asset_indexer / concert_analytics / concerts) could not be re-queried this session (needs the Management API — see PAT note below), but their writers were both repointed and verified on 08-04: the ads cron now writes szl (confirmed live), media-indexer serves from huv (confirmed live). No evidence of any remaining writer.
+
+### quyq (`quyqwdjygzalqqmrgkfk`) — audited with its legacy anon key (RLS is off on most tables there)
+- **43 of 47 tables: identical counts vs the 2026-08-04 snapshot** (subscribers 15,529 / campaigns 1,807 / sent_history 61,806 / subscriber_events 75,974 / posts 29 / projects 5 / assets 4 …), zero recent-timestamp rows.
+- 4 tables (media_assets, tag_definitions, asset_categories, research_tags_directory) return **HTTP 200 + `[]` to the anon key**: RLS is enabled on these, so anon sees nothing. They are NOT deleted — a dropped table returns 404/PGRST205, and all four are fully preserved in the 08-04 backups (135/111/5/1 rows). Their true counts can't be re-read because quyq's service key died (below).
+
+### ⚠ Credential drift discovered during this audit
+- The main Supabase **PAT `sbp_339055fa…` is now DEAD** (401 on every endpoint incl. `/v1/projects`, not just these projects) — it was working 08-04. Cause unknown (revoked/expired/rotated). The szl and vxz PATs still work but are scoped to other orgs and cannot see tqhf/quyq.
+- quyq's legacy **service key** also 401s (it died mid-day 08-04); its **anon key still works**. tqhf's service key still works.
+- **Consequence:** deleting these projects, or any further SQL against them, requires Lionel to mint a fresh PAT for the org that owns them (`qfrrgndpbwqxkollnysl`), or to act via the Supabase dashboard.
+
+### Recommendation
+Both DBs are provably idle with triple backups. Proceed to deletion (dashboard, or via a fresh PAT), then rotate the shared DB password `sorenkier23`.
