@@ -21,12 +21,20 @@ above features or price. One founded a narrow-key advocacy society in Japan.
 One is 80 and battling cancer, hoping to finally play his dream pieces. This
 is a movement as much as a market, and it should be talked to that way.
 
-**Price stopped nobody. Waiting is what strains people.** The most common
-hesitation after "no hesitation" was *doubts that a new company could deliver*
-(5 of 18), but read honestly, that is not a perception problem we can write
-our way out of. These buyers ordered between December and July, and the
-product does not exist yet. Their doubt is an accurate reading of reality, and
-it resolves when units ship, which needs capital, not copy. See §6.
+**Price is doing more work than the survey admits.** Nobody selected price as
+what almost stopped them, but that is survivorship bias: this cohort bought at
+a median of **$550**, and half paid under it. They are the people for whom the
+price was already low enough. The survey cannot tell us about everyone who saw
+$899 and left. Buyer language treats affordability as the deciding factor
+against Athena ("a steal", "the cheapest narrow-key option available"). See
+§7.
+
+**Waiting is the strain we cannot message away.** The most common hesitation
+after "no hesitation" was *doubts that a new company could deliver* (5 of 18),
+which is not a perception problem we can write our way out of. These buyers
+ordered between December and July and the product does not exist yet. Their
+doubt is an accurate reading of reality, and it resolves when units ship,
+which needs capital, not copy. See §6.
 
 **The Athena comparison is the competitive battleground.** Five buyers
 mentioned NarrowKeys Athena unprompted. We win on price (roughly a third of
@@ -326,13 +334,122 @@ for a product that does not exist yet:
   buyers to DreamPlay.
 - **People bought the mission before the product.** 5 of 18 named belief in
   the mission as their primary purchase reason, ahead of any feature.
-- **Price is not the objection.** Zero respondents named price as what almost
-  stopped them. The objection is delivery risk, which is precisely what
-  funding removes.
+- **Price is a real constraint, and our order book shows it.** Zero
+  respondents *named* price as their blocker, but they are the people who
+  already found the price acceptable: median paid **$550**, and buyer language
+  is explicitly comparative ("a steal", "three times the price"). Demand is
+  proven at $500-600. Demand at $899 is unproven. See §7a.
 
 This is a market thesis with names, quotes and payment records attached, not
 a hypothesis. Anyone assessing whether narrow-key demand is real can read
 Appendix B and decide for themselves.
+
+---
+
+## 7a. Price: what our own order book proves
+
+The survey says price stopped nobody. **Our order book says price is the
+single best-evidenced thing about our demand.** Both are true, and the second
+matters more, because the survey only ever interviewed people who already
+said yes.
+
+### What buyers actually paid
+
+66 real buyers, all amounts as paid (deposits included):
+
+| | |
+|---|---|
+| Median paid | **$550** |
+| Mean paid | $602 |
+| Under $550 | **33 buyers (50%)** |
+| $550-700 | 28 buyers (42%) |
+| $700+ | 5 buyers (8%) |
+| Range | $299 to $2,029 |
+
+Monthly medians have never left the mid-hundreds: $499 (Dec), $549 (Jan),
+$569 (Feb), $613 (Mar), $553 (Apr), $524 (May), $507 (Jun), $532 (Jul).
+
+**Eighteen of 66 bought a 50% reservation**: more than a quarter of our buyers
+chose to split the payment rather than pay in full, which is itself a price
+signal.
+
+**Read that against today's pricing.** Buyers who joined at $499-$650 are the
+entire evidence base for demand. Demand at $899, and at the $1,899 Pro, is
+**not evidenced by anything in this dataset**. Two people bought Pro-tier
+products; both were existing buyers upgrading, not new customers arriving at
+that price.
+
+### The survey's blind spot, stated plainly
+
+Nobody named price as their hesitation because **everyone who found the price
+too high never became a buyer and never received the survey**. The correct
+conclusion is not "price does not matter". It is "price was acceptable to the
+people for whom it was acceptable". Our 0-purchase site funnel (249 sessions,
+63 configurations, 13 begin_checkout, zero conversions) is where the price
+objection would actually show up, and it is exactly where we are failing.
+
+### Where the buyer language points
+
+Affordability is the argument buyers use when they explain the decision to
+themselves:
+
+> "A narrow-key piano that cost only $600 for a founders' edition was a
+> steal in comparison." (Joe)
+
+> "It was the cheapest narrow-key option available on the market. I think the
+> only other option was the Athena, which was three times the price."
+> (Josef)
+
+> "It was a better price than the Athena." (Samantha)
+
+> "The price was also reasonable." (Brian)
+
+Four buyers volunteered price as the reason *in prose* while none selected it
+in the multiple choice. That gap is the finding.
+
+### The DreamPlay Go hypothesis (Lionel, 2026-08-14)
+
+A **$600 DreamPlay Go with 128-note polyphony** sits precisely at the price
+our order book already validates, and would rebuild the entry point that
+originally created this buyer base.
+
+**What the data supports:**
+
+- $600 is at the top of the band where 92% of our buyers actually transacted.
+- Half our buyers paid under $550, so a $600 model is not a discount play, it
+  is a return to the real market price.
+- The Athena comparison works only while we are dramatically cheaper. At $899
+  we are "less expensive"; at $600 we are "a third of the price", which is
+  the argument buyers repeat unprompted.
+- Beginners and returners dominate this cohort (8 returning, 2 just
+  starting). 128-note polyphony is not a constraint any of them named. Nobody
+  in 18 responses asked for more polyphony.
+
+**What to be careful about:**
+
+- **Do not strand existing buyers.** Anyone who paid $549-$650 for a Piano
+  Bundle must not discover that a later, cheaper model is comparable to
+  theirs. Position Go as *below* the One on specification, not beside it, and
+  tell existing buyers what they still get that Go does not.
+- **The narrow keys must not be the thing that is cut.** Narrow keys are the
+  entire product thesis (10 of 18 bought for them). Go must ship DS5.5 and
+  DS6.0, or it is a different company's product.
+- **Protect the professional segment.** Paul (gigging jazz) needs 1/4"
+  outputs and a lighter shell. Those are Pro or One features; do not let Go
+  cannibalize the tier that funds development.
+- **A third tier adds decision cost.** Buyers are already unsure between 5.5
+  and 6.0, and two asked for less flashy Pro finishes. Three models with two
+  sizes and multiple finishes is a lot of choosing for a category most
+  visitors have never encountered. Sizing guidance becomes mandatory, not
+  optional.
+
+**What would confirm it before tooling money is spent:** we have a site that
+converts nobody at current prices and a live A/B framework. A Go landing page
+at $600, tested against the current offer, would produce a real answer for
+the cost of a test rather than a production run. If a $600 narrow-key
+keyboard cannot convert traffic, the problem is not price and we will have
+learned that cheaply.
+
 
 ---
 
@@ -436,7 +553,14 @@ Their answers cluster on things our website mostly does not say.
    Visitors are almost certainly making the same comparison silently, without
    our numbers in front of them. Test an explicit comparison.
 
-5. **Make the founder the funnel, because he already is.** Discovery is
+5. **Test the price itself, not just the words around it.** Our buyers
+   transacted at a median of $550 and the site now asks $899. Nobody has
+   tested whether the current price converts, and a 0-purchase funnel is
+   consistent with a price objection nobody is voicing. A $600 DreamPlay Go
+   landing page (§7a) tested against the current offer would answer this for
+   the cost of a test rather than a production run.
+
+6. **Make the founder the funnel, because he already is.** Discovery is
    YouTube-led (7 of 18 from MusicalBasics), and 5 of 18 bought the *mission*
    ahead of the product. The site treats the founder story as an About page.
    For this audience it may be the conversion asset. Test founder-forward
@@ -459,7 +583,11 @@ page, 423 clicks, 13 CTA clicks) while keeping 2a as control.
 - Does delivery timing kill conversion at the point of sale? A January 2027
   ship date on a page has never been tested against alternative framings.
 - Is the price presented as a bargain relative to Athena, or as an
-  unexplained several-hundred-dollar ask?
+  unexplained several-hundred-dollar ask? Buyers who paid describe it
+  comparatively ("a third of the price"); the site states a number.
+- **Does the current price convert at all?** Every buyer we have came in
+  around $550. We have never tested $899 against a lower entry price on live
+  traffic. This is the highest-value unanswered question on the list.
 - Does the site ever ask a visitor about their hands? Buyers self-identify by
   a physical trait; the site sells a product category.
 - What is the single next commitment we want from a visitor? At 1.6% email
