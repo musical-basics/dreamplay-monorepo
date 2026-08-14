@@ -1,6 +1,5 @@
-<!-- Mirror of db-backups/local-replica/README.md. The scripts are copied into
-     docs/plan/legacy-replica/ so the replica is rebuildable even if the laptop
-     folder is lost — but it needs the backup tarballs, which are LOCAL ONLY. -->
+<!-- Mirror of db-backups/local-replica/README.md. Scripts in docs/plan/legacy-replica/.
+     Rebuilding needs the backup tarballs, which are LOCAL ONLY. -->
 
 # Local Postgres replicas of the retired Supabase DBs
 
@@ -95,6 +94,34 @@ node build-sql.mjs ../tqhfpcdqxylrknwbrqqi/2026-08-04-full tqhf
 node build-sql.mjs ../quyqwdjygzalqqmrgkfk/2026-08-04 quyq
 ./load.sh && ./verify.sh
 ```
+
+## Rebuilding this on another machine
+
+The scripts are mirrored in git at `dreamplay-monorepo/docs/plan/legacy-replica/`, but they
+need the **backup tarballs**, which live only on this laptop. To rebuild elsewhere: copy
+the two authoritative archives (`tqhfpcdqxylrknwbrqqi-2026-08-04-full.tar.gz`,
+`quyqwdjygzalqqmrgkfk-2026-08-04.tar.gz`, ~22MB), extract them next to the scripts, then run
+`build-sql.mjs` → `docker compose up -d` → `./load.sh`.
+
+## Gotchas found while building this (they will bite a naive restore)
+
+These are fixed in `build-sql.mjs`; noted here because anyone hand-restoring the JSONL will
+hit them:
+
+1. **`"Customer"` is case-sensitive.** Legacy Supabase created a few tables with capitals.
+   Unquoted SQL (`select * from Customer`) fails — always `select * from "Customer"`.
+2. **Enum values appear late in the data.** Sampling the first N rows misses rare ones
+   (`complaint` first appears at row ~6,247 of `subscriber_events`). Scan the whole column
+   before creating the type, or the COPY dies mid-load.
+3. **jsonb columns can hold JSON arrays.** `merch_generations.ref_image_paths`,
+   `cf_campaign.key_features/media_gallery`, `chain_processes.history`,
+   `mailchimp_templates.assets`, `send_logs.image_logs` are jsonb — they must be written as
+   JSON, not as Postgres `{…}` array literals. Key the serializer on the declared column
+   type, not the value's shape.
+4. **quyq needs `uuid-ossp`** (some defaults call `uuid_generate_v4()`); tqhf only needs
+   `pgcrypto`.
+5. **`information_schema` hides ARRAY element types and enum names** — both must be
+   inferred from the data / the column default.
 
 ## Housekeeping
 
