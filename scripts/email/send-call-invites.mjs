@@ -48,7 +48,12 @@ for (const f of [join(repoRoot, ".env.local"), join(repoRoot, "apps/web/.env.loc
   try {
     for (const line of readFileSync(f, "utf8").split("\n")) {
       const m = line.match(/^([A-Z0-9_]+)=(.*)$/);
-      if (m && !(m[1] in process.env)) process.env[m[1]] = m[2];
+      // Values may be quoted in .env.local; strip a single matching pair.
+      // Leaving them in sent literal quote characters to Zoom, whose token
+      // endpoint answered "invalid_client" (2026-08-14).
+      if (m && !(m[1] in process.env)) {
+        process.env[m[1]] = m[2].replace(/^(['"])(.*)\1$/, "$2");
+      }
     }
   } catch {}
 }
