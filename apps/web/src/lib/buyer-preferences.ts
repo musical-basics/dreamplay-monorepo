@@ -63,7 +63,15 @@ export function parsePreferencesToken(t: string | null | undefined): string | nu
     return verifyBuyerPrefToken(id, t.slice(dot + 1)) ? id : null;
 }
 
-/** Did this buyer already purchase a Pro product? */
+/**
+ * Is this buyer on a Pro product right now?
+ *
+ * A Pro FINISH counts, because that is how a Pro configuration presents.
+ * Note this is deliberately NOT the same question as "did they buy Pro at
+ * checkout": someone who requested the upgrade through /order-preferences
+ * also ends up on a Pro finish. Use `boughtProAtCheckout` when the
+ * distinction matters, which it does for upgrade eligibility.
+ */
 export function boughtPro(buyer: Pick<Buyer, "product_line" | "finish">): boolean {
     return (
         /\bpro\b/i.test(buyer.product_line ?? "") ||
@@ -72,12 +80,36 @@ export function boughtPro(buyer: Pick<Buyer, "product_line" | "finish">): boolea
 }
 
 /**
+ * Did this buyer purchase a Pro product at checkout? Reads the product line
+ * only, never the finish, so a finish the buyer selected themselves cannot
+ * be mistaken for their original order.
+ */
+export function boughtProAtCheckout(buyer: Pick<Buyer, "product_line">): boolean {
+    return /\bpro\b/i.test(buyer.product_line ?? "");
+}
+
+/**
  * Pro-upgrade eligibility (Lionel, 2026-08-06): real buyers only, purchased
  * on or before 2026-04-30, and not already on a Pro product.
+ *
+ * Eligibility reads the PRODUCT LINE, not the finish. It used to call
+ * boughtPro(), which also matches a Pro finish, so saving the upgrade (which
+ * sets a Pro finish) made the buyer instantly ineligible for the upgrade
+ * they had just requested. Re-saving then failed with "not eligible", which
+ * is what happened to a buyer on 2026-08-06.
  */
 export function canUpgradeToPro(buyer: Buyer): boolean {
     if (buyer.kind !== "buyer") return false;
     if (!buyer.purchase_date) return false;
     if (buyer.purchase_date >= PRO_UPGRADE_CUTOFF) return false;
-    return !boughtPro(buyer);
+    return !boughtProAtCheckout(buyer);
+}
+
+/**
+ * Has this buyer already asked for (and been sent) the upgrade? Callers use
+ * this to say "your upgrade is already under way" rather than the misleading
+ * "not eligible".
+ */
+export function hasPendingProUpgrade(buyer: Pick<Buyer, "pro_upgrade_requested">): boolean {
+    return Boolean(buyer.pro_upgrade_requested);
 }

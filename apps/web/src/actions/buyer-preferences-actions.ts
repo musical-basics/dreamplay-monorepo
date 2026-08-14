@@ -9,6 +9,7 @@ import {
     boughtPro,
     canUpgradeToPro,
     parsePreferencesToken,
+    boughtProAtCheckout,
 } from "@/lib/buyer-preferences";
 import { sendProUpgradeEmail } from "@/lib/pro-upgrade-email";
 
@@ -45,7 +46,14 @@ export async function saveBuyerPreferences(
     const eligible = canUpgradeToPro(buyer);
     const upgradeToPro = input.upgradeToPro && eligible; // server-enforced: never trust the client on eligibility
     if (input.upgradeToPro && !eligible) {
-        return { ok: false, error: "This order is not eligible for the Pro upgrade." };
+        // Someone who already bought Pro outright is not "ineligible", they
+        // are done. Saying "not eligible" to them reads as a rejection.
+        return {
+            ok: false,
+            error: boughtProAtCheckout(buyer)
+                ? "Your order is already a DreamPlay One Pro, so there is nothing to upgrade."
+                : "This order is not eligible for the Pro upgrade. Please email support@dreamplaypianos.com and we will sort it out.",
+        };
     }
 
     const isPro = boughtPro(buyer) || upgradeToPro;
@@ -80,10 +88,15 @@ export async function saveBuyerPreferences(
         .eq("id", buyer.id);
     if (updateError) return { ok: false, error: "Something went wrong saving your choice. Please try again." };
 
-    // Newly requested upgrade: automatically send the $200 payment email.
+    // Send the $200 payment email whenever the box is ticked and the buyer
+    // has not paid yet. This used to fire only on the FIRST request
+    // (`&& !buyer.pro_upgrade_requested`), so if that one send failed the
+    // buyer could never trigger another: re-saving was a silent no-op and
+    // they were stuck with no link. Resending is safe, the email is just a
+    // checkout link, and it gives the buyer a way to recover by themselves.
     // Fire-and-forget semantics but awaited (serverless): failures never
     // block the save; the request stays visible on /admin/buyers regardless.
-    if (upgradeToPro && !buyer.pro_upgrade_requested) {
+    if (upgradeToPro) {
         const { data: sub } = await db
             .from("subscribers")
             .select("first_name")
