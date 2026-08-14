@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { COUPON_AMOUNT_USD } from "@/lib/coupon-trigger";
+import { loadCampaignStats } from "@/lib/campaign-stats";
+import { COUPON_AMOUNT_USD, COUPON_TEMPLATE_NAME } from "@/lib/coupon-trigger";
 import { getAdminDb } from "@/lib/db";
 import {
     AUDIENCE_SETTING,
@@ -8,14 +9,19 @@ import {
     utcIsoToEastern,
 } from "@/lib/marketing-calendar";
 import { CalendarBoard, type CalendarEmail } from "./CalendarBoard";
+import { CampaignPerformance } from "./CampaignPerformance";
 
 /**
  * /admin/marketing-calendar — the August 2026 nurture calendar.
  *
- * 10 draft emails on a Tue/Thu/Sun cadence, drawn from `campaigns` rows with
- * category "marketing-calendar". Everything is editable here (subject, copy,
- * preview text, send date + time in ET). Drafts stay inert until Lionel
+ * Eight draft emails on a Tue/Thu/Sun cadence, drawn from `campaigns` rows
+ * with category "marketing-calendar". Everything is editable here (subject,
+ * copy, preview text, send date + time in ET). Drafts stay inert until Lionel
  * approves and the send script goes out; this page never sends anything.
+ *
+ * Once they do send, the performance table below the calendar shows unique
+ * open and click rates computed from email_events, plus any revenue
+ * attributed back through the checkout note.
  */
 
 export const dynamic = "force-dynamic";
@@ -25,13 +31,39 @@ export default async function MarketingCalendarPage() {
     const [{ data: campaigns }, { data: audienceRow }] = await Promise.all([
         db
             .from("campaigns")
-            .select("id, name, subject_line, html_content, scheduled_at, status, variable_values")
+            .select(
+                "id, name, subject_line, html_content, scheduled_at, status, variable_values, is_template, parent_template_id",
+            )
             .eq("category", MARKETING_CALENDAR_CATEGORY)
             .order("scheduled_at", { ascending: true }),
         db.from("app_settings").select("value").eq("key", AUDIENCE_SETTING).maybeSingle(),
     ]);
 
-    const emails: CalendarEmail[] = (campaigns ?? []).map((c) => {
+    const allRows = campaigns ?? [];
+
+    // The calendar shows the eight scheduled nurture drafts. The coupon
+    // template and the per-recipient children its sends mint are excluded:
+    // the coupon has no date and belongs on its own page.
+    const couponTemplateId = allRows.find(
+        (c) => c.is_template && c.name === COUPON_TEMPLATE_NAME,
+    )?.id;
+    const isCouponRow = (c: (typeof allRows)[number]) =>
+        c.id === couponTemplateId ||
+        c.parent_template_id === couponTemplateId ||
+        c.name.startsWith(COUPON_TEMPLATE_NAME);
+
+    const scheduled = allRows.filter((c) => !isCouponRow(c) && !c.is_template);
+
+    // Sends and their events are recorded against the CHILD campaign, so roll
+    // each child up into the draft it came from before computing rates.
+    const rollUp = new Map<string, string>();
+    for (const c of allRows) {
+        if (c.parent_template_id) rollUp.set(c.id, c.parent_template_id);
+    }
+    const statsIds = allRows.filter((c) => !isCouponRow(c)).map((c) => c.id);
+    const stats = await loadCampaignStats(db, statsIds, rollUp);
+
+    const emails: CalendarEmail[] = scheduled.map((c) => {
         const vv = (typeof c.variable_values === "object" && c.variable_values !== null
             ? c.variable_values
             : {}) as Record<string, unknown>;
@@ -47,6 +79,14 @@ export default async function MarketingCalendarPage() {
             time: et.time,
         };
     });
+
+    const performance = emails.map((e) => ({
+        id: e.id,
+        topic: e.topic,
+        subject: e.subject,
+        date: e.date,
+        stats: stats.get(e.id) ?? null,
+    }));
 
     const audience = parseAudienceSetting(audienceRow?.value);
     const audienceCount = audience ? audience.subscriberIds.length - audience.removedIds.length : 0;
@@ -71,16 +111,19 @@ export default async function MarketingCalendarPage() {
                 </div>
             </div>
             <p className="font-sans text-sm text-white/40 mb-8 max-w-3xl">
-                Ten high-intent nurture emails, Tuesdays, Thursdays and Sundays. Click a card to edit its subject,
-                copy and send time (Eastern Time). All emails are drafts: nothing sends until you give the word,
-                and the send script will test to musicalbasics@gmail.com first as always.
+                {emails.length} high-intent nurture emails, Tuesdays, Thursdays and Sundays. Click a card to edit its
+                subject, copy and send time (Eastern Time). All emails are drafts: nothing sends until you give the
+                word, and the send script will test to musicalbasics@gmail.com first as always.
             </p>
             {emails.length === 0 ? (
                 <p className="font-sans text-sm text-white/40 border border-white/10 bg-white/[0.02] p-6">
                     No drafts found. Run <code className="text-emerald-300">node scripts/email/setup-marketing-calendar.mjs</code> to seed them.
                 </p>
             ) : (
-                <CalendarBoard initialEmails={emails} />
+                <>
+                    <CalendarBoard initialEmails={emails} />
+                    <CampaignPerformance rows={performance} />
+                </>
             )}
         </div>
     );

@@ -27,9 +27,26 @@ const eventsTable = {
     }),
 };
 
+/** Whether the subscriber referenced by dp_sid resolves. Set per test. */
+let subscriberExists = true;
+const subscribersTable = {
+    select: () => ({
+        eq: (_col: string, id: string) => ({
+            maybeSingle: async () => ({
+                data: subscriberExists ? { id } : null,
+                error: null,
+            }),
+        }),
+    }),
+};
+
 vi.mock("@/lib/db", () => ({
     getAdminDb: () => ({
-        from: (table: string) => (table === "buyers" ? { upsert: buyersUpsert } : eventsTable),
+        from: (table: string) => {
+            if (table === "buyers") return { upsert: buyersUpsert };
+            if (table === "subscribers") return subscribersTable;
+            return eventsTable;
+        },
     }),
 }));
 
@@ -51,6 +68,7 @@ function makeRequest(body: string, hmac?: string): Request {
 
 beforeEach(() => {
     process.env.SHOPIFY_WEBHOOK_SECRET = SECRET;
+    subscriberExists = true;
     vi.clearAllMocks();
 });
 
@@ -156,5 +174,60 @@ describe("POST /api/webhooks/shopify/orders", () => {
 
         expect(res.status).toBe(200);
         expect(eventsInsert).not.toHaveBeenCalled();
+    });
+});
+
+describe("email attribution from the order note", () => {
+    const SID = "11111111-2222-4333-8444-555555555555";
+    const CID = "66666666-7777-4888-8999-aaaaaaaaaaaa";
+
+    it("credits the subscriber and campaign that brought the buyer in", async () => {
+        const note = `checkout_source:customize | dp_session:abcd1234efgh | dp_sid:${SID} | dp_cid:${CID}`;
+        const body = JSON.stringify({ id: 555, email: "buyer@example.com", note });
+        const res = await POST(makeRequest(body, sign(body)));
+
+        expect(res.status).toBe(200);
+        const event = eventsInsert.mock.calls[0]![0] as Record<string, unknown>;
+        expect(event.subscriber_id).toBe(SID);
+        const meta = event.metadata as Record<string, unknown>;
+        expect(meta.email_campaign_id).toBe(CID);
+        expect(meta.email_subscriber_id).toBe(SID);
+    });
+
+    it("still records the campaign when the subscriber no longer exists", async () => {
+        // A stale cookie must not abort the insert: events.subscriber_id is a
+        // real FK, so an unresolvable id would lose the whole purchase event.
+        subscriberExists = false;
+        const note = `dp_sid:${SID} | dp_cid:${CID}`;
+        const body = JSON.stringify({ id: 556, email: "buyer@example.com", note });
+        const res = await POST(makeRequest(body, sign(body)));
+
+        expect(res.status).toBe(200);
+        const event = eventsInsert.mock.calls[0]![0] as Record<string, unknown>;
+        expect(event.subscriber_id).toBeNull();
+        expect((event.metadata as Record<string, unknown>).email_campaign_id).toBe(CID);
+    });
+
+    it("ignores malformed ids rather than writing junk into the foreign key", async () => {
+        const note = "dp_sid:not-a-uuid | dp_cid:also-bogus";
+        const body = JSON.stringify({ id: 557, email: "buyer@example.com", note });
+        const res = await POST(makeRequest(body, sign(body)));
+
+        expect(res.status).toBe(200);
+        const event = eventsInsert.mock.calls[0]![0] as Record<string, unknown>;
+        expect(event.subscriber_id).toBeNull();
+        const meta = event.metadata as Record<string, unknown>;
+        expect(meta.email_campaign_id).toBeUndefined();
+        expect(meta.email_subscriber_id).toBeUndefined();
+    });
+
+    it("leaves organic purchases unattributed", async () => {
+        const body = JSON.stringify({ id: 558, email: "buyer@example.com", note: "checkout_source:shop" });
+        const res = await POST(makeRequest(body, sign(body)));
+
+        expect(res.status).toBe(200);
+        const event = eventsInsert.mock.calls[0]![0] as Record<string, unknown>;
+        expect(event.subscriber_id).toBeNull();
+        expect((event.metadata as Record<string, unknown>).email_campaign_id).toBeUndefined();
     });
 });

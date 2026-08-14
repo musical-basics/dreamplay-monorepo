@@ -120,6 +120,12 @@ export async function POST(req: Request) {
         // into a cookie-less webhook. Parsing them makes purchases scoreable.
         const abVariant = note.match(/ab_variant:(\d+[a-z])/)?.[1] ?? null;
         const dpSession = note.match(/dp_session:([A-Za-z0-9_-]{8,64})/)?.[1] ?? null;
+        // Email attribution: the subscriber and campaign whose link brought
+        // this buyer to the site. Strictly UUID-shaped so a malformed or
+        // hand-edited note can never write junk into a foreign key.
+        const UUID = "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}";
+        const emailSubscriberId = note.match(new RegExp(`dp_sid:(${UUID})`))?.[1] ?? null;
+        const emailCampaignId = note.match(new RegExp(`dp_cid:(${UUID})`))?.[1] ?? null;
         const orderId = order.id != null ? String(order.id) : null;
 
         // Dedupe: this endpoint receives both orders/create and orders/paid
@@ -136,11 +142,27 @@ export async function POST(req: Request) {
             alreadyLogged = Boolean(existing?.length);
         }
 
+        // events.subscriber_id is a real FK, so a stale cookie pointing at a
+        // deleted subscriber would abort the insert and lose the purchase
+        // event entirely. Verify it resolves first; the raw ids go into
+        // metadata either way, so attribution survives even when the FK does
+        // not.
+        let resolvedSubscriberId: string | null = null;
+        if (emailSubscriberId) {
+            const { data: sub } = await db
+                .from("subscribers")
+                .select("id")
+                .eq("id", emailSubscriberId)
+                .maybeSingle();
+            resolvedSubscriberId = sub?.id ?? null;
+        }
+
         if (!alreadyLogged) {
             const { error: eventError } = await db.from("events").insert({
                 event_name: "purchase",
                 path: "/webhook/shopify",
                 email: email || null,
+                subscriber_id: resolvedSubscriberId,
                 session_id: dpSession,
                 ip_address:
                     req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "shopify-webhook",
@@ -149,6 +171,11 @@ export async function POST(req: Request) {
                     ...(abVariant
                         ? { ab_variant: abVariant, ab_experiments: { funnel: abVariant } }
                         : {}),
+                    // Email attribution, kept in metadata even when the
+                    // subscriber FK did not resolve, so a campaign can still
+                    // be credited for the sale.
+                    ...(emailCampaignId ? { email_campaign_id: emailCampaignId } : {}),
+                    ...(emailSubscriberId ? { email_subscriber_id: emailSubscriberId } : {}),
                     topic,
                     order_id: orderId,
                     order_number:
