@@ -129,3 +129,10 @@ Note: the projects were never actually paused (the 2026-08-04 pause attempt retu
 
 ### Recommendation
 Both DBs are provably idle with triple backups. Proceed to deletion (dashboard, or via a fresh PAT), then rotate the shared DB password `sorenkier23`.
+
+## 📦 Backup archive guide (added 2026-08-11) — see `db-backups/README.md`
+
+Which file is authoritative is NOT what the filenames suggest:
+- **tqhf → `tqhfpcdqxylrknwbrqqi-2026-08-04-full.tar.gz`** (not `-final`). `-full` has all 41 tables incl. hidden schemas. `-final` (later, pre-decommission) is identical for public tables but captured only 4,500 of 10,389 `concert_analytics.analytics_logs` rows — a pagination limit in the script's non-public read path, not DB data loss. Verified 2026-08-11: `-final`'s ids are a strict subset of `-full`'s (0 unique rows lost by preferring `-full`).
+- **quyq → `quyqwdjygzalqqmrgkfk-2026-08-04.tar.gz`** (the 17M morning archive — the only one with row data; the 11K `-full` is schema/metadata only, because quyq's service key died mid-day).
+- Backups are single-copy on Lionel's laptop; copy the two authoritative tarballs offsite before deleting the projects.
