@@ -21,13 +21,14 @@ above features or price. One founded a narrow-key advocacy society in Japan.
 One is 80 and battling cancer, hoping to finally play his dream pieces. This
 is a movement as much as a market, and it should be talked to that way.
 
-**Price is doing more work than the survey admits.** Nobody selected price as
-what almost stopped them, but that is survivorship bias: this cohort bought at
-a median of **$550**, and half paid under it. They are the people for whom the
-price was already low enough. The survey cannot tell us about everyone who saw
-$899 and left. Buyer language treats affordability as the deciding factor
-against Athena ("a steal", "the cheapest narrow-key option available"). See
-§7.
+**Price is doing more work than the survey admits, but not in the obvious
+direction.** Nobody selected price as what almost stopped them, which is
+survivorship bias: we only surveyed people who already accepted it. The
+subtler point is that **since April, 78% of buyers have chosen the 50%
+deposit**, committing to roughly $1,000 orders while paying about $550 up
+front. The price is acceptable; the lump sum is the friction. Buyer language
+still treats affordability as the deciding argument against Athena ("a steal",
+"three times the price"). See §7a.
 
 **Waiting is the strain we cannot message away.** The most common hesitation
 after "no hesitation" was *doubts that a new company could deliver* (5 of 18),
@@ -334,11 +335,10 @@ for a product that does not exist yet:
   buyers to DreamPlay.
 - **People bought the mission before the product.** 5 of 18 named belief in
   the mission as their primary purchase reason, ahead of any feature.
-- **Price is a real constraint, and our order book shows it.** Zero
-  respondents *named* price as their blocker, but they are the people who
-  already found the price acceptable: median paid **$550**, and buyer language
-  is explicitly comparative ("a steal", "three times the price"). Demand is
-  proven at $500-600. Demand at $899 is unproven. See §7a.
+- **Buyers commit to ~$1,000 orders when payment is split.** Since April, 78%
+  chose the 50% deposit: median $549 down against roughly a $1,098 order.
+  Median order value across all 66 buyers is **$603**, with 19 buyers above
+  $700. The constraint is cash flow, not willingness to pay. See §7a.
 
 This is a market thesis with names, quotes and payment records attached, not
 a hypothesis. Anyone assessing whether narrow-key demand is real can read
@@ -353,31 +353,55 @@ single best-evidenced thing about our demand.** Both are true, and the second
 matters more, because the survey only ever interviewed people who already
 said yes.
 
-### What buyers actually paid
+### What buyers actually paid, and what they committed to
 
-66 real buyers, all amounts as paid (deposits included):
+**These are two different numbers, and conflating them is a mistake.** 18 of
+66 buyers paid a **50% deposit**, knowing the balance is due later. Their
+$507 is a commitment to a ~$1,014 order, not a $507 purchase.
 
-| | |
-|---|---|
-| Median paid | **$550** |
-| Mean paid | $602 |
-| Under $550 | **33 buyers (50%)** |
-| $550-700 | 28 buyers (42%) |
-| $700+ | 5 buyers (8%) |
-| Range | $299 to $2,029 |
+| | Deposits (50%) | Full payments |
+|---|---|---|
+| Buyers | 18 | 48 |
+| Median **paid** | $507 | $564 |
+| Median **order value** | **~$1,014** | $564 |
+| Range paid | $299-$558 | $499-$2,029 |
 
-Monthly medians have never left the mid-hundreds: $499 (Dec), $549 (Jan),
-$569 (Feb), $613 (Mar), $553 (Apr), $524 (May), $507 (Jun), $532 (Jul).
+**Order value across all 66 buyers** (deposits counted at their true order
+size): median **$603**, mean $732. 47 buyers under $700, 15 between $700 and
+$1,100, 4 above $1,100.
 
-**Eighteen of 66 bought a 50% reservation**: more than a quarter of our buyers
-chose to split the payment rather than pay in full, which is itself a price
-signal.
+### The deposit model is the recent story, and it works
 
-**Read that against today's pricing.** Buyers who joined at $499-$650 are the
-entire evidence base for demand. Demand at $899, and at the $1,899 Pro, is
-**not evidenced by anything in this dataset**. Two people bought Pro-tier
-products; both were existing buyers upgrading, not new customers arriving at
-that price.
+Deposits are not evenly spread. They are what our buyers have been choosing
+lately:
+
+| Month | Deposits | Full payments |
+|---|---|---|
+| Dec 2025 | 0 | 4 |
+| Jan 2026 | 3 | 10 |
+| Feb 2026 | 1 | 15 |
+| Mar 2026 | 0 | 14 |
+| **Apr 2026** | **5** | 3 |
+| **May 2026** | **3** | 1 |
+| **Jun 2026** | **3** | 0 |
+| **Jul 2026** | **3** | 1 |
+
+**Since April, 14 of 18 buyers (78%) chose the 50% deposit**, at a median
+$549 deposit implying roughly a $1,098 order. Before April, deposits were 4
+of 43.
+
+Two conclusions follow, and they pull in opposite directions:
+
+1. **Recent buyers are committing to ~$1,000 instruments, not $550 ones.**
+   The apparent "everyone pays around $550" pattern is partly an artifact of
+   deposits landing in the same numeric range as early full payments. At
+   full order value, our recent cohort is a **$1,000-tier** customer base.
+   Demand above $899 is better evidenced than the raw paid figures suggested.
+
+2. **The way they buy at that price is by not paying it all at once.**
+   Splitting payment is now the norm, not the exception. That is a real
+   signal about cash-flow sensitivity: the price is acceptable, the lump sum
+   is not.
 
 ### The survey's blind spot, stated plainly
 
@@ -415,15 +439,39 @@ originally created this buyer base.
 
 **What the data supports:**
 
-- $600 is at the top of the band where 92% of our buyers actually transacted.
-- Half our buyers paid under $550, so a $600 model is not a discount play, it
-  is a return to the real market price.
+- $600 is roughly our **median order value** ($603), so it is the price point
+  our whole buyer base already sits at, not a discount.
+- $600 paid in full is close to the **$549 median deposit** recent buyers put
+  down. Go would let someone own an instrument outright for about what they
+  currently pay just to hold a place in line, which is a genuinely different
+  and easier offer.
 - The Athena comparison works only while we are dramatically cheaper. At $899
-  we are "less expensive"; at $600 we are "a third of the price", which is
-  the argument buyers repeat unprompted.
+  we are "less expensive"; at $600 we are "a third of the price", the
+  argument buyers repeat unprompted.
 - Beginners and returners dominate this cohort (8 returning, 2 just
-  starting). 128-note polyphony is not a constraint any of them named. Nobody
-  in 18 responses asked for more polyphony.
+  starting). Nobody in 18 responses asked for more polyphony; 128 is unlikely
+  to be the binding constraint for this audience.
+
+**What the deposit data complicates:**
+
+The deposit pattern is evidence that **willingness to pay is higher than $600**
+and that the real obstacle is paying it in one go. Since April, buyers have
+been committing to ~$1,098 orders. That suggests a second, cheaper option is
+not the only available answer, and possibly not the best one:
+
+- **The alternative to a cheaper product is easier payment on the existing
+  one.** Deposits already convert; extending that (instalments, or a smaller
+  deposit) addresses the same cash-flow friction without a new SKU, new
+  tooling, or new inventory risk.
+- **A $600 Go sits uncomfortably close to a $549 deposit.** A visitor
+  choosing between "own a Go outright for $600" and "put $549 down toward a
+  $1,098 One" may simply take the cheaper certain thing, converting One
+  buyers into Go buyers rather than adding new ones. That is margin lost, not
+  demand gained.
+- **Go earns its place if it reaches people the One never could**: buyers who
+  will not spend $1,000 on a piano at any payment schedule. That is a real
+  and probably large market, but it is a *different* market from the one this
+  survey describes, and nothing in this dataset sizes it.
 
 **What to be careful about:**
 
@@ -443,12 +491,19 @@ originally created this buyer base.
   visitors have never encountered. Sizing guidance becomes mandatory, not
   optional.
 
-**What would confirm it before tooling money is spent:** we have a site that
-converts nobody at current prices and a live A/B framework. A Go landing page
-at $600, tested against the current offer, would produce a real answer for
-the cost of a test rather than a production run. If a $600 narrow-key
-keyboard cannot convert traffic, the problem is not price and we will have
-learned that cheaply.
+**What would confirm it before tooling money is spent.** We have a site that
+converts nobody and a live A/B framework, so this is testable for the cost of
+a test rather than a production run. The strongest experiment is three-way:
+
+1. the current offer,
+2. a **$600 Go** landing page,
+3. the **existing One with a smaller deposit or instalments**.
+
+Arm 3 is the control that matters most, because it separates "our price is
+too high" from "our lump sum is too big". Those two diagnoses lead to
+completely different companies. If instalments convert as well as Go, we get
+the same revenue without building a second product line. If Go wins clearly,
+build it with confidence.
 
 
 ---
@@ -553,12 +608,13 @@ Their answers cluster on things our website mostly does not say.
    Visitors are almost certainly making the same comparison silently, without
    our numbers in front of them. Test an explicit comparison.
 
-5. **Test the price itself, not just the words around it.** Our buyers
-   transacted at a median of $550 and the site now asks $899. Nobody has
-   tested whether the current price converts, and a 0-purchase funnel is
-   consistent with a price objection nobody is voicing. A $600 DreamPlay Go
-   landing page (§7a) tested against the current offer would answer this for
-   the cost of a test rather than a production run.
+5. **Test the payment structure, not only the price.** Since April, 78% of
+   buyers chose a 50% deposit, committing to ~$1,098 orders while paying
+   ~$549 up front. Willingness to pay looks higher than the headline
+   suggests; the lump sum is the friction. The site should test a
+   deposit-first offer as prominently as it tests price. See §7a for the
+   recommended three-way test (current offer vs $600 Go vs easier
+   instalments).
 
 6. **Make the founder the funnel, because he already is.** Discovery is
    YouTube-led (7 of 18 from MusicalBasics), and 5 of 18 bought the *mission*
@@ -585,9 +641,13 @@ page, 423 clicks, 13 CTA clicks) while keeping 2a as control.
 - Is the price presented as a bargain relative to Athena, or as an
   unexplained several-hundred-dollar ask? Buyers who paid describe it
   comparatively ("a third of the price"); the site states a number.
-- **Does the current price convert at all?** Every buyer we have came in
-  around $550. We have never tested $899 against a lower entry price on live
-  traffic. This is the highest-value unanswered question on the list.
+- **Does the current price convert at all, and is the lump sum the real
+  blocker?** Recent buyers overwhelmingly choose to split payment. We have
+  never tested $899-in-full against either a lower price or an easier payment
+  schedule on live traffic. This is the highest-value unanswered question on
+  the list.
+- Is the 50% deposit option visible and well explained on the product page,
+  given that it is how most recent buyers actually transacted?
 - Does the site ever ask a visitor about their hands? Buyers self-identify by
   a physical trait; the site sells a product category.
 - What is the single next commitment we want from a visitor? At 1.6% email
