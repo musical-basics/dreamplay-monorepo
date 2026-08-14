@@ -203,7 +203,15 @@ export default async function BuyerResearchPage() {
             </div>
 
             {/* SURVEY ANSWERS */}
-            <h2 className="font-serif text-2xl tracking-tight mb-4">Survey answers ({surveyDone})</h2>
+            <div className="flex flex-wrap items-baseline justify-between gap-3 mb-4">
+                <h2 className="font-serif text-2xl tracking-tight">Survey answers ({surveyDone})</h2>
+                <Link
+                    href="/admin/buyers/survey"
+                    className="font-sans text-xs uppercase tracking-widest text-amber-300 hover:text-amber-200"
+                >
+                    Read every response &rarr;
+                </Link>
+            </div>
             {surveyDone === 0 ? (
                 <p className="font-sans text-sm text-white/40 mb-10">No survey responses yet.</p>
             ) : (
