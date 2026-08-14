@@ -18,6 +18,10 @@ export interface PreferencesFormProps {
     alreadyPro: boolean;
     /** May request the $200 upgrade (pre-May 2026 non-Pro buyers only). */
     upgradeEligible: boolean;
+    /** Shopify cart permalink for the $200 upgrade, shown right after saving. */
+    upgradeCheckoutUrl: string;
+    /** Already paid: show a receipt line instead of another payment prompt. */
+    upgradePaidAt: string | null;
     standardSizes: Option[];
     proSizes: Option[];
     standardFinishes: Option[];
@@ -125,11 +129,42 @@ export function PreferencesForm(props: PreferencesFormProps) {
                                 >
                                     product information page
                                 </a>
-                                . Nothing to pay today: we will follow up by email with a secure payment link to
-                                complete the upgrade.
+                                . Tick the box, save, and you can pay the $200 right here.
                             </span>
                         </span>
                     </label>
+
+                    {/* Payment lives behind Save on purpose: paying before the
+                        size and finish are on file would leave us with money
+                        and no configuration to build. */}
+                    {upgrade && !props.upgradePaidAt && (
+                        <div className="mt-5 pt-5 border-t border-amber-400/20">
+                            {saved ? (
+                                <>
+                                    <a
+                                        href={props.upgradeCheckoutUrl}
+                                        className="inline-flex items-center justify-center border border-amber-400 bg-amber-400 px-8 py-4 font-sans text-xs font-bold uppercase tracking-widest text-black transition-all hover:bg-amber-300 rounded-full"
+                                    >
+                                        Pay $200 and Upgrade
+                                    </a>
+                                    <p className="font-sans text-xs text-white/45 mt-3">
+                                        Opens our secure Shopify checkout. Your place in line and your estimated ship
+                                        date do not change.
+                                    </p>
+                                </>
+                            ) : (
+                                <p className="font-sans text-sm text-amber-200/80">
+                                    Save your configuration below and the payment button appears here.
+                                </p>
+                            )}
+                        </div>
+                    )}
+
+                    {props.upgradePaidAt && (
+                        <p className="font-sans text-sm text-emerald-400 mt-5 pt-5 border-t border-amber-400/20">
+                            Your $200 upgrade is paid. You are on the DreamPlay One Pro.
+                        </p>
+                    )}
                 </div>
             )}
 
@@ -145,7 +180,10 @@ export function PreferencesForm(props: PreferencesFormProps) {
                 </button>
                 {saved && (
                     <p className="font-sans text-sm text-emerald-400 mt-4">
-                        Saved. Your configuration is on file{upgrade ? ", and we have recorded your Pro upgrade request. Watch your inbox for the payment link." : "."}
+                        Saved. Your configuration is on file
+                        {upgrade && !props.upgradePaidAt
+                            ? ". Use the Pay $200 button above to finish your upgrade."
+                            : "."}
                     </p>
                 )}
                 {error && <p className="font-sans text-sm text-red-400 mt-4">{error}</p>}

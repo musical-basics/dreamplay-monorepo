@@ -11,6 +11,7 @@ import {
     parsePreferencesToken,
 } from "@/lib/buyer-preferences";
 import { formatPricePaid, formatShipMonth } from "@/lib/buyer-update-email";
+import { proUpgradeCheckoutUrl } from "@/lib/pro-upgrade-email";
 import { getStoreCreditBalance } from "@/lib/store-credit";
 import { PreferencesForm } from "./PreferencesForm";
 
@@ -144,6 +145,8 @@ export default async function OrderPreferencesPage({
                             initialUpgradeRequested={buyer.pro_upgrade_requested}
                             alreadyPro={alreadyPro}
                             upgradeEligible={upgradeEligible}
+                            upgradeCheckoutUrl={proUpgradeCheckoutUrl(buyer)}
+                            upgradePaidAt={buyer.pro_upgrade_paid_at}
                             standardSizes={STANDARD_SIZES.map((s) => ({ value: s, label: s, description: SIZE_DESCRIPTIONS[s] }))}
                             proSizes={PRO_SIZES.map((s) => ({ value: s, label: s, description: SIZE_DESCRIPTIONS[s] }))}
                             standardFinishes={STANDARD_FINISHES.map((f) => ({ ...f }))}
