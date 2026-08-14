@@ -661,8 +661,9 @@ page, 423 clicks, 13 CTA clicks) while keeping 2a as control.
   score sheet), `/admin/buyers/activity` (per-buyer email and page journeys).
 - **Buyer order data**: `/admin/buyers` (product, configuration, price paid,
   order date, estimated ship date per buyer).
-- Four founder calls are scheduled 14-17 Aug; recordings or notes will add
-  qualitative depth beyond these written answers.
+- Four founder calls are scheduled 14-17 Aug; notes are written up in
+  **Appendix C** as each one happens. The first (Nigel Binns, 14 Aug) is
+  already there and adds more than any single survey response did.
 
 
 ---
@@ -1145,5 +1146,79 @@ are our interpretation; this is what buyers actually said.
 > Price 
 >
 > Support
+
+---
+
+## Appendix C: founder call notes
+
+Notes from the live calls, written up immediately after each conversation.
+These are the depth that the survey arms could not reach. Where a call
+contradicts something in the sections above, the call wins: it is a longer
+conversation with a real person, not a checkbox.
+
+### Nigel Binns, 2026-08-14 (WhatsApp, 15 min)
+
+**Arm** B2 (call, no offer) · **Ordered** 2026-03-13 · **Paid** $608.65 ·
+**Config** DS5.5 / Black · **Based** Scotland · **Age** 64
+
+**Player history**
+
+- Started playing at 15, roughly 49 years ago. Nobody else in the family plays.
+- Parents bought him a chord organ as a teenager, which is how he got into jazz.
+- Took UK Grade 5 classical piano lessons as a teenager.
+- Owns and plays a Yamaha acoustic upright, bought about 20 years ago.
+
+**Hands**
+
+- **Dupuytren's contracture**, the connective-tissue condition that pulls the
+  fingers toward the palm. This is a progressive medical condition, not simply
+  small hands.
+- **Left hand 7 inches, right hand 8 inches** of reach.
+- Cannot reach an octave at all unless he catches the very edge of the keys.
+
+**What he cannot play, specifically**
+
+- Fast semiquaver octaves. Found a piece on the musicnotes website he could
+  not play for this reason.
+- The inner notes of chords. He can only hit them clumsily, or not at all.
+- He practiced for hours against these limits and saw very little improvement.
+  The barrier was never effort. It was geometry.
+
+**On Athena**
+
+Nigel placed an order with NarrowKeys Athena, then went looking on the
+**pianoclack.com** forums and concluded that the Athena is "nothing more than
+a $500 off-the-shelf Chinese brand" being sold at $2,500. He contrasted that
+with DreamPlay being **built from the ground up**, which is what won him over.
+
+**Concerns**
+
+- The **texture of the keys**. Raised unprompted, and this is the first time
+  a buyer has named surface feel as a worry.
+
+**What he wants**
+
+To actually be able to play an octave. Stated plainly, as the whole point.
+
+**Action items**
+
+1. **Sizing check, urgent.** Nigel ordered **DS5.5**, but a 7-inch left-hand
+   reach with a progressive contracture makes 5.5 the right call to verify
+   rather than assume. This is exactly the "buyers are guessing at sizing"
+   problem flagged in §9. Confirm his configuration with him directly before
+   his unit is built.
+2. **Answer the key-texture question.** Nobody has asked this before. We
+   should have a real answer ready, and it likely belongs on the website.
+3. **The pianoclack.com forum is a live channel.** A buyer independently
+   researched us there and it moved him toward us. Worth watching, and
+   worth understanding what is being said about DreamPlay in that community.
+
+**Why this call matters beyond Nigel**
+
+He is the clearest case yet that our buyer is not "someone with small hands."
+He is someone with a **medical condition** that ended a lifelong relationship
+with an instrument he still owns. The Yamaha upright is sitting in his house
+in Scotland, unplayable as written. That is a far sharper story than
+ergonomics, and it is the same shape as the "return story" recommended in §9.
 
 ---
