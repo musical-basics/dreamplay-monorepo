@@ -136,3 +136,5 @@ Which file is authoritative is NOT what the filenames suggest:
 - **tqhf → `tqhfpcdqxylrknwbrqqi-2026-08-04-full.tar.gz`** (not `-final`). `-full` has all 41 tables incl. hidden schemas. `-final` (later, pre-decommission) is identical for public tables but captured only 4,500 of 10,389 `concert_analytics.analytics_logs` rows — a pagination limit in the script's non-public read path, not DB data loss. Verified 2026-08-11: `-final`'s ids are a strict subset of `-full`'s (0 unique rows lost by preferring `-full`).
 - **quyq → `quyqwdjygzalqqmrgkfk-2026-08-04.tar.gz`** (the 17M morning archive — the only one with row data; the 11K `-full` is schema/metadata only, because quyq's service key died mid-day).
 - Backups are single-copy on Lionel's laptop; copy the two authoritative tarballs offsite before deleting the projects.
+
+- **Full per-table catalog** of both backups (every table: row count, columns, what it held, and where each one went): [`legacy-db-backup-catalog.md`](legacy-db-backup-catalog.md), mirrored at `db-backups/README.md`.
