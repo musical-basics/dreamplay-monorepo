@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { getAdminDb } from "@/lib/db";
 import { verifyShopifyWebhook } from "@/lib/shopify/verify-webhook";
+import { PRO_UPGRADE_VARIANT_ID } from "@/lib/pro-upgrade-email";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -33,6 +34,7 @@ export const runtime = "nodejs";
 type ShopifyLineItem = {
     title?: string | null;
     quantity?: number | null;
+    variant_id?: number | string | null;
 };
 
 type ShopifyOrder = {
@@ -103,6 +105,59 @@ export async function POST(req: Request) {
             });
             // 500 so Shopify retries (e.g. transient DB error).
             return new NextResponse("db error", { status: 500 });
+        }
+    }
+
+    // The $200 Pro upgrade is a SECOND order on an email already in `buyers`,
+    // and the upsert above uses ignoreDuplicates, so it deliberately leaves
+    // the existing row untouched. Without this block the payment left no
+    // trace on the buyer at all: product_line and price_paid_usd still
+    // described the original order, and only pro_upgrade_requested (INTENT,
+    // not money) hinted at anything. Record it explicitly.
+    if (email && (order.line_items ?? []).some((li) => String(li.variant_id ?? "") === PRO_UPGRADE_VARIANT_ID)) {
+        try {
+            const orderId = order.id != null ? String(order.id) : null;
+            if (orderId) {
+                const { data: buyerRow } = await db
+                    .from("buyers")
+                    .select("id")
+                    .eq("email", email)
+                    .maybeSingle();
+
+                // UNIQUE on shopify_order_id makes orders/create followed by
+                // orders/paid (and Shopify retries) a no-op after the first.
+                const { error: payError } = await db.from("pro_upgrade_payments").upsert(
+                    {
+                        buyer_id: buyerRow?.id ?? null,
+                        email,
+                        shopify_order_id: orderId,
+                        shopify_order_name: order.name ?? null,
+                        amount_usd: Number(order.total_price ?? 0),
+                        currency: order.currency ?? "USD",
+                        financial_status: "paid",
+                        source: "webhook",
+                        raw: { topic, order_name: order.name ?? null },
+                    },
+                    { onConflict: "shopify_order_id", ignoreDuplicates: true },
+                );
+                if (payError) throw payError;
+
+                if (buyerRow?.id) {
+                    await db
+                        .from("buyers")
+                        .update({ pro_upgrade_paid_at: new Date().toISOString() })
+                        .eq("id", buyerRow.id)
+                        .is("pro_upgrade_paid_at", null);
+                }
+            }
+        } catch (err) {
+            // Never fail the webhook over this: Shopify would retry the whole
+            // delivery and the buyers upsert has already succeeded.
+            console.error("[shopify-orders-webhook] pro upgrade payment record failed (non-fatal)", {
+                topic,
+                orderRef,
+                error: err instanceof Error ? err.message : err,
+            });
         }
     }
 

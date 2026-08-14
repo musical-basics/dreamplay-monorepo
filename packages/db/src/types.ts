@@ -114,6 +114,7 @@ export interface Database {
           est_ship_date: string | null;
           order_details_source: string | null;
           pro_upgrade_requested: boolean;
+          pro_upgrade_paid_at: string | null;
           unit_count: number;
           created_at: string;
           updated_at: string;
@@ -133,6 +134,7 @@ export interface Database {
           est_ship_date?: string | null;
           order_details_source?: string | null;
           pro_upgrade_requested?: boolean;
+          pro_upgrade_paid_at?: string | null;
           unit_count?: number;
           created_at?: string;
           updated_at?: string;
@@ -152,6 +154,7 @@ export interface Database {
           est_ship_date?: string | null;
           order_details_source?: string | null;
           pro_upgrade_requested?: boolean;
+          pro_upgrade_paid_at?: string | null;
           unit_count?: number;
           created_at?: string;
           updated_at?: string;
@@ -1753,6 +1756,7 @@ export interface Database {
           meeting_url: string | null;
           meeting_provider_id: string | null;
           invite_sent_at: string | null;
+          reminder_sent_at: string | null;
           confirmed_at: string | null;
           declined_at: string | null;
           reschedule_note: string | null;
@@ -1777,6 +1781,7 @@ export interface Database {
           meeting_url?: string | null;
           meeting_provider_id?: string | null;
           invite_sent_at?: string | null;
+          reminder_sent_at?: string | null;
           confirmed_at?: string | null;
           declined_at?: string | null;
           reschedule_note?: string | null;
@@ -1801,12 +1806,58 @@ export interface Database {
           meeting_url?: string | null;
           meeting_provider_id?: string | null;
           invite_sent_at?: string | null;
+          reminder_sent_at?: string | null;
           confirmed_at?: string | null;
           declined_at?: string | null;
           reschedule_note?: string | null;
           link_sent_at?: string | null;
           created_at?: string;
           updated_at?: string;
+        };
+        Relationships: [];
+      };
+      pro_upgrade_payments: {
+        Row: {
+          id: string;
+          buyer_id: string | null;
+          email: string;
+          shopify_order_id: string;
+          shopify_order_name: string | null;
+          amount_usd: number;
+          currency: string;
+          financial_status: string;
+          paid_at: string;
+          source: string;
+          raw: Json | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          buyer_id?: string | null;
+          email: string;
+          shopify_order_id: string;
+          shopify_order_name?: string | null;
+          amount_usd: number;
+          currency?: string;
+          financial_status?: string;
+          paid_at?: string;
+          source?: string;
+          raw?: Json | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          buyer_id?: string | null;
+          email?: string;
+          shopify_order_id?: string;
+          shopify_order_name?: string | null;
+          amount_usd?: number;
+          currency?: string;
+          financial_status?: string;
+          paid_at?: string;
+          source?: string;
+          raw?: Json | null;
+          created_at?: string;
         };
         Relationships: [];
       };
