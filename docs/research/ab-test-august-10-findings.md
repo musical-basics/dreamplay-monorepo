@@ -112,7 +112,9 @@ subject lines were not the variable that mattered. What people were asked to
 ## 3. Who our buyers are
 
 **Age** skews old: 45-59 is the largest group (6), 60+ next (4), 18-29 (5),
-30-44 (2). This is not a youth product.
+30-44 (2). This is not a youth product. **10 of the 17 who stated an age
+(59%) are 45 or older.** This finding became the basis of a positioning
+shift: see [marketing-positioning-45-plus.md](marketing-positioning-45-plus.md).
 
 **Experience**: "Returning after years away" dominates (8 of 18), then
 intermediate (4), professional/teacher (2), advanced (2), beginner (2). We are
