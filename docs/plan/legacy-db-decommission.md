@@ -138,3 +138,5 @@ Which file is authoritative is NOT what the filenames suggest:
 - Backups are single-copy on Lionel's laptop; copy the two authoritative tarballs offsite before deleting the projects.
 
 - **Full per-table catalog** of both backups (every table: row count, columns, what it held, and where each one went): [`legacy-db-backup-catalog.md`](legacy-db-backup-catalog.md), mirrored at `db-backups/README.md`.
+
+- **Local Docker replica** of both retired DBs (real queryable Postgres, verified row-for-row: tqhf 73,666 / quyq 158,904): [`legacy-db-local-replica.md`](legacy-db-local-replica.md); scripts in `legacy-replica/`, live copy at `db-backups/local-replica/`. This is how the old data stays queryable after the Supabase projects are deleted.

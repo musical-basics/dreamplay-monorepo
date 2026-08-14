@@ -1,0 +1,43 @@
+# Local Postgres replicas of the two retired Supabase projects.
+# Data lives in named volumes; the SQL/TSV under ./out is the source of truth
+# (regenerate any time with build-sql.mjs, reload with load.sh).
+services:
+  tqhf:
+    image: postgres:16
+    container_name: legacy-tqhf
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: localonly
+      POSTGRES_DB: tqhf
+    ports:
+      - "55432:5432"          # host port 55432 -> old website/analytics DB
+    volumes:
+      - tqhf-data:/var/lib/postgresql/data
+      - ./out/tqhf:/restore:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d tqhf"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  quyq:
+    image: postgres:16
+    container_name: legacy-quyq
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: localonly
+      POSTGRES_DB: quyq
+    ports:
+      - "55433:5432"          # host port 55433 -> old email DB
+    volumes:
+      - quyq-data:/var/lib/postgresql/data
+      - ./out/quyq:/restore:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d quyq"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  tqhf-data:
+  quyq-data:
