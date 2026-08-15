@@ -172,11 +172,19 @@ Phase C: emails
 - [x] 8 LOVE emails drafted (scripts/email/setup-love-vs-spec-emails.mjs)
 - [x] 32 templates seeded (send keys mc-<spec|love>-<arm>-01..08, Aug 18 -
       Sep 3, 4 per slot day on /admin/marketing-calendar); old 8 retired
-- [ ] Email 06 confirmed by Lionel (SPEC arms; swap angle if untrue)
-Phase D: split + approval
-- [ ] Audience snapshot REBUILT on send day (run
-      `node scripts/email/setup-marketing-calendar.mjs --audience-only`)
-- [x] `send-love-vs-spec.mjs` with frozen 4-way salt
-- [ ] [TEST] emails approved by Lionel (per slot: `--slot N --test musicalbasics@gmail.com`)
-Phase E: run from Aug 18 (`--slot N --execute` each slot morning); readout
-~Sep 10 in docs/research/. Coupon trigger confirmed OFF (no setting rows).
+- [x] Email 06 confirmed true by Lionel (2026-08-15)
+Phase D: split + automation
+- [x] Audience FROZEN on the 2026-08-12 snapshot (507; the salt was balanced
+      against exactly this set; no mid-test rebuilds)
+- [x] `send-love-vs-spec.mjs` with frozen 4-way salt (love-vs-spec-v173)
+- [x] Sends are FULLY AUTOMATIC (Lionel's call 2026-08-15, zero-touch):
+      GitHub Actions `love-vs-spec-send.yml`, daily 8 AM ET [TEST] copies of
+      that day's 4 arm emails to musicalbasics@gmail.com, daily 9 AM ET real
+      send. `--auto` resolves the slot from templates' scheduled_at, so
+      re-dating in the calendar GUI moves the sends. Secrets set on the repo;
+      end-to-end dispatch verified 2026-08-15 (correct no-op on a non-slot
+      day). Editing a template in the GUI before its slot day still works;
+      after its send it is frozen as history.
+Phase E: runs itself Aug 18 - Sep 3; readout ~Sep 10 in docs/research/.
+Coupon trigger confirmed OFF (no setting rows). Delete the workflow file
+after the readout.
