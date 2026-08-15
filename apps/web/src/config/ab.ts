@@ -38,10 +38,14 @@ export const abFunnel = defineAbFunnel({
   main: { route: "/premium-offer", cta: "/customize" },
 
   groups: [
+    // Groups 1/2/3/5 paused 2026-08-14 for the Love-vs-Spec 2x2
+    // (docs/plan/AB-TEST-LOVE-VS-SPEC.md). The test runs entirely in groups
+    // 6 and 7 below; 2a's layout lives on as 6a/6b under fresh keys so the
+    // offer fork (standard vs $249 deposit) can't blend into 2a's history.
     {
       group: "1",
       name: "Current site (premium-offer family)",
-      active: true,
+      active: false,
       variations: [
         {
           key: "1a",
@@ -64,7 +68,7 @@ export const abFunnel = defineAbFunnel({
     {
       group: "2",
       name: "Original homepage",
-      active: true,
+      active: false,
       variations: [
         {
           key: "2a",
@@ -79,7 +83,7 @@ export const abFunnel = defineAbFunnel({
     {
       group: "3",
       name: "Special Offer (sticky parallax)",
-      active: true,
+      active: false,
       variations: [
         {
           key: "3a",
@@ -113,13 +117,67 @@ export const abFunnel = defineAbFunnel({
     {
       group: "5",
       name: "Simplified premium-offer",
-      active: true,
+      active: false,
       variations: [
         {
           key: "5a",
           since: "2026-08-04T07:25:00Z",
           label: "Simplified 1a (new Aug 4 2026) — 5 sections, single CTA path",
           route: "/simple-offer",
+          cta: "/customize",
+          active: true,
+        },
+      ],
+    },
+    // ========================================================================
+    // LOVE-VS-SPEC 2x2 (launched 2026-08-14, docs/plan/AB-TEST-LOVE-VS-SPEC.md)
+    // Message (spec 6x vs love 7x) x Offer (a = standard, b = $249 deposit +
+    // Pro sold out). 6a/6b share /legacy-home and 7a/7b share /play-again:
+    // the offer difference rides the dp_ab cookie into /customize and
+    // /dreamplay-pro via lib/ab-offer.ts, not the landing route. Email arms
+    // pin their cell with ?v=<key> deep links.
+    // ========================================================================
+    {
+      group: "6",
+      name: "Spec message (2a rerun) — Love-vs-Spec 2x2",
+      active: true,
+      variations: [
+        {
+          key: "6a",
+          since: "2026-08-15T06:00:00Z",
+          label: "legacy-home, standard offer (Love-vs-Spec 2x2, Aug 2026)",
+          route: "/legacy-home",
+          cta: "/customize",
+          active: true,
+        },
+        {
+          key: "6b",
+          since: "2026-08-15T06:00:00Z",
+          label: "legacy-home, $249 deposit + Pro sold out (Love-vs-Spec 2x2)",
+          route: "/legacy-home",
+          cta: "/customize",
+          active: true,
+        },
+      ],
+    },
+    {
+      group: "7",
+      name: "Love message (/play-again) — Love-vs-Spec 2x2",
+      active: true,
+      variations: [
+        {
+          key: "7a",
+          since: "2026-08-15T06:00:00Z",
+          label: "play-again love rewrite, standard offer (Love-vs-Spec 2x2, Aug 2026)",
+          route: "/play-again",
+          cta: "/customize",
+          active: true,
+        },
+        {
+          key: "7b",
+          since: "2026-08-15T06:00:00Z",
+          label: "play-again love rewrite, $249 deposit + Pro sold out (Love-vs-Spec 2x2)",
+          route: "/play-again",
           cta: "/customize",
           active: true,
         },
