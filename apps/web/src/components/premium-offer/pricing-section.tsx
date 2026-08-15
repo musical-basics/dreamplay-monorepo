@@ -9,13 +9,13 @@ const allTiers = [
     id: 'reservation',
     badge: null,
     title: "Lock My Spot",
-    subtitle: "Batch 1 — August 2027",
+    subtitle: "Batch 1 — May 2027",
     price: "$99",
     msrp: null,
     description:
-      "100% refundable reservation. Lock in Founder\u0027s pricing and secure your Batch 1 (August 2027) delivery. Pay the remaining balance only when your piano is boxed and ready to ship.",
+      "100% refundable reservation. Lock in Founder\u0027s pricing and secure your Batch 1 (May 2027) delivery. Pay the remaining balance only when your piano is boxed and ready to ship.",
     includes: ["Batch 1 Delivery Slot", "Founder\u0027s Price Lock", "Full Refund Anytime"],
-    delivery: "Aug 2027",
+    delivery: "May 2027",
     backers: 0,
     remaining: 50,
     total: 50,
@@ -31,7 +31,7 @@ const allTiers = [
     description:
       "Pay 50% now ($499), the rest ($500 + shipping/taxes) when ready to ship.",
     includes: ["DreamPlay One Keyboard"],
-    delivery: "Aug 2027",
+    delivery: "May 2027",
     backers: 2,
     remaining: 8,
     total: 10,
@@ -47,7 +47,7 @@ const allTiers = [
     description:
       "The DreamPlay One Keyboard. Available in DS5.5 or DS6.0. Choose Midnight Black or Pearl White.",
     includes: ["DreamPlay One Keyboard"],
-    delivery: "Aug 2027",
+    delivery: "May 2027",
     backers: 40,
     remaining: 10,
     total: 50,
@@ -63,7 +63,7 @@ const allTiers = [
     description:
       "The complete DreamPlay experience. Keyboard, adjustable stand, responsive sustain pedal, and comfortable padded bench.",
     includes: ["DreamPlay One Keyboard", "Keyboard Stand", "Sustain Pedal", "Padded Bench"],
-    delivery: "Aug 2027",
+    delivery: "May 2027",
     backers: 208,
     remaining: 42,
     total: 250,

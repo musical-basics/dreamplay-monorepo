@@ -223,6 +223,22 @@ describe("resolveFunnel", () => {
     expect(resolve("/about", undefined)).toEqual({ type: "none" });
   });
 
+  it("stamps the cookie from ?v=<known key> on any deep link, serving the page unchanged", () => {
+    const res = resolve("/customize", "2a", "v=1b");
+    expect(res).toMatchObject({ type: "rewrite", to: "/customize", variant: "1b" });
+    if (res.type !== "rewrite") throw new Error("unreachable");
+    expect(res.setCookie?.value).toBe("1b");
+    // Cookie already matches → no restamp
+    const same = resolve("/customize", "1b", "v=1b");
+    if (same.type !== "rewrite") throw new Error("unreachable");
+    expect(same.setCookie).toBeUndefined();
+    // Unknown key on a deep link is ignored — the page serves normally
+    expect(resolve("/customize", "2a", "v=9z")).toEqual({ type: "none" });
+    // Other query params alongside are irrelevant
+    const withSid = resolve("/how-it-works", undefined, "sid=abc&v=2a");
+    expect(withSid).toMatchObject({ type: "rewrite", to: "/how-it-works", variant: "2a" });
+  });
+
   it("testing mode funnels / and /main into /ab for everyone", () => {
     const testing = { testingMode: true };
     expect(resolveFunnel(config, "/", null, undefined, testing)).toEqual({

@@ -2,7 +2,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { Navbar } from "@/components/Navbar"
 import Footer from "@/components/Footer"
-import { formatOneProTargetDeliveryDate } from "@/lib/one-pro-delivery"
+import { ProBuyCta, ProOfferSwitch, ProSoldOutGate } from "./ProSoldOutGate"
 
 export const dynamic = "force-dynamic"
 
@@ -82,7 +82,9 @@ const premiumBundleIncludes = [
 ]
 
 export default function DreamPlayProPage() {
-    const targetDeliveryDate = formatOneProTargetDeliveryDate()
+    // Pro delivery target. Fixed string per the May 2027 date change; the
+    // rolling formatOneProTargetDeliveryDate() helper is no longer used here.
+    const targetDeliveryDate = "May 2027"
     const productJsonLd = {
         "@context": "https://schema.org",
         "@type": "Product",
@@ -114,6 +116,9 @@ export default function DreamPlayProPage() {
             <Navbar forceOpaque={true} darkMode={true} className="border-b border-white/10 bg-neutral-950" />
 
             <main className="pt-16">
+                {/* Deposit249 variants (6b/7b) only: SOLD OUT banner + waitlist card */}
+                <ProSoldOutGate />
+
                 {/* Hero — cinematic flagship reveal */}
                 <section className="relative flex min-h-[92vh] flex-col justify-end overflow-hidden bg-neutral-950 px-6 pb-20 pt-24 md:px-16">
                     <div className="absolute inset-0 z-0">
@@ -162,12 +167,12 @@ export default function DreamPlayProPage() {
                             </div>
 
                             <div className="flex flex-wrap gap-3">
-                                <Link
+                                <ProBuyCta
                                     href="/customize?product=pro"
                                     className="bg-white px-7 py-4 font-sans text-xs font-semibold uppercase tracking-[0.2em] text-neutral-950 transition hover:bg-[#c5a059] hover:text-neutral-950"
                                 >
                                     Reserve DreamPlay One Pro
-                                </Link>
+                                </ProBuyCta>
                                 <Link
                                     href="/how-it-works"
                                     className="border border-white/30 px-7 py-4 font-sans text-xs font-semibold uppercase tracking-[0.2em] text-white transition hover:border-white hover:bg-white/5"
@@ -494,7 +499,10 @@ export default function DreamPlayProPage() {
                                         <span className="ml-2 font-sans text-sm italic tracking-normal text-white/35">USD</span>
                                     </div>
                                     <p className="mb-10 font-sans text-xs text-white/45">
-                                        Target delivery: {targetDeliveryDate}. Preorder configured for checkout.
+                                        <ProOfferSwitch
+                                            standard={<>Target delivery: {targetDeliveryDate}. Preorder configured for checkout.</>}
+                                            soldOut={<>This production run is spoken for. Join the waitlist to be first in line for the next one.</>}
+                                        />
                                     </p>
 
                                     <ul className="mb-12 space-y-3 font-sans text-sm font-light text-white/70">
@@ -507,12 +515,12 @@ export default function DreamPlayProPage() {
                                     </ul>
                                 </div>
 
-                                <Link
+                                <ProBuyCta
                                     href="/customize?product=pro"
                                     className="block border border-white/30 py-4 text-center font-sans text-xs font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-white hover:text-neutral-950"
                                 >
                                     Reserve Standard
-                                </Link>
+                                </ProBuyCta>
                             </div>
 
                             {/* Tier 2: Premium Bundle */}
@@ -532,7 +540,10 @@ export default function DreamPlayProPage() {
                                         <span className="ml-2 font-sans text-sm italic tracking-normal text-white/35">USD</span>
                                     </div>
                                     <p className="mb-10 font-sans text-xs text-white/45">
-                                        Target delivery: {targetDeliveryDate}. Preorder configured for checkout.
+                                        <ProOfferSwitch
+                                            standard={<>Target delivery: {targetDeliveryDate}. Preorder configured for checkout.</>}
+                                            soldOut={<>This production run is spoken for. Join the waitlist to be first in line for the next one.</>}
+                                        />
                                     </p>
 
                                     <ul className="mb-12 space-y-3 font-sans text-sm font-light text-white/80">
@@ -545,17 +556,20 @@ export default function DreamPlayProPage() {
                                     </ul>
                                 </div>
 
-                                <Link
+                                <ProBuyCta
                                     href="/customize?product=pro"
                                     className="block bg-[#c5a059] py-4 text-center font-sans text-xs font-bold uppercase tracking-[0.2em] text-neutral-950 transition hover:bg-white"
                                 >
                                     Reserve Bundle
-                                </Link>
+                                </ProBuyCta>
                             </div>
                         </div>
 
                         <p className="mt-14 text-center font-sans text-[10px] uppercase tracking-[0.25em] text-white/35">
-                            DreamPlay One Pro preorder handoff runs through secure checkout
+                            <ProOfferSwitch
+                                standard={<>DreamPlay One Pro preorder handoff runs through secure checkout</>}
+                                soldOut={<>Waitlist members hear first when Pro production reopens</>}
+                            />
                         </p>
                     </div>
                 </section>
@@ -564,22 +578,40 @@ export default function DreamPlayProPage() {
                 <section className="border-t border-white/10 bg-neutral-900 px-6 py-20 text-neutral-50 md:px-16">
                     <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-6 md:flex-row md:items-center">
                         <div>
-                            <p className="mb-3 font-sans text-[10px] font-semibold uppercase tracking-[0.3em] text-[#c5a059]">
-                                Now reserving
-                            </p>
-                            <h2 className="font-serif text-3xl md:text-4xl">DreamPlay One Pro is available to preorder.</h2>
-                            <p className="mt-3 max-w-2xl font-sans text-sm font-light text-white/60">
-                                Secure your size, finish, and package today. Target delivery is {targetDeliveryDate}.
-                            </p>
+                            <ProOfferSwitch
+                                standard={
+                                    <>
+                                        <p className="mb-3 font-sans text-[10px] font-semibold uppercase tracking-[0.3em] text-[#c5a059]">
+                                            Now reserving
+                                        </p>
+                                        <h2 className="font-serif text-3xl md:text-4xl">DreamPlay One Pro is available to preorder.</h2>
+                                        <p className="mt-3 max-w-2xl font-sans text-sm font-light text-white/60">
+                                            Secure your size, finish, and package today. Target delivery is {targetDeliveryDate}.
+                                        </p>
+                                    </>
+                                }
+                                soldOut={
+                                    <>
+                                        <p className="mb-3 font-sans text-[10px] font-semibold uppercase tracking-[0.3em] text-[#c5a059]">
+                                            Pro Waitlist
+                                        </p>
+                                        <h2 className="font-serif text-3xl md:text-4xl">DreamPlay One Pro is sold out.</h2>
+                                        <p className="mt-3 max-w-2xl font-sans text-sm font-light text-white/60">
+                                            The current production run is spoken for. Join the waitlist and we will email you
+                                            when Pro production reopens.
+                                        </p>
+                                    </>
+                                }
+                            />
                         </div>
 
                         <div className="flex flex-wrap gap-3">
-                            <Link
+                            <ProBuyCta
                                 href="/customize?product=pro"
                                 className="bg-white px-7 py-4 font-sans text-xs font-semibold uppercase tracking-[0.2em] text-neutral-950 transition hover:bg-[#c5a059]"
                             >
                                 Start reservation
-                            </Link>
+                            </ProBuyCta>
                             <Link
                                 href="/contact"
                                 className="border border-white/30 px-7 py-4 font-sans text-xs font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-white/5"

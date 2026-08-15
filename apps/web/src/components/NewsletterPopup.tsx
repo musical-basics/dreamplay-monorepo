@@ -409,7 +409,7 @@ export default function NewsletterPopup() {
                                     : activePopup === "shipping"
                                     ? WAITLIST_OFFER_BODY
                                     : activePopup === "discount"
-                                        ? "Enter your email to secure early-adopter pricing for the DreamPlay One Founder's Batch, shipping August 2027."
+                                        ? "Enter your email to secure early-adopter pricing for the DreamPlay One Founder's Batch, shipping May 2027."
                                         : activePopup === "discount_44"
                                             ? "Enter your email now to unlock an exclusive 44% discount on the DreamPlay One. This offer won't last."
                                             : activePopup === "accessory_25"

@@ -16,8 +16,8 @@ import { AnimatedSection } from "@/components/animated-section";
  * Target delivery is also stated statically in src/config/shop.ts; the two
  * must agree.
  */
-const ANCHOR_ORDER_DATE = new Date("2026-08-12T00:00:00Z");
-const TARGET_DELIVERY = new Date("2027-08-15T00:00:00Z");
+const ANCHOR_ORDER_DATE = new Date("2026-08-14T00:00:00Z");
+const TARGET_DELIVERY = new Date("2027-05-15T00:00:00Z");
 
 export function DynamicProductionTimeline() {
     const [dates, setDates] = useState({ today: "", delivery: "", year: "" });

@@ -111,7 +111,7 @@ export function TrustSection() {
                         <span className="mt-0.5 h-2 w-2 shrink-0 rounded-full bg-foreground" />
                         <p>
                           <strong className="text-foreground">
-                            Delivery Target (August 2027):
+                            Delivery Target (May 2027):
                           </strong>{" "}
                           We have built a 2-month buffer into our timeline to
                           account for potential ocean freight delays or customs

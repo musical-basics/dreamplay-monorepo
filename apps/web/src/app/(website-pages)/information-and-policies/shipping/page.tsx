@@ -260,7 +260,7 @@ export default function ShippingPage() {
                                     </div>
                                 </div>
                                 <div className="font-serif text-5xl font-bold mb-2 text-white">$50–$70</div>
-                                <p className="text-white/40 text-sm mb-8">Estimated Shipping August 2027</p>
+                                <p className="text-white/40 text-sm mb-8">Estimated Shipping May 2027</p>
                                 <div className="space-y-3">
                                     {['Australia', 'China', 'Japan', 'South Korea', 'New Zealand', 'Singapore', 'Switzerland', 'Taiwan', 'Hawaii (US)'].map(c => (
                                         <div key={c} className="flex items-center gap-3 text-sm text-white/60"><span className="text-[#00C2CB]">✓</span> {c}</div>
@@ -277,7 +277,7 @@ export default function ShippingPage() {
                                     </div>
                                 </div>
                                 <div className="font-serif text-5xl font-bold mb-2 text-white">$150</div>
-                                <p className="text-white/40 text-sm mb-8">Estimated Shipping August 2027</p>
+                                <p className="text-white/40 text-sm mb-8">Estimated Shipping May 2027</p>
                                 <div className="space-y-3">
                                     {['Brazil', 'India', 'Mexico', 'UAE', 'Saudi Arabia', 'Turkey', 'Argentina', 'Egypt'].map(c => (
                                         <div key={c} className="flex items-center gap-3 text-sm text-white/60"><span className="text-white/40">✓</span> {c}</div>
@@ -441,7 +441,7 @@ export default function ShippingPage() {
                                     <h3 className="font-serif text-2xl font-bold">DS5.5</h3>
                                     <div className="text-right">
                                         <div className="text-[10px] uppercase tracking-wider text-white/50">Ships</div>
-                                        <div className="font-sans font-medium text-sm">August 2027</div>
+                                        <div className="font-sans font-medium text-sm">May 2027</div>
                                     </div>
                                 </div>
                                 <p className="text-white/50 text-sm border-t border-white/10 pt-4 mt-4">Zone A: Smaller Hands</p>
@@ -456,7 +456,7 @@ export default function ShippingPage() {
                                     <h3 className="font-serif text-2xl font-bold">DS6.0</h3>
                                     <div className="text-right">
                                         <div className="text-[10px] uppercase tracking-wider text-white/50">Ships</div>
-                                        <div className="font-sans font-medium text-sm">August 2027</div>
+                                        <div className="font-sans font-medium text-sm">May 2027</div>
                                     </div>
                                 </div>
                                 <p className="text-white/50 text-sm border-t border-white/10 pt-4 mt-4">Zone B: Medium Hands</p>
@@ -471,7 +471,7 @@ export default function ShippingPage() {
                                     <h3 className="font-serif text-2xl font-bold">DS6.5</h3>
                                     <div className="text-right">
                                         <div className="text-[10px] uppercase tracking-wider text-white/50">Ships</div>
-                                        <div className="font-sans font-medium text-[#0066cc] text-sm">August 2027</div>
+                                        <div className="font-sans font-medium text-[#0066cc] text-sm">May 2027</div>
                                     </div>
                                 </div>
                                 <p className="text-white/50 text-sm border-t border-white/10 pt-4 mt-4">Zone C: Standard Size</p>

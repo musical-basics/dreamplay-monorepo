@@ -1,34 +1,11 @@
-const ONE_PRO_DELIVERY_TIME_ZONE = "America/New_York";
+/**
+ * Published target delivery for the DreamPlay One Pro. This used to compute a
+ * rolling "one year from today" date; as of 2026-08-14 the Pro quotes the
+ * fixed published target instead. Keep this in sync with the delivery strings
+ * in src/config/shop.ts whenever the target moves.
+ */
+const ONE_PRO_TARGET_DELIVERY = "May 2027";
 
-export function formatOneProTargetDeliveryDate(fromDate = new Date()) {
-    const sourceParts = getDatePartsInTimeZone(fromDate);
-    const targetYear = sourceParts.year + 1;
-    const targetDay = Math.min(sourceParts.day, getDaysInMonth(targetYear, sourceParts.month));
-    const targetDate = new Date(Date.UTC(targetYear, sourceParts.month - 1, targetDay, 12));
-
-    return new Intl.DateTimeFormat("en-US", {
-        month: "long",
-        day: "numeric",
-        year: "numeric",
-        timeZone: "UTC",
-    }).format(targetDate);
-}
-
-function getDatePartsInTimeZone(date: Date) {
-    const parts = new Intl.DateTimeFormat("en-US", {
-        day: "numeric",
-        month: "numeric",
-        timeZone: ONE_PRO_DELIVERY_TIME_ZONE,
-        year: "numeric",
-    }).formatToParts(date);
-
-    return {
-        day: Number(parts.find(part => part.type === "day")?.value),
-        month: Number(parts.find(part => part.type === "month")?.value),
-        year: Number(parts.find(part => part.type === "year")?.value),
-    };
-}
-
-function getDaysInMonth(year: number, month: number) {
-    return new Date(Date.UTC(year, month, 0)).getUTCDate();
+export function formatOneProTargetDeliveryDate(_fromDate = new Date()) {
+    return ONE_PRO_TARGET_DELIVERY;
 }

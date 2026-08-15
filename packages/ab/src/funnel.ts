@@ -251,6 +251,9 @@ export interface ResolveFunnelOptions {
  *              active variations; rewrite to the variation's route.
  * - `/ab/<key>` (or `/ab?v=<key>`) → forced preview/share link: stamp that
  *              variation (active or not) and serve it.
+ * - any other path with `?v=<known key>` → serve the page unchanged but stamp
+ *              the variation cookie (deep links like /customize?v=6b keep an
+ *              email arm consistent with its site variant).
  * - anything else → none.
  */
 export function resolveFunnel(
@@ -283,6 +286,24 @@ export function resolveFunnel(
   const isAbRoot = pathname === "/ab";
   const abPathKey = pathname.startsWith("/ab/") ? pathname.slice("/ab/".length) : undefined;
   if (!isAbRoot && abPathKey === undefined) {
+    // Forced assignment on ANY page via ?v=<key> (e.g. /customize?v=6b from an
+    // email link): stamp the cookie and serve the page unchanged, so a deep
+    // link can pin the visitor's arm without a detour through /ab. Unknown
+    // keys are ignored — real routes are never shadowed or broken by a bad
+    // shared link.
+    const deepForcedKey = search?.get("v");
+    if (deepForcedKey) {
+      const deepForced = findVariation(config, deepForcedKey);
+      if (deepForced) {
+        return {
+          type: "rewrite",
+          to: pathname,
+          variant: deepForced.variation.key,
+          setCookie:
+            rawCookie === deepForced.variation.key ? undefined : funnelCookie(deepForced.variation.key),
+        };
+      }
+    }
     return { type: "none" };
   }
 

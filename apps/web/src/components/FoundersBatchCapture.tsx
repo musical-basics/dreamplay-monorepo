@@ -70,7 +70,7 @@ export function FoundersBatchCapture({ isOpen, onClose }: FoundersBatchCapturePr
                                 <Rocket className="text-white" size={24} strokeWidth={1.5} />
                             </div>
                             <p className="font-sans text-[10px] uppercase tracking-[0.3em] text-amber-400/80 mb-3">
-                                Founder&apos;s Batch — August 2027
+                                Founder&apos;s Batch — May 2027
                             </p>
                             <h2 className="text-2xl md:text-3xl font-serif text-white tracking-tight leading-tight mb-4">
                                 Secure Your Spot.

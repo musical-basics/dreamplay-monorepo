@@ -6,7 +6,7 @@ export function SocialProofBar() {
         <Divider />
         <Stat value="208" label="Backers" />
         <Divider />
-        <Stat value="Batch 1" label="Aug 2027" />
+        <Stat value="Batch 1" label="May 2027" />
         <Divider />
         <Stat value="100%" label="Refundable" />
       </div>

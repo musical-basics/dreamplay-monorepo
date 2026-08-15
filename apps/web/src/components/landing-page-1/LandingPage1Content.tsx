@@ -249,7 +249,7 @@ const FAQ_ITEMS = [
     },
     {
         q: "When will it ship?",
-        a: "Batch 1 ships August 2027. You'll receive monthly backstage photo and video updates showing your piano being built.",
+        a: "Batch 1 ships May 2027. You'll receive monthly backstage photo and video updates showing your piano being built.",
     },
     {
         q: "Can I try both sizes?",
@@ -281,7 +281,7 @@ const TIMELINE_STEPS = [
     {
         step: "3",
         title: "Ship",
-        desc: "Pay the remaining $500 (+ shipping/taxes) only when your piano is boxed and ready to ship (August 2027).",
+        desc: "Pay the remaining $500 (+ shipping/taxes) only when your piano is boxed and ready to ship (May 2027).",
         icon: Package,
     },
 ]
@@ -420,7 +420,7 @@ export function LandingPage1Content() {
                                 <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
                             </div>
                             <p className="text-sm text-amber-900 font-medium">
-                                Batch 1 Delivery (August 2027) is{" "}
+                                Batch 1 Delivery (May 2027) is{" "}
                                 <strong>83% Full</strong>. Only{" "}
                                 <strong>42 allocations</strong> remaining.
                             </p>

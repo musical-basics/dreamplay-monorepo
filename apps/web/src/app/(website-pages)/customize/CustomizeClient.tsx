@@ -10,6 +10,9 @@ import { useAnalytics } from "@dreamplay/analytics/react";
 import { ArrowRight, ArrowLeft, Check, ShieldCheck, X, CheckCircle2, Undo2, Truck } from "lucide-react";
 import { createBrowserClient } from "@dreamplay/db";
 import { VARIANT_MAP } from "@/config/variant-map";
+import { DEPOSIT249_VARIANT_MAP } from "@/config/deposit249-variant-map";
+import { useAbVariation } from "@dreamplay/ab/react";
+import { offerModeForVariant } from "@/lib/ab-offer";
 import { abCheckoutNoteParts } from "@/lib/ab-checkout";
 import { DynamicProductionTimeline } from "@/components/customize/DynamicProductionTimeline";
 import { RegisterModal } from "@/components/RegisterModal";
@@ -42,6 +45,8 @@ interface ProductTier {
     remaining: number | null;
     total: number | null;
     highlight: boolean;
+    /** Renders the card unbuyable (deposit249 offer mode marks the Pro sold out). */
+    soldOut?: boolean;
 }
 
 type AuthUser = {
@@ -88,6 +93,12 @@ function TierPaymentInfo({ tier, isSelected }: { tier: ProductTier; isSelected: 
 export default function CustomizeClient({ urls, hiddenProducts }: CustomizeClientProps) {
     const searchParams = useSearchParams();
     const analytics = useAnalytics();
+
+    // Love-vs-Spec 2x2 (docs/plan/AB-TEST-LOVE-VS-SPEC.md): visitors on
+    // variants 6b/7b see the $249-deposit offer and a sold-out Pro. The offer
+    // rides the dp_ab cookie, not the route, so this one page serves both.
+    const abVariation = useAbVariation();
+    const isDeposit249 = offerModeForVariant(abVariation?.key) === 'deposit249';
 
     // --- STATE ---
     const [appState, setAppState] = useState({
@@ -148,13 +159,13 @@ export default function CustomizeClient({ urls, hiddenProducts }: CustomizeClien
             id: 'reservation',
             badge: null as string | null,
             title: "Lock My Spot",
-            subtitle: "Batch 1 — August 2027",
+            subtitle: "Batch 1 — May 2027",
             price: "$99",
             retailPrice: null as string | null,
             originalPrice: null as string | null,
-            description: "100% refundable reservation. Lock in Founder\u0027s pricing and secure your Batch 1 (August 2027) delivery. Pay the remaining balance only when your piano is boxed and ready to ship.",
+            description: "100% refundable reservation. Lock in Founder\u0027s pricing and secure your Batch 1 (May 2027) delivery. Pay the remaining balance only when your piano is boxed and ready to ship.",
             includes: ["Batch 1 Delivery Slot", "Founder\u0027s Price Lock", "Full Refund Anytime"],
-            delivery: "Aug 2027",
+            delivery: "May 2027",
             backers: 0,
             remaining: 50,
             total: 50,
@@ -170,7 +181,7 @@ export default function CustomizeClient({ urls, hiddenProducts }: CustomizeClien
             originalPrice: null as string | null,
             description: "Pay 50% now ($499), the rest ($500 + shipping/taxes) when ready to ship.",
             includes: ["DreamPlay One Keyboard"],
-            delivery: "Aug 2027",
+            delivery: "May 2027",
             backers: 2,
             remaining: 8,
             total: 10,
@@ -186,7 +197,7 @@ export default function CustomizeClient({ urls, hiddenProducts }: CustomizeClien
             originalPrice: null as string | null,
             description: "Pay $499 today to secure your spot. The remaining $500 is charged only when your piano is boxed and ready to ship. Available in DS5.5, DS6.0, or DS6.5 — Midnight Black or Pearl White.",
             includes: ["DreamPlay One Keyboard"],
-            delivery: "Aug 2027",
+            delivery: "May 2027",
             backers: 40,
             remaining: 10,
             total: 50,
@@ -202,7 +213,7 @@ export default function CustomizeClient({ urls, hiddenProducts }: CustomizeClien
             originalPrice: null as string | null,
             description: "Pay $549 today to secure your spot. The remaining $550 is charged only when your piano is boxed and ready to ship. Includes stand, bench, and pedal.",
             includes: ["DreamPlay One Keyboard", "Keyboard Stand", "Sustain Pedal", "Padded Bench"],
-            delivery: "Aug 2027",
+            delivery: "May 2027",
             backers: 208,
             remaining: 42,
             total: 250,
@@ -242,14 +253,43 @@ export default function CustomizeClient({ urls, hiddenProducts }: CustomizeClien
         },
     };
 
+    // --- DEPOSIT249 OFFER OVERRIDES (variants 6b/7b) ---
+    // $249 down replaces the 50% deposits (totals unchanged: $999 / $1,099);
+    // the Pro is sold out. The reserve50 card is dropped from the order below
+    // as redundant next to a $249 headline.
+    if (isDeposit249) {
+        const solo = PRODUCT_CATALOG.solo;
+        if (solo) PRODUCT_CATALOG.solo = {
+            ...solo,
+            subtitle: "$249 Now · Balance At Delivery",
+            price: "$249",
+            description: "Pay $249 today to secure your spot. The remaining $750 plus shipping and taxes is charged only when your piano is boxed and ready to ship. Available in DS5.5, DS6.0, or DS6.5, Midnight Black or Pearl White.",
+        };
+        const full = PRODUCT_CATALOG.full;
+        if (full) PRODUCT_CATALOG.full = {
+            ...full,
+            subtitle: "$249 Now · Balance At Delivery",
+            price: "$249",
+            description: "Pay $249 today to secure your spot. The remaining $850 plus shipping and taxes is charged only when your piano is boxed and ready to ship. Includes stand, bench, and pedal.",
+        };
+        const proSolo = PRODUCT_CATALOG.pro_solo;
+        if (proSolo) PRODUCT_CATALOG.pro_solo = { ...proSolo, soldOut: true, badge: "Sold Out" };
+        const proFull = PRODUCT_CATALOG.pro_full;
+        if (proFull) PRODUCT_CATALOG.pro_full = { ...proFull, soldOut: true, badge: "Sold Out", highlight: false };
+    }
+
     // --- BUILD VISIBLE TIERS ---
-    // Always use static PRODUCT_CATALOG filtered by hiddenProducts
+    // Always use static PRODUCT_CATALOG filtered by hiddenProducts.
+    // NOTE: pro tiers used to bypass the hiddenProducts filter entirely; they
+    // no longer do, so the admin hidden_products variable works for every tier.
     const tiers = (() => {
         const defaultOrder = appState.product === 'pro'
             ? ['pro_solo', 'pro_full']
-            : ['reservation', 'reserve50', 'solo', 'full'];
+            : isDeposit249
+                ? ['reservation', 'solo', 'full']
+                : ['reservation', 'reserve50', 'solo', 'full'];
         return defaultOrder
-            .filter(id => appState.product === 'pro' || !hiddenProducts.includes(id))
+            .filter(id => !hiddenProducts.includes(id))
             .map(id => PRODUCT_CATALOG[id])
             .filter((tier): tier is ProductTier => tier !== undefined);
     })();
@@ -576,8 +616,15 @@ export default function CustomizeClient({ urls, hiddenProducts }: CustomizeClien
                 : appState.size;
             const color = appState.color;
 
-            // Variant lookup: journey product variantId > VARIANT_MAP[tier][size][color]
-            const exactVariantId = VARIANT_MAP[tierId]?.[size]?.[color] || "";
+            // Sold-out tiers (deposit249 mode marks the Pro sold out) never check out.
+            if (PRODUCT_CATALOG[tierId]?.soldOut) return;
+
+            // Variant lookup: deposit249 visitors buy the $249-deposit Shopify
+            // products; everyone else the standard map.
+            const useDeposit249Variant = isDeposit249 && (tierId === 'solo' || tierId === 'full');
+            const exactVariantId = (useDeposit249Variant
+                ? DEPOSIT249_VARIANT_MAP[tierId]?.[size]?.[color]
+                : VARIANT_MAP[tierId]?.[size]?.[color]) || "";
 
             let checkoutUrl = "";
 
@@ -598,6 +645,12 @@ export default function CustomizeClient({ urls, hiddenProducts }: CustomizeClien
 
                 checkoutUrl = `https://dreamplay-pianos.myshopify.com/cart/clear?return_to=${encodeURIComponent(permalink)}`;
 
+            } else if (useDeposit249Variant) {
+                // NEVER fall through to the admin-URL fallback here: it points at
+                // the full-price deposit products and would silently charge the
+                // standard $499/$549 instead of the advertised $249.
+                alert('This reservation option is temporarily unavailable. Please try again shortly, or email support@dreamplaypianos.com.');
+                return;
             } else if (appState.product === 'pro') {
                 alert('This DreamPlay One Pro configuration is not available for checkout yet. Please choose a listed Pro size and finish.');
                 return;
@@ -1257,8 +1310,8 @@ export default function CustomizeClient({ urls, hiddenProducts }: CustomizeClien
                                             </p>
                                         )}
 
-                                        {/* 50% info pill */}
-                                        {tier.subtitle?.includes('50%') && <TierPaymentInfo tier={tier} isSelected={isSelected} />}
+                                        {/* Deposit info pill (50% and $249 offers alike) */}
+                                        {(tier.subtitle?.includes('50%') || tier.subtitle?.includes('$249')) && <TierPaymentInfo tier={tier} isSelected={isSelected} />}
                                     </div>
 
                                     <p className={`mt-6 min-h-[80px] w-full flex-grow font-sans text-sm leading-relaxed ${isSelected ? 'text-black/60' : 'text-white/70'}`}>
@@ -1314,16 +1367,30 @@ export default function CustomizeClient({ urls, hiddenProducts }: CustomizeClien
 
                                     {/* CTA Button */}
                                     <div className="mt-8 w-full pt-4">
-                                        <button
-                                            onClick={() => handleSelectTier(tier.id)}
-                                            className={`flex w-full items-center justify-center gap-2 border px-6 py-4 text-center font-sans text-xs uppercase tracking-widest transition-colors cursor-pointer ${isSelected
-                                                ? 'border-white bg-white text-black hover:bg-white/90'
-                                                : 'border-white/30 text-white hover:border-white hover:bg-white/10'
-                                            }`}
-                                        >
-                                            {isSelected ? 'Reserve Now' : 'Select'}
-                                            {!isSelected && <span className="ml-1">→</span>}
-                                        </button>
+                                        {tier.soldOut ? (
+                                            <>
+                                                <div className="flex w-full items-center justify-center border border-white/15 px-6 py-4 text-center font-sans text-xs uppercase tracking-widest text-white/40 cursor-not-allowed select-none">
+                                                    Sold Out
+                                                </div>
+                                                <a
+                                                    href="/dreamplay-pro#waitlist"
+                                                    className="mt-3 block text-center font-sans text-xs text-white/60 underline underline-offset-4 hover:text-white"
+                                                >
+                                                    Join the Pro waitlist
+                                                </a>
+                                            </>
+                                        ) : (
+                                            <button
+                                                onClick={() => handleSelectTier(tier.id)}
+                                                className={`flex w-full items-center justify-center gap-2 border px-6 py-4 text-center font-sans text-xs uppercase tracking-widest transition-colors cursor-pointer ${isSelected
+                                                    ? 'border-white bg-white text-black hover:bg-white/90'
+                                                    : 'border-white/30 text-white hover:border-white hover:bg-white/10'
+                                                }`}
+                                            >
+                                                {isSelected ? 'Reserve Now' : 'Select'}
+                                                {!isSelected && <span className="ml-1">→</span>}
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                             )
@@ -1355,7 +1422,9 @@ export default function CustomizeClient({ urls, hiddenProducts }: CustomizeClien
                         </>
                     ) : (
                         <p className="text-center text-xs text-white/40 mt-10 max-w-xl mx-auto leading-relaxed font-sans">
-                            DreamPlay One Pro pricing and package contents match the selected product. Target delivery is {oneProTargetDeliveryDate}. Taxes, shipping charges, and preorder terms are shown in checkout.
+                            {isDeposit249
+                                ? 'The DreamPlay One Pro is currently sold out. Join the waitlist and you will be first in line when Pro production reopens.'
+                                : `DreamPlay One Pro pricing and package contents match the selected product. Target delivery is ${oneProTargetDeliveryDate}. Taxes, shipping charges, and preorder terms are shown in checkout.`}
                         </p>
                     )}
 
