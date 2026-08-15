@@ -28,6 +28,8 @@
  *   - em-dash guard: refuses to send any template containing an em dash
  *
  * Usage:
+ *   node send-love-vs-spec.mjs --auto                today's slot, real send (cron)
+ *   node send-love-vs-spec.mjs --auto-test           today's slot as [TEST] to Lionel (cron)
  *   node send-love-vs-spec.mjs --pick-salt           read-only: evaluate salts
  *                                                    for the most even 4-way
  *                                                    split of today's audience
@@ -50,21 +52,31 @@ import { fileURLToPath } from "node:url";
 
 const argv = process.argv.slice(2);
 const PICK_SALT = argv.includes("--pick-salt");
-const EXECUTE = argv.includes("--execute");
+// AUTO modes are what the scheduled GitHub Actions workflow runs daily:
+//   --auto-test  8 AM ET: today's 4 arm emails as [TEST] copies to Lionel
+//   --auto       9 AM ET: today's slot, real send
+// Both no-op (exit 0) on days with no scheduled slot.
+const AUTO = argv.includes("--auto");
+const AUTO_TEST = argv.includes("--auto-test");
+let EXECUTE = argv.includes("--execute");
 const testIdx = argv.indexOf("--test");
-const TEST_EMAIL = testIdx === -1 ? null : argv[testIdx + 1];
+let TEST_EMAIL = testIdx === -1 ? null : argv[testIdx + 1];
 if (testIdx !== -1 && !TEST_EMAIL) {
   console.error("--test requires an email address");
   process.exit(1);
 }
 const slotIdx = argv.indexOf("--slot");
-const SLOT = slotIdx === -1 ? null : Number(argv[slotIdx + 1]);
-if (!PICK_SALT && (!Number.isInteger(SLOT) || SLOT < 1 || SLOT > 8)) {
-  console.error("Usage: --pick-salt | --slot <1..8> [--execute | --test <email>]");
+let SLOT = slotIdx === -1 ? null : Number(argv[slotIdx + 1]);
+if (!PICK_SALT && !AUTO && !AUTO_TEST && (!Number.isInteger(SLOT) || SLOT < 1 || SLOT > 8)) {
+  console.error("Usage: --pick-salt | --auto | --auto-test | --slot <1..8> [--execute | --test <email>]");
   process.exit(1);
 }
 if (PICK_SALT && (EXECUTE || TEST_EMAIL)) {
   console.error("--pick-salt is read-only; do not combine with --execute/--test");
+  process.exit(1);
+}
+if ((AUTO || AUTO_TEST) && (SLOT !== null || EXECUTE || TEST_EMAIL || (AUTO && AUTO_TEST))) {
+  console.error("--auto/--auto-test take no other flags");
   process.exit(1);
 }
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
@@ -272,6 +284,28 @@ if (PICK_SALT) {
   console.log(`split:     ${ARMS.map((a) => `${a} ${best.tally[a]}`).join(" · ")} (spread ${best.spread})`);
   console.log(`\nFreeze this value as SALT in this file before the first real send.`);
   process.exit(0);
+}
+
+// =================================================================================
+// AUTO MODES: resolve today's slot from the TEMPLATES' scheduled_at, so date
+// edits made in /admin/marketing-calendar are honored without touching this
+// file. Non-slot days exit 0 quietly, which makes a dumb daily cron safe.
+// =================================================================================
+if (AUTO || AUTO_TEST) {
+  const etToday = new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(new Date());
+  const rows = await rest(
+    `campaigns?select=send_key,scheduled_at&category=eq.${CATEGORY}&status=eq.draft` +
+      `&send_key=like.mc-*&scheduled_at=gte.${etToday}T00:00:00Z&scheduled_at=lte.${etToday}T23:59:59Z&limit=10`,
+  );
+  const m = rows?.[0]?.send_key?.match(/-(\d\d)$/);
+  if (!m) {
+    console.log(`No Love-vs-Spec slot scheduled today (${etToday} ET). Nothing to do.`);
+    process.exit(0);
+  }
+  SLOT = Number(m[1]);
+  if (AUTO_TEST) TEST_EMAIL = "musicalbasics@gmail.com";
+  else EXECUTE = true;
+  console.log(`AUTO: ${etToday} ET -> slot ${pad2(SLOT)} (${AUTO_TEST ? "[TEST] copies to Lionel" : "REAL SEND"})`);
 }
 
 // =================================================================================

@@ -1,0 +1,65 @@
+# Love-vs-Spec 2x2 email automation (docs/plan/AB-TEST-LOVE-VS-SPEC.md).
+#
+# Two daily fires, both no-ops on days without a scheduled slot:
+#   12:00 UTC (8 AM ET): today's 4 arm emails as [TEST] copies to
+#                        musicalbasics@gmail.com, so Lionel sees exactly what
+#                        goes out an hour later without having to do anything.
+#   13:00 UTC (9 AM ET): the real send, all 4 arms in one run.
+#
+# The script resolves "today's slot" from the template rows' scheduled_at in
+# the DB, so re-dating emails in /admin/marketing-calendar automatically moves
+# the sends too. Re-runs are safe: child campaigns + sent_history make every
+# send idempotent per subscriber. Slot dates run 2026-08-18 to 2026-09-03;
+# after that every fire is a quiet no-op (delete this file when the test's
+# readout is done).
+#
+# NOTE: 9:00 AM ET == 13:00 UTC only during daylight time, which holds for the
+# whole Aug 18 - Sep 3 window. GitHub cron can fire some minutes late; that is
+# acceptable for a marketing send.
+
+name: love-vs-spec-send
+
+on:
+  schedule:
+    - cron: "0 12 * 8,9 *" # 8 AM ET — [TEST] copies to Lionel
+    - cron: "0 13 * 8,9 *" # 9 AM ET — the real send
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "auto-test ([TEST] copies) or auto (REAL SEND)"
+        required: true
+        default: "auto-test"
+        type: choice
+        options:
+          - auto-test
+          - auto
+
+concurrency:
+  group: love-vs-spec-send
+  cancel-in-progress: false
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Send (or no-op on non-slot days)
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          EMAIL_UNSUBSCRIBE_SECRET: ${{ secrets.EMAIL_UNSUBSCRIBE_SECRET }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            MODE="--${{ inputs.mode }}"
+          elif [ "${{ github.event.schedule }}" = "0 12 * 8,9 *" ]; then
+            MODE="--auto-test"
+          else
+            MODE="--auto"
+          fi
+          echo "running: send-love-vs-spec.mjs $MODE"
+          node scripts/email/send-love-vs-spec.mjs "$MODE"
