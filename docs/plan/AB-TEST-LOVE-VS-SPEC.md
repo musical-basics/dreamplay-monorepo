@@ -159,21 +159,24 @@ templates remain untouched.
 ## 6. Execution checklist
 
 Phase A: platform
-- [ ] Registry groups 6/7, pause 1/2/3/5
-- [ ] Middleware `?v=` stamping on any page
-- [ ] `ab-offer.ts` + /customize offer fork + pro filter fix
-- [ ] May 2027 sweep
-- [ ] Shopify $249 products + DEPOSIT249_VARIANT_MAP
-- [ ] /dreamplay-pro sold-out banner + Pro waitlist capture
+- [x] Registry groups 6/7, pause 1/2/3/5 (2026-08-14, commit 00b1eec)
+- [x] `?v=` stamping on any deep link (packages/ab funnel.ts + tests)
+- [x] `ab-offer.ts` + /customize offer fork + pro filter fix
+- [x] May 2027 sweep (14 files; Jan 2027 backer strings untouched)
+- [x] Shopify $249 products created + DEPOSIT249_VARIANT_MAP (products
+      10398999642426 / 10398999675194, 12 variants @ $249, no-shipping)
+- [x] /dreamplay-pro sold-out banner + Pro Waitlist capture (deposit249 only)
 Phase B: love page
-- [ ] `/play-again` built (7a/7b), noindex, registered
+- [x] `/play-again` built, noindex, registered as 7a/7b
 Phase C: emails
-- [ ] 8 LOVE emails drafted
-- [ ] Seeder: 32 templates, arm-prefixed names, new send keys; old 8 retired
-- [ ] Calendar GUI verified showing all variations
-- [ ] Email 06 confirmed by Lionel (SPEC arms)
+- [x] 8 LOVE emails drafted (scripts/email/setup-love-vs-spec-emails.mjs)
+- [x] 32 templates seeded (send keys mc-<spec|love>-<arm>-01..08, Aug 18 -
+      Sep 3, 4 per slot day on /admin/marketing-calendar); old 8 retired
+- [ ] Email 06 confirmed by Lionel (SPEC arms; swap angle if untrue)
 Phase D: split + approval
-- [ ] Audience snapshot rebuilt; 4-way salt frozen
-- [ ] `send-marketing-love-ab.mjs`
-- [ ] [TEST] x32 approved by Lionel
-Phase E: run from Aug 18; readout ~Sep 10 in docs/research/
+- [ ] Audience snapshot REBUILT on send day (run
+      `node scripts/email/setup-marketing-calendar.mjs --audience-only`)
+- [x] `send-love-vs-spec.mjs` with frozen 4-way salt
+- [ ] [TEST] emails approved by Lionel (per slot: `--slot N --test musicalbasics@gmail.com`)
+Phase E: run from Aug 18 (`--slot N --execute` each slot morning); readout
+~Sep 10 in docs/research/. Coupon trigger confirmed OFF (no setting rows).
