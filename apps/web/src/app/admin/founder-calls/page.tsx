@@ -4,7 +4,9 @@ import { loadArmOverrides, resolveArm } from "@/lib/buyer-research";
 import {
     LIONEL_TZ,
     candidateSlots,
+    formatIn,
     suggestSchedule,
+    tzAbbrev,
     type CallPreference,
 } from "@/lib/call-scheduling";
 import { CallScheduler, type SchedulerRequest, type SchedulerSlot } from "./CallScheduler";
@@ -90,6 +92,14 @@ export default async function FounderCallsPage() {
 
     const slotList: SchedulerSlot[] = slots.map((s) => ({ iso: s.toISOString() }));
 
+    // The agenda: every booked call that has not finished yet (small grace
+    // window so an in-progress call stays visible), regardless of the
+    // scheduler's exclusions. This is the "what is on my calendar" view.
+    const agenda = (rows ?? [])
+        .filter((r) => r.scheduled_at && r.status !== "cancelled" && r.status !== "completed")
+        .filter((r) => new Date(r.scheduled_at!).getTime() > now.getTime() - 30 * 60000)
+        .sort((a, b) => a.scheduled_at!.localeCompare(b.scheduled_at!));
+
     return (
         <div>
             <div className="mb-6">
@@ -100,10 +110,79 @@ export default async function FounderCallsPage() {
                     &larr; Research dashboard
                 </Link>
                 <h1 className="font-serif text-3xl tracking-tight mt-2">Founder calls</h1>
-                <p className="font-sans text-sm text-white/40 mt-1 max-w-3xl leading-relaxed">
-                    A suggested time for every buyer who asked for a call, inside your Friday and Saturday 2pm to 5pm ET
-                    window where possible. Each card shows the time in your timezone and theirs. Move anyone you like,
-                    then save. Nothing is emailed from this page.
+            </div>
+
+            {/* ── UPCOMING AGENDA ── */}
+            <div className="mb-10">
+                <h2 className="font-sans text-xs uppercase tracking-[0.25em] text-blue-400 font-bold mb-3">
+                    Upcoming calls · your time ({tzAbbrev(now, LIONEL_TZ)})
+                </h2>
+                {agenda.length === 0 ? (
+                    <p className="font-sans text-sm text-white/40">Nothing on the calendar.</p>
+                ) : (
+                    <div className="space-y-2">
+                        {agenda.map((r) => {
+                            const b = buyerById.get(r.buyer_id);
+                            const start = new Date(r.scheduled_at!);
+                            const theirZone = r.timezone || LIONEL_TZ;
+                            return (
+                                <div
+                                    key={r.id}
+                                    className={`flex flex-wrap items-center gap-x-6 gap-y-2 border px-5 py-3.5 ${
+                                        r.confirmed_at ? "border-emerald-400/30 bg-emerald-400/[0.04]" : "border-amber-400/30 bg-amber-400/[0.04]"
+                                    }`}
+                                >
+                                    <div className="w-56">
+                                        <p className="font-sans text-sm font-bold text-white">{formatIn(start, LIONEL_TZ)}</p>
+                                        <p className="font-sans text-xs text-white/40">
+                                            {formatIn(start, theirZone)} {tzAbbrev(start, theirZone)} for them
+                                        </p>
+                                    </div>
+                                    <div className="min-w-[200px]">
+                                        <p className="font-sans text-sm text-white/90">{displayName(b?.notes ?? null) || b?.email}</p>
+                                        <p className="font-sans text-xs text-white/40">{b?.email}</p>
+                                    </div>
+                                    <div className="font-sans text-sm text-white/70">
+                                        {r.contact_method === "zoom" && r.meeting_url ? (
+                                            <a href={r.meeting_url} target="_blank" rel="noreferrer" className="text-blue-300 underline hover:text-blue-200">
+                                                Zoom link
+                                            </a>
+                                        ) : (
+                                            <span>
+                                                {r.contact_method}
+                                                {r.contact_value && <span className="text-white/50"> · {r.contact_value}</span>}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div className="flex gap-1.5 ml-auto">
+                                        <span
+                                            className={`border px-2 py-0.5 font-sans text-[10px] uppercase tracking-widest ${
+                                                r.confirmed_at ? "border-emerald-400/50 text-emerald-300" : "border-amber-400/50 text-amber-300"
+                                            }`}
+                                        >
+                                            {r.confirmed_at ? "confirmed" : "awaiting reply"}
+                                        </span>
+                                        {r.reminder_sent_at && (
+                                            <span className="border border-white/20 px-2 py-0.5 font-sans text-[10px] uppercase tracking-widest text-white/50">
+                                                reminded
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
+
+            <div className="mb-6">
+                <h2 className="font-sans text-xs uppercase tracking-[0.25em] text-blue-400 font-bold mb-2">
+                    Scheduler
+                </h2>
+                <p className="font-sans text-sm text-white/40 max-w-3xl leading-relaxed">
+                    A suggested time for every buyer who asked for a call, inside your availability where possible.
+                    Each card shows the time in your timezone and theirs. Move anyone you like, then save. Nothing is
+                    emailed from this page.
                 </p>
             </div>
 
