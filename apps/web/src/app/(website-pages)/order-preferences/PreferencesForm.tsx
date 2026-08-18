@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useAnalytics } from "@dreamplay/analytics/react";
 import { saveBuyerPreferences } from "@/actions/buyer-preferences-actions";
+import { withAbCheckoutMarkers } from "@/lib/ab-checkout";
 
 interface Option {
     value: string;
@@ -39,6 +41,7 @@ export function PreferencesForm(props: PreferencesFormProps) {
     const [saved, setSaved] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [pending, startTransition] = useTransition();
+    const analytics = useAnalytics();
 
     const sizeValid = sizes.some((s) => s.value === size);
     const finishValid = finishes.some((f) => f.value === finish);
@@ -143,6 +146,18 @@ export function PreferencesForm(props: PreferencesFormProps) {
                                 <>
                                     <a
                                         href={props.upgradeCheckoutUrl}
+                                        onClick={(e) => {
+                                            // The URL is built server-side, so the
+                                            // variant/session/campaign markers can only be
+                                            // added here, at click time, from cookies.
+                                            // Without them the webhook logs the purchase
+                                            // with no session and no ab_variant.
+                                            e.preventDefault();
+                                            window.location.href = withAbCheckoutMarkers(
+                                                props.upgradeCheckoutUrl,
+                                                analytics.getSessionId(),
+                                            );
+                                        }}
                                         className="inline-flex items-center justify-center border border-amber-400 bg-amber-400 px-8 py-4 font-sans text-xs font-bold uppercase tracking-widest text-black transition-all hover:bg-amber-300 rounded-full"
                                     >
                                         Pay $200 and Upgrade

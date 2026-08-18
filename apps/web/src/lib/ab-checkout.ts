@@ -41,3 +41,50 @@ export function abCheckoutNoteParts(sessionId: string | undefined): string[] {
 
   return parts;
 }
+
+/**
+ * Append the attribution markers to a Shopify cart permalink that was built
+ * SERVER-SIDE (and therefore could not read cookies).
+ *
+ * The $200 Pro upgrade link is the case this exists for: it is rendered by
+ * `proUpgradeCheckoutUrl()` on the server (it is also emailed), so it reached
+ * Shopify carrying only `Pro upgrade | reservation <ref>`. Every Pro upgrade
+ * purchase therefore landed in `events` with `session_id: null` and no
+ * `ab_variant`, which made those orders — the only real revenue in August 2026
+ * — invisible to the A/B score sheet and to campaign attribution.
+ *
+ * Call this in a click handler (it reads document.cookie) on the URL the
+ * server produced; the note's existing content is preserved and the markers
+ * are appended with the same ` | ` separator the webhook parser expects.
+ * Returns the URL unchanged when there is nothing to add or the URL is not
+ * the expected cart-clear shape, so a failure here can never block a payment.
+ */
+export function withAbCheckoutMarkers(
+  checkoutUrl: string,
+  sessionId: string | undefined,
+): string {
+  const parts = abCheckoutNoteParts(sessionId);
+  if (parts.length === 0) return checkoutUrl;
+
+  try {
+    // Shape: https://<store>/cart/clear?return_to=<encoded /cart/...?note=...>
+    const outer = new URL(checkoutUrl);
+    const returnTo = outer.searchParams.get("return_to");
+    if (!returnTo) return checkoutUrl;
+
+    // return_to is a relative path; parse against the same origin.
+    const inner = new URL(returnTo, outer.origin);
+    const existingNote = inner.searchParams.get("note") ?? "";
+    // Idempotent: never stamp a second ab_variant onto the same note.
+    if (/(^|\s\|\s)ab_variant:/.test(existingNote)) return checkoutUrl;
+
+    const note = [existingNote, ...parts].filter(Boolean).join(" | ");
+    inner.searchParams.set("note", note);
+
+    outer.searchParams.set("return_to", `${inner.pathname}${inner.search}`);
+    return outer.toString();
+  } catch {
+    // Malformed URL: hand back the original rather than breaking checkout.
+    return checkoutUrl;
+  }
+}
