@@ -1,0 +1,128 @@
+[
+ {
+  "handle": "dreamplay-one-keyboard-only",
+  "productId": "gid://shopify/Product/10226995233082",
+  "variantId": "gid://shopify/ProductVariant/53162663969082",
+  "variantTitle": "Default Title",
+  "oldPrice": "599.00"
+ },
+ {
+  "handle": "dreamplay-piano-bundle",
+  "productId": "gid://shopify/Product/10079238783290",
+  "variantId": "gid://shopify/ProductVariant/53081205506362",
+  "variantTitle": "DS5.5 / Black",
+  "oldPrice": "649.00"
+ },
+ {
+  "handle": "dreamplay-piano-bundle",
+  "productId": "gid://shopify/Product/10079238783290",
+  "variantId": "gid://shopify/ProductVariant/53081205539130",
+  "variantTitle": "DS5.5 / White",
+  "oldPrice": "649.00"
+ },
+ {
+  "handle": "dreamplay-piano-bundle",
+  "productId": "gid://shopify/Product/10079238783290",
+  "variantId": "gid://shopify/ProductVariant/53081205571898",
+  "variantTitle": "DS6.0 / Black",
+  "oldPrice": "649.00"
+ },
+ {
+  "handle": "dreamplay-piano-bundle",
+  "productId": "gid://shopify/Product/10079238783290",
+  "variantId": "gid://shopify/ProductVariant/53081205604666",
+  "variantTitle": "DS6.0 / White",
+  "oldPrice": "649.00"
+ },
+ {
+  "handle": "dreamplay-piano-bundle",
+  "productId": "gid://shopify/Product/10079238783290",
+  "variantId": "gid://shopify/ProductVariant/53081289883962",
+  "variantTitle": "DS6.5 / Black",
+  "oldPrice": "649.00"
+ },
+ {
+  "handle": "dreamplay-piano-bundle",
+  "productId": "gid://shopify/Product/10079238783290",
+  "variantId": "gid://shopify/ProductVariant/53081289916730",
+  "variantTitle": "DS6.5 / White",
+  "oldPrice": "649.00"
+ },
+ {
+  "handle": "dreamplay-piano-bundle-copy-1",
+  "productId": "gid://shopify/Product/10226997428538",
+  "variantId": "gid://shopify/ProductVariant/53162690707770",
+  "variantTitle": "Default Title",
+  "oldPrice": "649.00"
+ },
+ {
+  "handle": "dreamplay-piano-bundle-mlk-sale",
+  "productId": "gid://shopify/Product/10142236541242",
+  "variantId": "gid://shopify/ProductVariant/52623554216250",
+  "variantTitle": "DS5.5 / Midnight Black",
+  "oldPrice": "799.00"
+ },
+ {
+  "handle": "dreamplay-piano-bundle-mlk-sale",
+  "productId": "gid://shopify/Product/10142236541242",
+  "variantId": "gid://shopify/ProductVariant/52623554249018",
+  "variantTitle": "DS5.5 / Pearl White",
+  "oldPrice": "799.00"
+ },
+ {
+  "handle": "dreamplay-piano-bundle-mlk-sale",
+  "productId": "gid://shopify/Product/10142236541242",
+  "variantId": "gid://shopify/ProductVariant/52623554281786",
+  "variantTitle": "DS6.0 / Midnight Black",
+  "oldPrice": "799.00"
+ },
+ {
+  "handle": "dreamplay-piano-bundle-mlk-sale",
+  "productId": "gid://shopify/Product/10142236541242",
+  "variantId": "gid://shopify/ProductVariant/52623554314554",
+  "variantTitle": "DS6.0 / Pearl White",
+  "oldPrice": "799.00"
+ },
+ {
+  "handle": "dreamplay-one-piano-bundle-2026",
+  "productId": "gid://shopify/Product/10179134456122",
+  "variantId": "gid://shopify/ProductVariant/52968324399418",
+  "variantTitle": "Black / DS5.5",
+  "oldPrice": "899.00"
+ },
+ {
+  "handle": "dreamplay-one-piano-bundle-2026",
+  "productId": "gid://shopify/Product/10179134456122",
+  "variantId": "gid://shopify/ProductVariant/52968335278394",
+  "variantTitle": "Black / DS6.0",
+  "oldPrice": "899.00"
+ },
+ {
+  "handle": "dreamplay-one-piano-bundle-2026",
+  "productId": "gid://shopify/Product/10179134456122",
+  "variantId": "gid://shopify/ProductVariant/52968324432186",
+  "variantTitle": "White / DS5.5",
+  "oldPrice": "899.00"
+ },
+ {
+  "handle": "dreamplay-one-piano-bundle-2026",
+  "productId": "gid://shopify/Product/10179134456122",
+  "variantId": "gid://shopify/ProductVariant/52968335311162",
+  "variantTitle": "White / DS6.0",
+  "oldPrice": "899.00"
+ },
+ {
+  "handle": "dreamplay-one-keyboard-reservation",
+  "productId": "gid://shopify/Product/10224955523386",
+  "variantId": "gid://shopify/ProductVariant/53150736253242",
+  "variantTitle": "Default Title",
+  "oldPrice": "99.00"
+ },
+ {
+  "handle": "dreamplay-one-keyboard-reservation-march",
+  "productId": "gid://shopify/Product/10227009945914",
+  "variantId": "gid://shopify/ProductVariant/53162856317242",
+  "variantTitle": "Default Title",
+  "oldPrice": "99.00"
+ }
+]
