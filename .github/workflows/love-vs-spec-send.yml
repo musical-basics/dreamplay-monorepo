@@ -20,9 +20,13 @@
 name: love-vs-spec-send
 
 on:
-  schedule:
-    - cron: "0 12 * 8,9 *" # 8 AM ET — [TEST] copies to Lionel
-    - cron: "0 13 * 8,9 *" # 9 AM ET — the real send
+  # PAUSED 2026-09-02 by Lionel: automatic sends are off. Slots 01-07 sent;
+  # slot 08 (the only one linking to /customize) was NOT sent. To resume,
+  # uncomment the two crons below, or run the workflow manually via
+  # workflow_dispatch, which still works while paused.
+  # schedule:
+  #   - cron: "0 12 * 8,9 *" # 8 AM ET, [TEST] copies to Lionel
+  #   - cron: "0 13 * 8,9 *" # 9 AM ET, the real send
   workflow_dispatch:
     inputs:
       mode:

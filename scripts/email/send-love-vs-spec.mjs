@@ -51,6 +51,15 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const argv = process.argv.slice(2);
+
+// PAUSED 2026-09-02 by Lionel. Slots 01-07 sent (Aug 18 - Sep 1); slot 08 was
+// never sent. This is a hard stop on every real-send path, independent of the
+// GitHub Actions cron (also commented out in .github/workflows/love-vs-spec-send.yml),
+// so a manual workflow_dispatch or a local run cannot send by accident.
+// To resume: delete this block AND uncomment the crons in the workflow.
+// Read-only modes (--pick-salt, dry-run, --test) are deliberately still allowed.
+const PAUSED = true;
+
 const PICK_SALT = argv.includes("--pick-salt");
 // AUTO modes are what the scheduled GitHub Actions workflow runs daily:
 //   --auto-test  8 AM ET: today's 4 arm emails as [TEST] copies to Lionel
@@ -59,6 +68,14 @@ const PICK_SALT = argv.includes("--pick-salt");
 const AUTO = argv.includes("--auto");
 const AUTO_TEST = argv.includes("--auto-test");
 let EXECUTE = argv.includes("--execute");
+if (PAUSED && (argv.includes("--auto") || argv.includes("--execute"))) {
+  console.error("REFUSING TO SEND: the love-vs-spec sequence is PAUSED (set 2026-09-02).");
+  console.error("Slots 01-07 are sent; slot 08 was never sent.");
+  console.error("To resume, remove the PAUSED block at the top of this script and");
+  console.error("uncomment the crons in .github/workflows/love-vs-spec-send.yml.");
+  process.exit(1);
+}
+
 const testIdx = argv.indexOf("--test");
 let TEST_EMAIL = testIdx === -1 ? null : argv[testIdx + 1];
 if (testIdx !== -1 && !TEST_EMAIL) {
