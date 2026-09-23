@@ -35,7 +35,10 @@ export const abFunnel = defineAbFunnel({
   // The manually-pinned page every dreamplaypianos.com visitor lands on when
   // the testing toggle is OFF. NOT part of the A/B test: its traffic is never
   // variant-tagged, even when its layout matches a variation.
-  main: { route: "/premium-offer", cta: "/customize" },
+  // 2026-09-23: pinned to the Webflow-era launch homepage (verbatim port of
+  // dreamplay-website@1d47b9f, registered below as 2b) per Lionel; it was
+  // /premium-offer (1a) from the Jul 18 2026 cutover until then.
+  main: { route: "/webflow-home", cta: "/customize" },
 
   groups: [
     // Groups 1/2/3/5 paused 2026-08-14 for the Love-vs-Spec 2x2
@@ -75,6 +78,14 @@ export const abFunnel = defineAbFunnel({
           since: "2026-08-04T07:25:00Z",
           label: "Original site at launch (Dec 17 2025 – Jan 24 2026)",
           route: "/legacy-home",
+          cta: "/customize",
+          active: true,
+        },
+        {
+          key: "2b",
+          since: "2026-09-23T11:00:00Z",
+          label: "Webflow launch homepage: verbatim port of dreamplay-website@1d47b9f (Jan 2 2026), pinned as /main from Sep 23 2026",
+          route: "/webflow-home",
           cta: "/customize",
           active: true,
         },

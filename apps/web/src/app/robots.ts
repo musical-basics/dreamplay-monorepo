@@ -23,6 +23,7 @@ export default function robots(): MetadataRoute.Robots {
                     '/ab',
                     '/main',
                     '/legacy-home',
+                    '/webflow-home',
                     '/special-offer',
                     '/landing-page-1',
                     '/simple-offer',
