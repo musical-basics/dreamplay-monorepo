@@ -17,7 +17,10 @@
  *   - read_all_orders scope (orders >60 days old)
  *
  * All functions fail soft (return null / []) so a Shopify hiccup never breaks
- * the portal — the order card simply doesn't render.
+ * the portal: the order card simply doesn't render. The one exception is
+ * `adminGraphql`, which throws: background jobs that move money (the payment
+ * auto-capture sweep) must not mistake "Shopify was unreachable" for "nothing
+ * to do".
  */
 
 const domain = process.env.SHOPIFY_STORE_DOMAIN || "dreamplay-pianos.myshopify.com";
@@ -54,24 +57,41 @@ async function getAdminToken(): Promise<string | null> {
     }
 }
 
-async function adminGql<T>(query: string, variables: Record<string, unknown> = {}): Promise<T | null> {
+/**
+ * Strict Admin GraphQL call: throws on missing credentials, HTTP errors and
+ * GraphQL `errors` instead of returning null. Mutation `userErrors` are part
+ * of `data` and are left for the caller to inspect.
+ */
+export async function adminGraphql<T>(query: string, variables: Record<string, unknown> = {}): Promise<T> {
     const token = await getAdminToken();
-    if (!token) return null;
+    if (!token) throw new Error("Shopify Admin token unavailable (check SHOPIFY_ADMIN_CLIENT_ID/SECRET)");
+    const res = await fetch(`https://${domain}/admin/api/${version}/graphql.json`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Shopify-Access-Token": token },
+        body: JSON.stringify({ query, variables }),
+        cache: "no-store",
+    });
+    if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(`Shopify Admin API responded ${res.status}: ${text.slice(0, 300)}`);
+    }
+    const json = await res.json();
+    if (json.errors) throw new Error(`Shopify GraphQL errors: ${JSON.stringify(json.errors).slice(0, 500)}`);
+    return json.data as T;
+}
+
+/** Shopify admin URL for an order, from its GraphQL id. */
+export function shopifyAdminOrderUrl(orderGid: string): string {
+    const store = domain.replace(/\.myshopify\.com$/, "");
+    const numericId = orderGid.split("/").pop() ?? orderGid;
+    return `https://admin.shopify.com/store/${store}/orders/${numericId}`;
+}
+
+async function adminGql<T>(query: string, variables: Record<string, unknown> = {}): Promise<T | null> {
     try {
-        const res = await fetch(`https://${domain}/admin/api/${version}/graphql.json`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json", "X-Shopify-Access-Token": token },
-            body: JSON.stringify({ query, variables }),
-            cache: "no-store",
-        });
-        const json = await res.json();
-        if (json.errors) {
-            console.error("[shopify-admin] gql errors", JSON.stringify(json.errors));
-            return null;
-        }
-        return json.data as T;
+        return await adminGraphql<T>(query, variables);
     } catch (err) {
-        console.error("[shopify-admin] gql error", err);
+        console.error("[shopify-admin] gql error", err instanceof Error ? err.message : err);
         return null;
     }
 }

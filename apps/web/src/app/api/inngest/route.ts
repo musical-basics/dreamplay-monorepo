@@ -3,6 +3,7 @@ import { inngest } from "@/inngest/client";
 import { callFunctions } from "@/inngest/call-functions";
 import { couponFunctions } from "@/inngest/coupon-functions";
 import { emailFunctions } from "@/inngest/functions";
+import { paymentFunctions } from "@/inngest/payment-functions";
 import { reportFunctions } from "@/inngest/report-functions";
 
 /**
@@ -17,5 +18,5 @@ export const dynamic = "force-dynamic";
 
 export const { GET, POST, PUT } = serve({
     client: inngest,
-    functions: [...emailFunctions, ...reportFunctions, ...couponFunctions, ...callFunctions],
+    functions: [...emailFunctions, ...reportFunctions, ...couponFunctions, ...callFunctions, ...paymentFunctions],
 });
