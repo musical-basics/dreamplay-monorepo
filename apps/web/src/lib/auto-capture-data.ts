@@ -10,6 +10,7 @@
 import type { AdminClient } from "@dreamplay/db";
 import { adminGraphql } from "@/lib/shopify/admin";
 import {
+    AUTO_CAPTURE_BACKUP_STATUS,
     AUTO_CAPTURE_SETTING,
     AUTO_CAPTURE_STATUS,
     type AutoCaptureSetting,
@@ -147,6 +148,8 @@ export interface AutoCaptureStatus {
     lastErrorAt: string | null;
     lastError: string | null;
     lastErrorAlertedAt: string | null;
+    /** When the primary last emailed that the backup job had gone quiet. */
+    backupDownAlertedAt: string | null;
 }
 
 const EMPTY_STATUS: AutoCaptureStatus = {
@@ -156,6 +159,7 @@ const EMPTY_STATUS: AutoCaptureStatus = {
     lastErrorAt: null,
     lastError: null,
     lastErrorAlertedAt: null,
+    backupDownAlertedAt: null,
 };
 
 export async function readAutoCaptureStatus(db: AdminClient): Promise<AutoCaptureStatus> {
@@ -163,6 +167,25 @@ export async function readAutoCaptureStatus(db: AdminClient): Promise<AutoCaptur
     const value = data?.value;
     if (!value || typeof value !== "object" || Array.isArray(value)) return { ...EMPTY_STATUS };
     return { ...EMPTY_STATUS, ...(value as Partial<AutoCaptureStatus>) };
+}
+
+/** Written by the backup job (scripts/shopify/auto-capture-backup.mjs); read-only here. */
+export interface BackupHeartbeat {
+    lastRunAt: string | null;
+    lastCounts: { captured: number; handedOver: number; warned: number } | null;
+    lastError: string | null;
+    primaryStale: boolean | null;
+}
+
+export async function readBackupHeartbeat(db: AdminClient): Promise<BackupHeartbeat> {
+    const { data } = await db.from("app_settings").select("value").eq("key", AUTO_CAPTURE_BACKUP_STATUS).maybeSingle();
+    const v = (data?.value ?? {}) as Partial<BackupHeartbeat>;
+    return {
+        lastRunAt: typeof v.lastRunAt === "string" ? v.lastRunAt : null,
+        lastCounts: v.lastCounts ?? null,
+        lastError: typeof v.lastError === "string" ? v.lastError : null,
+        primaryStale: typeof v.primaryStale === "boolean" ? v.primaryStale : null,
+    };
 }
 
 /** Read-merge-write. Sweeps are singletons, so there is no competing writer. */

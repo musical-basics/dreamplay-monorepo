@@ -1,4 +1,5 @@
 import {
+    BACKUP_STALE_HOURS,
     type CaptureDecision,
     type CaptureOrder,
     DEADLINE_WARNING_HOURS,
@@ -8,7 +9,12 @@ import {
     formatEastern,
     formatMoney,
 } from "@/lib/auto-capture";
-import { fetchAuthorizedOrders, loadAutoCaptureSetting, readAutoCaptureStatus } from "@/lib/auto-capture-data";
+import {
+    fetchAuthorizedOrders,
+    loadAutoCaptureSetting,
+    readAutoCaptureStatus,
+    readBackupHeartbeat,
+} from "@/lib/auto-capture-data";
 import { getAdminDb } from "@/lib/db";
 import { shopifyAdminOrderUrl } from "@/lib/shopify/admin";
 import { AutoCaptureControls } from "./AutoCaptureControls";
@@ -52,7 +58,11 @@ function Plan({ decision }: { decision: CaptureDecision }) {
 export default async function AutoCapturePage() {
     const db = getAdminDb();
     const now = new Date();
-    const [setting, status] = await Promise.all([loadAutoCaptureSetting(db), readAutoCaptureStatus(db)]);
+    const [setting, status, backup] = await Promise.all([
+        loadAutoCaptureSetting(db),
+        readAutoCaptureStatus(db),
+        readBackupHeartbeat(db),
+    ]);
 
     let orders: CaptureOrder[] = [];
     let loadError: string | null = null;
@@ -64,6 +74,8 @@ export default async function AutoCapturePage() {
     const items = orders.map((order) => ({ order, decision: decideCapture(order, setting, now) }));
 
     const stale = !status.lastRunAt || now.getTime() - new Date(status.lastRunAt).getTime() > STALE_AFTER_MS;
+    const backupStale =
+        !backup.lastRunAt || now.getTime() - new Date(backup.lastRunAt).getTime() > BACKUP_STALE_HOURS * 3_600_000;
 
     return (
         <div>
@@ -92,6 +104,18 @@ export default async function AutoCapturePage() {
                           }`
                         : "The sweep has not run yet."}
                     {stale && " It should run every hour: check the Inngest dashboard (function shopify-auto-capture-sweep)."}
+                </p>
+                <p className={`font-sans text-sm ${backupStale ? "text-amber-300" : "text-white/60"}`}>
+                    {backup.lastRunAt
+                        ? `Backup job (GitHub Actions, captures on day 5 whatever the sweep missed) last ran ${formatEastern(backup.lastRunAt)}${
+                              backup.lastCounts
+                                  ? `: captured ${backup.lastCounts.captured}, handed over ${backup.lastCounts.handedOver}, warned ${backup.lastCounts.warned}.`
+                                  : "."
+                          }`
+                        : "The backup job (GitHub Actions) has not run yet."}
+                    {backupStale &&
+                        " It should run every hour: check GitHub, Actions, payment-capture-backup (public repos lose scheduled workflows after 60 days without a commit)."}
+                    {backup.lastError && ` Last error: ${backup.lastError}`}
                 </p>
                 {status.lastError && (
                     <p className="font-sans text-sm text-red-300 border border-red-400/30 bg-red-400/5 p-4">

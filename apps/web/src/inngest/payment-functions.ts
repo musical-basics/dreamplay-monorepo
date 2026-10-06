@@ -18,7 +18,9 @@
  *   4. tag: capture-manually on hand-overs, capture-deadline-warned on
  *      warnings, AFTER the email, so a failed tag means a duplicate alert
  *      next hour rather than a silent miss
- *   5. heartbeat: app_settings "shopify:auto-capture:status"
+ *   5. backup watch: alert (at most daily) if the independent day-5 backup
+ *      job (D15, GitHub Actions) has not written its heartbeat for 6 hours
+ *   6. heartbeat: app_settings "shopify:auto-capture:status"
  *
  * Kill switch: app_settings["shopify:auto-capture"].enabled, toggled at
  * /admin/auto-capture. Manual run: send event "shopify/auto-capture.run";
@@ -33,6 +35,7 @@ import {
     MANUAL_CAPTURE_TAG,
     type CaptureResult,
     type FollowUp,
+    backupHeartbeatAction,
     planFollowUps,
 } from "@/lib/auto-capture";
 import {
@@ -41,12 +44,14 @@ import {
     captureAuthorization,
     loadAutoCapturePipeline,
     readAutoCaptureStatus,
+    readBackupHeartbeat,
     updateAutoCaptureStatus,
 } from "@/lib/auto-capture-data";
 import {
     AUTO_CAPTURE_RECIPIENT,
     type ActionEntry,
     buildAutoCaptureEmail,
+    buildBackupDownEmail,
     buildSweepFailureEmail,
 } from "@/lib/auto-capture-email";
 import { getAdminDb } from "@/lib/db";
@@ -189,6 +194,27 @@ export const shopifyAutoCaptureSweep = inngest.createFunction(
                 addOrderTags(f.order.id, [DEADLINE_WARNED_TAG]),
             );
         }
+
+        // Watch the watcher: the backup job (D15) runs on GitHub cron, which a
+        // public repo loses after 60 days without a commit. Monitoring only;
+        // a failure here must not fail the capture run.
+        await step.run("check-backup-heartbeat", async () => {
+            try {
+                const db = getAdminDb();
+                const [backup, status] = await Promise.all([readBackupHeartbeat(db), readAutoCaptureStatus(db)]);
+                const action = backupHeartbeatAction(backup.lastRunAt, status.backupDownAlertedAt, now);
+                if (action === "alert" && backup.lastRunAt) {
+                    const { subject, html } = buildBackupDownEmail(backup.lastRunAt);
+                    await createResendSender().send({ from: defaultFromAddress(), to: AUTO_CAPTURE_RECIPIENT, subject, html });
+                    await updateAutoCaptureStatus(db, { backupDownAlertedAt: nowIso });
+                } else if (action === "clear") {
+                    await updateAutoCaptureStatus(db, { backupDownAlertedAt: null });
+                }
+                return { backupLastRunAt: backup.lastRunAt, action };
+            } catch (err) {
+                return { error: err instanceof Error ? err.message : String(err) };
+            }
+        });
 
         const counts = { captured: captured.length, handedOver: handOver.length, warned: expiring.length, waiting };
         await step.run("record-status", async () =>

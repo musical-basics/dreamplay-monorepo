@@ -117,6 +117,21 @@ export function buildAutoCaptureEmail(report: AutoCaptureReport): { subject: str
     return { subject, html: sections.join("\n") };
 }
 
+/** The backup job (GitHub Actions) has gone quiet. Sent at most once a day. */
+export function buildBackupDownEmail(lastRunAt: string): { subject: string; html: string } {
+    return {
+        subject: "Payment auto-capture: the backup job has stopped running",
+        html: [
+            `<p>The backup payment capture job last ran ${esc(formatEastern(lastRunAt))}. It should run every hour.</p>`,
+            `<p>The primary sweep is still capturing payments, so nothing is at risk right now, but if the primary also fails there is no safety net.</p>`,
+            `<p>Most likely cause: GitHub turns off scheduled workflows in public repositories after 60 days without a commit. ` +
+                `Fix: GitHub, repository dreamplay-monorepo, Actions, payment-capture-backup, Enable workflow. ` +
+                `Otherwise check that run's log for an error.</p>`,
+            `<p><a href="${AUTO_CAPTURE_ADMIN_URL}">${AUTO_CAPTURE_ADMIN_URL}</a></p>`,
+        ].join("\n"),
+    };
+}
+
 /** The "the sweep itself is broken" alert, sent at most once a day. */
 export function buildSweepFailureEmail(error: string, lastRunAt: string | null): { subject: string; html: string } {
     return {

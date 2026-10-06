@@ -1,0 +1,61 @@
+# Backup payment capture (decision D15).
+#
+# The primary capture is the hourly Inngest sweep on Vercel (D14), which
+# captures card payments 72 hours after checkout. This job runs on separate
+# infrastructure with a separate implementation (scripts/shopify/
+# auto-capture-backup.mjs) in case the primary silently fails: it captures
+# anything still uncaptured on day 5, hands flagged orders to a human, sends
+# the 24-hour expiry warning, and alerts if the primary's heartbeat is stale.
+# When the primary works, every run is a quiet no-op.
+#
+# Hourly at :23 (off the primary's :00, and off GitHub's busy top of the
+# hour; GitHub cron can run late or skip under load, and an hourly schedule
+# gives ~36 tries before an authorization expires).
+#
+# PUBLIC REPO: GitHub disables scheduled workflows after 60 days without a
+# commit. The primary sweep alerts support@ if this job's heartbeat goes
+# stale; re-enable under Actions > payment-capture-backup. Logs carry counts
+# only; order details go to the private email.
+
+name: payment-capture-backup
+
+on:
+  schedule:
+    - cron: "23 * * * *"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "dry-run (print the plan) or execute (capture/tag/email)"
+        required: true
+        default: "dry-run"
+        type: choice
+        options:
+          - dry-run
+          - execute
+
+concurrency:
+  group: payment-capture-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Backup capture
+        env:
+          SHOPIFY_ADMIN_CLIENT_ID: ${{ secrets.SHOPIFY_ADMIN_CLIENT_ID }}
+          SHOPIFY_ADMIN_CLIENT_SECRET: ${{ secrets.SHOPIFY_ADMIN_CLIENT_SECRET }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.mode }}" = "dry-run" ]; then
+            node scripts/shopify/auto-capture-backup.mjs
+          else
+            node scripts/shopify/auto-capture-backup.mjs --execute
+          fi

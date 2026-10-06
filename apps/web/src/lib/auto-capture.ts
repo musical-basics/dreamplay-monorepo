@@ -46,6 +46,14 @@ export const AUTO_CAPTURE_SETTING = "shopify:auto-capture";
 export const AUTO_CAPTURE_STATUS = "shopify:auto-capture:status";
 /** Event that triggers an extra sweep; `data.dryRun: true` evaluates without acting. */
 export const AUTO_CAPTURE_EVENT = "shopify/auto-capture.run";
+/**
+ * Heartbeat of the independent backup job (D15: GitHub Actions,
+ * scripts/shopify/auto-capture-backup.mjs), which captures on day 5 whatever
+ * this sweep missed. The two watch each other's heartbeats.
+ */
+export const AUTO_CAPTURE_BACKUP_STATUS = "shopify:auto-capture:backup-status";
+/** The backup runs hourly on GitHub cron, which can lag; this much silence means it is down. */
+export const BACKUP_STALE_HOURS = 6;
 
 /** "A human owns this capture." Added by the sweep on hand-over, or by hand to opt out. */
 export const MANUAL_CAPTURE_TAG = "capture-manually";
@@ -310,6 +318,24 @@ export function decideCapture(order: CaptureOrder, setting: AutoCaptureSetting, 
 export function needsDeadlineWarning(order: CaptureOrder, expiresAt: string | null, now: Date): boolean {
     if (!expiresAt || hasTag(order.tags, DEADLINE_WARNED_TAG)) return false;
     return new Date(expiresAt).getTime() - now.getTime() <= DEADLINE_WARNING_HOURS * HOUR_MS;
+}
+
+/**
+ * The backup job's health, judged by the primary each run. A backup that has
+ * never run is "none" (not set up yet), not an outage. Alerts repeat at most
+ * daily while it stays down; "clear" resets that once it is back, so the
+ * next outage alerts at once.
+ */
+export function backupHeartbeatAction(
+    backupLastRunAt: string | null,
+    lastAlertedAt: string | null,
+    now: Date,
+): "alert" | "clear" | "none" {
+    if (!backupLastRunAt) return "none";
+    const stale = now.getTime() - new Date(backupLastRunAt).getTime() > BACKUP_STALE_HOURS * HOUR_MS;
+    if (!stale) return lastAlertedAt ? "clear" : "none";
+    const due = !lastAlertedAt || now.getTime() - new Date(lastAlertedAt).getTime() >= 24 * HOUR_MS;
+    return due ? "alert" : "none";
 }
 
 export type CaptureResult = { ok: true; transactionId: string; status: string } | { ok: false; error: string };
