@@ -13,7 +13,8 @@ import { offerModeForVariant, type OfferMode } from "@/lib/ab-offer";
  * Sold-out gating for /dreamplay-pro in the Love-vs-Spec 2x2 test
  * (docs/plan/AB-TEST-LOVE-VS-SPEC.md).
  *
- * Visitors on the deposit249 offer (variants 6b/7b) see the Pro as SOLD OUT:
+ * Visitors on the deposit249 offer (everyone except test cells 6a/7a since
+ * D15; see lib/ab-offer.ts) see the Pro as SOLD OUT:
  * a banner plus a waitlist capture card replace the purchase path. Everyone
  * else (standard mode) sees the page exactly as before; every component in
  * this file renders the unmodified standard markup in that case.

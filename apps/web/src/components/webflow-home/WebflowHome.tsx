@@ -18,7 +18,10 @@ import { respSrcSet } from "./responsive";
  *    through the Next image optimiser instead (see ./responsive.ts);
  *  - the two conversion CTAs use <AbCtaLink> so clicks score as `cta_click`
  *    and the destination follows the funnel config (/customize);
- *  - Navbar/Footer are the same-commit components, kept local to this port.
+ *  - Navbar/Footer are the same-commit components, kept local to this port;
+ *  - 2026-10-07: the Reserve section's 2025 pricing ($599 founder price,
+ *    $899 launch) was replaced with the current offer, matching variant 7b:
+ *    $999 founder's price, $1,499 MSRP, $249 down, May 2027 (decision D15).
  * Styling comes from the Webflow stylesheets loaded by the (webflow-home)
  * route-group layout; the runtime (jQuery + webflow.js + Swiper) is booted by
  * <WebflowRuntime /> there.
@@ -551,8 +554,8 @@ export default function WebflowHome() {
                 <div className="discount-all-content-wrap">
                   <div className="discount-all-content-block">
                     <div className="discount-summury-block">
-                      <p className="p-xl _w-medium"><strong>Lock in the $599 Founder&#x27;s Price<br /></strong></p>
-                      <div className="p-medium _w-medium">The DreamPlay One will launch at <strong>$899</strong>. Due to the early stage, we are offering this keyboard at the incredible price of $599 (with free shipping). This is the lowest price we will ever offer.</div>
+                      <p className="p-xl _w-medium"><strong>Lock in the $999 Founder&#x27;s Price<br /></strong></p>
+                      <div className="p-medium _w-medium">The DreamPlay One will launch at an MSRP of <strong>$1,499</strong>. Reserve yours today for just <strong>$249 down</strong> and pay the rest of the $999 founder&#x27;s price only when your piano is ready to ship. This is the lowest price we will ever offer, and every reservation is covered by a money-back guarantee until your piano ships. Estimated delivery: May 2027.</div>
                     </div>
                     <div className="discount-btn-block">
                       <AbCtaLink cta="webflow_home_reserve" data-w-id="f1d5c3cb-94af-550d-2aa5-b4cc60c9289e"  className="btn-secondary w-inline-block">
