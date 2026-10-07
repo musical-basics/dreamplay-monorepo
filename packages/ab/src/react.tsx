@@ -75,7 +75,9 @@ export function useAbVariation(): AbVariation | undefined {
 export function useAbCta(fallback: string): string {
   const ctx = useContext(AbFunnelContext);
   if (!ctx) return fallback;
-  if (ctx.variation) return applyCtaBase(fallback, ctx.variation.cta);
+  // /main is outside the test (D14): its configured CTA wins even for
+  // visitors holding a funnel cookie.
   if (ctx.pathname === "/main") return applyCtaBase(fallback, ctx.config.main.cta);
+  if (ctx.variation) return applyCtaBase(fallback, ctx.variation.cta);
   return fallback;
 }

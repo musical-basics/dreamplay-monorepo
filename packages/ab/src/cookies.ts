@@ -38,15 +38,35 @@ export function readAbVariantFromCookieString(
   return value;
 }
 
+export interface GetAbAssignmentsOptions {
+  /**
+   * Pathnames whose events are never variant-tagged, even for visitors who
+   * hold a dp_ab cookie (exact match on the pathname, query ignored). The app
+   * passes ["/main"]: the pinned homepage is outside the test (D11/D14), and
+   * since D14 cookie holders land there from `/` too.
+   */
+  untaggedPaths?: readonly string[];
+}
+
 /**
  * Assignment getter for the analytics client (`getAbAssignments` config).
  * Reads document.cookie fresh on every event so a mid-session (re)assignment
- * is reflected immediately.
+ * is reflected immediately. The analytics client passes the event's path, so
+ * `untaggedPaths` applies to the page the event belongs to (a page_leave sent
+ * after a client-side navigation still counts as its original page).
  */
-export function createGetAbAssignments(config?: AbFunnelConfig): () => Record<string, string> {
-  return () => {
+export function createGetAbAssignments(
+  config?: AbFunnelConfig,
+  opts: GetAbAssignmentsOptions = {}
+): (context?: { path?: string }) => Record<string, string> {
+  const untagged = new Set(opts.untaggedPaths ?? []);
+  return (context) => {
     const result: Record<string, string> = {};
     if (typeof document === "undefined") return result;
+    if (untagged.size > 0 && context?.path !== undefined) {
+      const pathname = context.path.split(/[?#]/)[0] ?? "";
+      if (untagged.has(pathname)) return result;
+    }
     const variant = readAbVariantFromCookieString(document.cookie, config);
     if (variant) result[FUNNEL_ASSIGNMENT_KEY] = variant;
     return result;

@@ -79,7 +79,8 @@ export async function middleware(request: NextRequest) {
 
     // ========================================================================
     // A/B FUNNEL ROUTING (Decision D11; must resolve BEFORE session refresh)
-    //   /      → redirect to /ab (funnel members) or /main (everyone else)
+    //   /      → redirect to /main (everyone; D14), or /ab when the admin
+    //            testing toggle is ON
     //   /main  → rewrite to the manually-pinned layout (never tagged/scored)
     //   /ab    → sticky dp_ab cookie or CSPRNG assignment → rewrite to the
     //            variation's layout route; /ab/<key> forces a variation.

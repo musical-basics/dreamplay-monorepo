@@ -35,9 +35,11 @@ export interface AnalyticsConfig {
    * Returns the visitor's current A/B assignments as an
    * `{ [experimentKey]: variantKey }` map. Provided by @dreamplay/ab
    * (`createGetAbAssignments`). Called fresh on every event so mid-session
-   * re-bucketing is reflected.
+   * re-bucketing is reflected. Receives the event's own `path` (pathname +
+   * search, the same value sent as `path`), so an implementation can leave
+   * events on specific pages untagged.
    */
-  getAbAssignments?: () => Record<string, string>;
+  getAbAssignments?: (context: { path: string }) => Record<string, string>;
   /**
    * When several experiments run concurrently, which one populates the
    * top-level `ab_variant` metadata key. With exactly one assignment the
@@ -297,11 +299,11 @@ export function createAnalytics(config: AnalyticsConfig = {}): Analytics {
     return meta;
   }
 
-  function abMetadata(): Record<string, unknown> {
+  function abMetadata(path: string): Record<string, unknown> {
     if (!config.getAbAssignments) return {};
     let assignments: Record<string, string>;
     try {
-      assignments = config.getAbAssignments();
+      assignments = config.getAbAssignments({ path });
     } catch {
       return {};
     }
@@ -364,16 +366,17 @@ export function createAnalytics(config: AnalyticsConfig = {}): Analytics {
     ensureIdentity();
     ensureClickTracking();
     captureFirstTouch();
+    const path = extra.path ?? pathFromContext();
     const payload: TrackPayload = {
       eventName,
-      path: extra.path ?? pathFromContext(),
+      path,
       sessionId: sessionId as string,
       visitorId,
       timestamp: new Date().toISOString(),
       metadata: {
         ...config.defaultMetadata,
         ...attributionMetadata(),
-        ...abMetadata(),
+        ...abMetadata(path),
         ...metadata,
       },
       ...(extra.durationSeconds !== undefined ? { durationSeconds: extra.durationSeconds } : {}),

@@ -34,8 +34,8 @@ to tag analytics events — this is deliberate and load-bearing).
 
 | Request | Behavior |
 |---|---|
-| `/` | 307 redirect → `/ab` if the `dp_ab` cookie holds a **known** variation (active or not), else → `/main`. Query string preserved. **Testing mode on: always → `/ab`.** |
-| `/main` | Middleware **rewrite** (URL unchanged) to the manually-pinned layout route (`main.route`). No cookie is set, no variant tag ever. **Testing mode on: 307 → `/ab` instead.** |
+| `/` | 307 redirect → `/main` for everyone, cookie holders included (D14, 2026-10-07; before that a known `dp_ab` cookie sent `/` to `/ab`). Query string preserved. **Testing mode on: always → `/ab`.** |
+| `/main` | Middleware **rewrite** (URL unchanged) to the manually-pinned layout route (`main.route`). No cookie is set, and events on `/main` are never variant-tagged, even for cookie holders (`untaggedPaths` in `createGetAbAssignments`). Its configured CTA wins over a cookie holder's variation CTA. **Testing mode on: 307 → `/ab` instead.** |
 | `/ab` | Resolve variation, then rewrite (URL unchanged) to its route: ① cookie valid **and still active** → serve it (sticky, no restamp); ② cookie missing/inactive/deactivated → CSPRNG-pick a new one from the **active** pool (weighted), stamp cookie; ③ zero active variations → serve the main layout, untagged. |
 | `/ab/<key>` or `/ab?v=<key>` | **Forced preview/share link**: serve exactly that variation (works for inactive ones too) and stamp the cookie. Unknown key → redirect to `/ab` (normal assignment). |
 | `/<key>` (e.g. `/5a`) | Shorthand for the above: 307 → `/ab/<key>`. Only for keys that exist in the registry (the `\d+[a-z]` pattern is checked against it), so real routes can never be shadowed. |
@@ -56,14 +56,19 @@ layout pages themselves stay normal, publicly-routable pages.
 
 Consequences that fall out of this design for free (do not break them):
 
-- **/main exclusion is structural, not filtered.** Main-funnel visitors have
-  no cookie → their events carry no variant tag → they cannot appear on the
-  score sheet, even when /main's layout is byte-identical to a variation.
+- **/main exclusion.** Main-funnel visitors have no cookie, so their events
+  carry no variant tag and cannot appear on the score sheet, even when /main's
+  layout is byte-identical to a variation. Since D14 cookie holders also land
+  on /main from `/`; for them the exclusion is explicit: events whose path is
+  `/main` are untagged (`untaggedPaths: ["/main"]` in AppProviders), while
+  their later events elsewhere (e.g. `/customize`, where their offer arm still
+  applies) keep their variant, intention-to-treat style.
 - **Mid-session funnel entry works.** A main-funnel visitor who clicks any
   `/ab` link gets assigned and is in the A/B funnel from then on ("continuously
-  shown that variant going forward") — the cookie wins on all future `/` hits.
+  shown that variant going forward") on `/ab`, forced links and other pages.
+  Since D14 the cookie no longer redirects `/`: the homepage stays `/main`.
 - **Deactivation reassigns lazily.** Deactivating `3b` (or all of group 3)
-  means visitors holding `3b` are re-bucketed on their *next* `/` or `/ab`
+  means visitors holding `3b` are re-bucketed on their *next* `/ab`
   visit. Their historical `3b` events remain on the score sheet.
 
 ## 3. Registry spec (source of truth = code, not DB)

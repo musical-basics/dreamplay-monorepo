@@ -137,13 +137,14 @@ describe("resolveFunnel", () => {
   const resolve = (path: string, cookie?: string, search?: string) =>
     resolveFunnel(config, path, new URLSearchParams(search ?? ""), cookie);
 
-  it("routes / by funnel membership", () => {
+  it("routes / to /main for everyone when testing mode is off (D14)", () => {
     expect(resolve("/")).toEqual({ type: "redirect", to: "/main" });
-    expect(resolve("/", "2a")).toEqual({ type: "redirect", to: "/ab" });
-    // Deactivated-but-known variations still belong to the funnel (reassigned at /ab)
-    expect(resolve("/", "3a")).toEqual({ type: "redirect", to: "/ab" });
-    // Garbage cookie → main funnel
+    // A funnel cookie no longer pulls the homepage into the test...
+    expect(resolve("/", "2a")).toEqual({ type: "redirect", to: "/main" });
+    expect(resolve("/", "3a")).toEqual({ type: "redirect", to: "/main" });
     expect(resolve("/", "zz")).toEqual({ type: "redirect", to: "/main" });
+    // ...but the same cookie still pins the visitor's cell on /ab.
+    expect(resolve("/ab", "2a")).toEqual({ type: "rewrite", to: "/special-offer", variant: "2a" });
   });
 
   it("serves /main from the pinned route without cookie or variant", () => {

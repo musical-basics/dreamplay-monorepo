@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { readAbVariantFromCookieString } from "../cookies";
+import { createGetAbAssignments, readAbVariantFromCookieString } from "../cookies";
 import { defineAbFunnel } from "../funnel";
 
 const config = defineAbFunnel({
@@ -32,5 +32,40 @@ describe("readAbVariantFromCookieString", () => {
   it("validates against the registry: unknown values drop, inactive ones survive", () => {
     expect(readAbVariantFromCookieString("dp_ab=9z", config)).toBeUndefined();
     expect(readAbVariantFromCookieString("dp_ab=1b", config)).toBe("1b");
+  });
+});
+
+describe("createGetAbAssignments", () => {
+  // Minimal document stub: this package's tests run without a DOM.
+  const withCookie = (cookie: string, fn: () => void) => {
+    const g = globalThis as { document?: { cookie: string } };
+    const prev = g.document;
+    g.document = { cookie };
+    try {
+      fn();
+    } finally {
+      if (prev === undefined) delete g.document;
+      else g.document = prev;
+    }
+  };
+
+  it("tags every event from the cookie by default", () => {
+    withCookie("dp_ab=1a", () => {
+      const get = createGetAbAssignments(config);
+      expect(get({ path: "/main" })).toEqual({ funnel: "1a" });
+      expect(get()).toEqual({ funnel: "1a" });
+    });
+  });
+
+  it("leaves untaggedPaths untagged (query ignored) and tags everything else", () => {
+    withCookie("dp_ab=1a", () => {
+      const get = createGetAbAssignments(config, { untaggedPaths: ["/main"] });
+      expect(get({ path: "/main" })).toEqual({});
+      expect(get({ path: "/main?utm_source=x&v=1a" })).toEqual({});
+      expect(get({ path: "/customize" })).toEqual({ funnel: "1a" });
+      expect(get({ path: "/main-street" })).toEqual({ funnel: "1a" });
+      // No path supplied → no exclusion possible, tag as before
+      expect(get()).toEqual({ funnel: "1a" });
+    });
   });
 });

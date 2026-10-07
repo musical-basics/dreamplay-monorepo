@@ -142,6 +142,24 @@ describe("A/B assignment tagging", () => {
     expect(withPrimary.payloads[0]?.metadata.ab_variant).toBe("control");
   });
 
+  it("passes each event's own path to getAbAssignments (page_leave keeps its page)", async () => {
+    const seen: string[] = [];
+    const h = createHarness({
+      getAbAssignments: ({ path }): Record<string, string> => {
+        seen.push(path);
+        return path.startsWith("/main") ? {} : { funnel: "6b" };
+      },
+    });
+    h.setUrl("https://dreamplaypianos.com/main?utm_source=x");
+    await h.analytics.pageview();
+    // Client-side navigation: the URL moves on before /main's page_leave fires.
+    h.setUrl("https://dreamplaypianos.com/customize");
+    await h.analytics.pageLeave();
+    await h.analytics.pageview();
+    expect(seen).toEqual(["/main?utm_source=x", "/main?utm_source=x", "/customize"]);
+    expect(h.payloads.map((p) => p.metadata.ab_variant)).toEqual([undefined, undefined, "6b"]);
+  });
+
   it("survives a throwing getAbAssignments hook", async () => {
     const h = createHarness({
       getAbAssignments: () => {
