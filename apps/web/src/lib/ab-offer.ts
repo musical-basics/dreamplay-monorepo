@@ -6,7 +6,7 @@
  * Premium Bundle (totals unchanged: $999 / $1,099, balance plus shipping and
  * taxes at delivery) and the Pro shown as sold out with a waitlist.
  *
- * Since 2026-10-07 (decision D15) it is the DEFAULT for everyone: the /main
+ * Since 2026-10-07 (decision D17) it is the DEFAULT for everyone: the /main
  * homepage, visitors without a dp_ab cookie, and holders of any variant
  * outside the running test. Only the test's standard-offer cells 6a and 7a
  * keep the standard offer (50% deposits, Pro purchasable), so the 2x2's offer

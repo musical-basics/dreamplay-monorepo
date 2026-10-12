@@ -15,7 +15,7 @@ import { abFunnel } from "@/config/ab";
  *   /api/track. getAbAssignments reads the dp_ab funnel cookie stamped by the
  *   middleware (validated against the registry) on every event, so exposures
  *   and conversions carry metadata.ab_variant. Events on /main are never
- *   tagged (D14): since 2026-10-07 cookie holders land on /main from `/` too,
+ *   tagged (D16): since 2026-10-07 cookie holders land on /main from `/` too,
  *   and the pinned homepage must stay out of the score sheet. Their later
  *   events elsewhere (e.g. /customize) still carry their assigned variant.
  * - AbFunnelProvider: exposes the visitor's variation + CTA swapping

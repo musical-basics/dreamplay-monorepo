@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { offerModeForVariant } from "@/lib/ab-offer";
 
-describe("offerModeForVariant (D15)", () => {
+describe("offerModeForVariant (D17)", () => {
   it("gives the 7b deposit offer to visitors outside the test (homepage, no cookie)", () => {
     expect(offerModeForVariant(undefined)).toBe("deposit249");
     expect(offerModeForVariant(null)).toBe("deposit249");

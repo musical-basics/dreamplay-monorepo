@@ -21,7 +21,7 @@ import { respSrcSet } from "./responsive";
  *  - Navbar/Footer are the same-commit components, kept local to this port;
  *  - 2026-10-07: the Reserve section's 2025 pricing ($599 founder price,
  *    $899 launch) was replaced with the current offer, matching variant 7b:
- *    $999 founder's price, $1,499 MSRP, $249 down, May 2027 (decision D15).
+ *    $999 founder's price, $1,499 MSRP, $249 down, May 2027 (decision D17).
  * Styling comes from the Webflow stylesheets loaded by the (webflow-home)
  * route-group layout; the runtime (jQuery + webflow.js + Swiper) is booted by
  * <WebflowRuntime /> there.

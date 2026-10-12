@@ -42,8 +42,8 @@ export interface GetAbAssignmentsOptions {
   /**
    * Pathnames whose events are never variant-tagged, even for visitors who
    * hold a dp_ab cookie (exact match on the pathname, query ignored). The app
-   * passes ["/main"]: the pinned homepage is outside the test (D11/D14), and
-   * since D14 cookie holders land there from `/` too.
+   * passes ["/main"]: the pinned homepage is outside the test (D11/D16), and
+   * since D16 cookie holders land there from `/` too.
    */
   untaggedPaths?: readonly string[];
 }

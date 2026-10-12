@@ -265,7 +265,7 @@ export function resolveFunnel(
 ): FunnelResolution {
   const known = findVariation(config, rawCookie);
 
-  // D14 (2026-10-07): the homepage is the pinned /main page for everyone,
+  // D16 (2026-10-07): the homepage is the pinned /main page for everyone,
   // cookie holders included. Only the admin testing toggle sends / into the
   // test. A dp_ab cookie still pins the visitor's cell on /ab, /ab/<key> and
   // ?v= deep links (and their offer on /customize); it no longer hijacks /.

@@ -137,7 +137,7 @@ describe("resolveFunnel", () => {
   const resolve = (path: string, cookie?: string, search?: string) =>
     resolveFunnel(config, path, new URLSearchParams(search ?? ""), cookie);
 
-  it("routes / to /main for everyone when testing mode is off (D14)", () => {
+  it("routes / to /main for everyone when testing mode is off (D16)", () => {
     expect(resolve("/")).toEqual({ type: "redirect", to: "/main" });
     // A funnel cookie no longer pulls the homepage into the test...
     expect(resolve("/", "2a")).toEqual({ type: "redirect", to: "/main" });
