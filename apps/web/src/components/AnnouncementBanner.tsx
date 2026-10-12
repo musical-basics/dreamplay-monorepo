@@ -10,6 +10,7 @@ const DISMISSED_KEY = "dp_waitlist_announcement_dismissed";
 const DISMISSED_EVENT = "dreamplay-waitlist-announcement-dismissed";
 const HIDDEN_ROUTES = [
     "/customize",
+    "/customize2",
     "/shop",
     "/checkout",
     "/login",

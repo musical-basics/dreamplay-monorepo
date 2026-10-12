@@ -26,6 +26,8 @@ interface CustomizeClientProps {
         reservation?: string;
     }
     hiddenProducts: string[]
+    appearance?: 'original' | 'homepage'
+    className?: string
 }
 
 type HandSizeId = 'small' | 'medium' | 'large';
@@ -90,7 +92,8 @@ function TierPaymentInfo({ tier, isSelected }: { tier: ProductTier; isSelected: 
     );
 }
 
-export default function CustomizeClient({ urls, hiddenProducts }: CustomizeClientProps) {
+export default function CustomizeClient({ urls, hiddenProducts, appearance = 'original', className = '' }: CustomizeClientProps) {
+    const isHomepage = appearance === 'homepage';
     const searchParams = useSearchParams();
     const analytics = useAnalytics();
 
@@ -820,11 +823,11 @@ export default function CustomizeClient({ urls, hiddenProducts }: CustomizeClien
     ];
 
     return (
-        <div className="min-h-screen bg-white font-sans text-neutral-900 selection:bg-neutral-200">
-            <Navbar forceOpaque={true} darkMode={true} className="border-b border-white/10 bg-[#050505] backdrop-blur-md" />
+        <div className={`min-h-screen bg-white font-sans text-neutral-900 selection:bg-neutral-200 ${className}`}>
+            {!isHomepage && <Navbar forceOpaque={true} darkMode={true} className="border-b border-white/10 bg-[#050505] backdrop-blur-md" />}
 
             {/* --- FIXED FLOATING WIDGETS WRAPPER (below the header) --- */}
-            <div className="fixed top-16 left-0 right-0 z-50 flex flex-col pointer-events-none">
+            <div data-customize="widgets" className="fixed top-16 left-0 right-0 z-50 flex flex-col pointer-events-none">
                 <div className="pointer-events-auto">
 
                 {/* DESKTOP URGENCY WIDGET */}
@@ -849,7 +852,7 @@ export default function CustomizeClient({ urls, hiddenProducts }: CustomizeClien
 
                 {/* DESKTOP BUILD SUMMARY */}
                 {(appState.handSpan || appState.size || appState.color) && (
-                    <div className={`absolute right-4 md:right-8 ${authUser && showWidget && widgetTimeLeft > 0 ? 'top-[290px]' : 'top-[140px]'} z-[60] bg-[#050505] border border-white/10 p-5 shadow-2xl max-w-sm hidden md:block transition-all`}>
+                    <div data-customize="build-summary" className={`absolute right-4 md:right-8 ${authUser && showWidget && widgetTimeLeft > 0 ? 'top-[290px]' : 'top-[140px]'} z-[60] bg-[#050505] border border-white/10 p-5 shadow-2xl max-w-sm hidden md:block transition-all`}>
                         <h4 className="font-sans text-[10px] uppercase tracking-[0.2em] text-white/40 mb-3">Your Build So Far</h4>
                         <div className="flex flex-col gap-2">
                             <div className="flex items-center justify-between">
@@ -922,7 +925,7 @@ export default function CustomizeClient({ urls, hiddenProducts }: CustomizeClien
                         <div className="hidden md:flex items-center gap-8 text-[10px] uppercase tracking-[0.2em] font-medium text-white/40 mx-auto">
                             {navSteps.map((label, i) => (
                                 <React.Fragment key={i}>
-                                    <button onClick={() => scrollToSection(i)} className={`flex items-center gap-2 transition-colors cursor-pointer hover:text-white ${currentSection === i ? 'text-white font-bold' : ''}`}>
+                                    <button aria-current={currentSection === i ? 'step' : undefined} onClick={() => scrollToSection(i)} className={`flex items-center gap-2 transition-colors cursor-pointer hover:text-white ${currentSection === i ? 'text-white font-bold' : ''}`}>
                                         <span className={`flex h-5 w-5 items-center justify-center rounded-full border ${currentSection === i ? 'border-white bg-white text-black' : 'border-white/20'}`}>{i + 1}</span>
                                         <span>{label}</span>
                                     </button>
@@ -942,11 +945,12 @@ export default function CustomizeClient({ urls, hiddenProducts }: CustomizeClien
             <section ref={el => { if (sectionRefs.current) sectionRefs.current[0] = el }} id="section-0" className="relative flex h-screen items-center justify-center overflow-hidden bg-[#050505] pt-16 text-white">
                 {/* Subtle blue/white glow tracking mouse */}
                 <div
+                    data-customize="hero-background"
                     className="pointer-events-none absolute inset-0 transition-opacity duration-300"
-                    style={{ background: `radial-gradient(1000px circle at ${mousePos.x}% ${mousePos.y}%, rgba(100, 180, 255, 0.15), transparent 40%)` }}
+                    style={isHomepage ? undefined : { background: `radial-gradient(1000px circle at ${mousePos.x}% ${mousePos.y}%, rgba(100, 180, 255, 0.15), transparent 40%)` }}
                 ></div>
 
-                <div className="relative z-10 mx-auto max-w-4xl px-4 text-center md:px-6">
+                <div data-customize="hero-content" className="relative z-10 mx-auto max-w-4xl px-4 text-center md:px-6">
                     <div className="mb-6 inline-block border border-white/20 bg-white/5 px-4 py-2 font-sans text-[10px] uppercase tracking-[0.3em] text-white/70 backdrop-blur-sm md:mb-8">
                         <span className="mr-2 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-white"></span>
                         {appState.product === 'pro' ? 'DreamPlay One Pro Preorder' : 'Final Units Remaining in Batch 1'}
@@ -961,12 +965,13 @@ export default function CustomizeClient({ urls, hiddenProducts }: CustomizeClien
                         In just a few steps, we&apos;ll help you discover the ideal keyboard size and finish for your musical journey.
                     </p>
 
-                    <div className="mx-auto mb-10 grid max-w-3xl gap-3 md:grid-cols-2">
+                    <div data-customize="product-options" className="mx-auto mb-10 grid max-w-3xl gap-3 md:grid-cols-2">
                         {productOptions.map(product => {
                             const isSelected = appState.product === product.id;
                             return (
                                 <button
                                     key={product.id}
+                                    aria-pressed={isSelected}
                                     onClick={() => handleSelectProduct(product.id)}
                                     className={`border p-5 text-left transition-all ${isSelected ? 'border-white bg-white text-black' : 'border-white/15 bg-white/[0.04] text-white hover:border-white/40 hover:bg-white/[0.08]'}`}
                                 >
@@ -982,6 +987,7 @@ export default function CustomizeClient({ urls, hiddenProducts }: CustomizeClien
                     </div>
 
                     <button
+                        data-customize="start"
                         onClick={() => scrollToSection(1)}
                         className="group mx-auto flex items-center justify-center gap-3 border border-white bg-white px-10 py-5 font-sans text-xs uppercase tracking-widest text-black transition-all hover:bg-white/90 hover:scale-105 shadow-xl shadow-white/10"
                     >
@@ -1029,6 +1035,8 @@ export default function CustomizeClient({ urls, hiddenProducts }: CustomizeClien
                             return (
                                 <button
                                     key={btn.id}
+                                    data-customize="option-card"
+                                    aria-pressed={isSelected}
                                     onClick={() => handleSelectHandSize(btn.id)}
                                     className={`group relative flex flex-col border p-8 text-center transition-all duration-300 md:p-10 cursor-pointer ${isDark
                                         ? isSelected
@@ -1045,10 +1053,20 @@ export default function CustomizeClient({ urls, hiddenProducts }: CustomizeClien
                                         </div>
                                     )}
 
-                                    {/* Emoji */}
-                                    <div className="mb-4 flex justify-center">
+                                    {/* The homepage pairs each hand zone with a visual guide. */}
+                                    {isHomepage ? (
+                                        <div data-customize="hand-image" className="mb-6 overflow-hidden rounded-2xl">
+                                            <Image
+                                                src={`/images/hands/${btn.id === 'small' ? 'zone-a-small' : btn.id === 'medium' ? 'zone-b-medium' : 'zone-c-standard'}-hands-diagram.png`}
+                                                alt={`${btn.fullZone} hand span guide`}
+                                                width={600}
+                                                height={400}
+                                                className="w-full object-cover"
+                                            />
+                                        </div>
+                                    ) : <div className="mb-4 flex justify-center">
                                         <span className={`-scale-x-100 inline-block text-3xl transition-all duration-300 md:text-4xl ${isSelected ? 'grayscale-0 opacity-100' : 'opacity-50 grayscale group-hover:opacity-80 group-hover:grayscale-0'}`} role="img" aria-label={btn.label}>{btn.emoji}</span>
-                                    </div>
+                                    </div>}
 
                                     {/* Label & Description */}
                                     <h3 className={`mb-2 font-serif text-xl md:text-2xl ${isDark ? 'text-white' : 'text-neutral-900'}`}>{btn.label}</h3>
@@ -1123,6 +1141,8 @@ export default function CustomizeClient({ urls, hiddenProducts }: CustomizeClien
                             return (
                                 <button
                                     key={key}
+                                    data-customize="option-card"
+                                    aria-pressed={isSelected}
                                     onClick={() => handleSelectSize(key)}
                                     className={`group relative flex flex-col items-start border text-left transition-all duration-300 ${isLight
                                         ? isSelected
@@ -1205,6 +1225,8 @@ export default function CustomizeClient({ urls, hiddenProducts }: CustomizeClien
                             return (
                                 <button
                                     key={finish.id}
+                                    data-customize="option-card"
+                                    aria-pressed={isSelected}
                                     onClick={() => handleSelectColor(finish.id)}
                                     className={`group relative flex flex-col overflow-hidden border text-left transition-all duration-300 ${isSelected ? 'border-black bg-white z-10 scale-105 shadow-xl' : 'border-black/10 bg-white shadow-lg hover:border-black/30 hover:shadow-xl'
                                         }`}
@@ -1255,7 +1277,7 @@ export default function CustomizeClient({ urls, hiddenProducts }: CustomizeClien
 
                     {appState.product === 'one' && <DynamicProductionTimeline />}
 
-                    <div className={`grid gap-6 md:grid-cols-2 ${appState.product === 'pro' ? 'lg:grid-cols-2' : 'lg:grid-cols-3'}`}>
+                    <div data-customize="tier-options" className={`grid gap-6 md:grid-cols-2 ${appState.product === 'pro' ? 'lg:grid-cols-2' : 'lg:grid-cols-3'}`}>
                         {tiers.map(tier => {
                             const isSelected = appState.selectedTier === tier.id;
                             const isHighlight = tier.highlight;
@@ -1270,6 +1292,8 @@ export default function CustomizeClient({ urls, hiddenProducts }: CustomizeClien
                             return (
                                 <div
                                     key={tier.id}
+                                    data-customize="tier-card"
+                                    data-selected={isSelected}
                                     className={`relative flex flex-col border p-8 text-left transition-all md:p-10 overflow-visible ${isHighlight
                                             ? "border-white/30 bg-white/10 shadow-lg"
                                             : "border-white/10 bg-white/5 shadow-lg"
@@ -1568,7 +1592,7 @@ export default function CustomizeClient({ urls, hiddenProducts }: CustomizeClien
 
             {/* --- SIZING MODAL (DARK) --- */}
             {isSizingModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 backdrop-blur-md">
+                <div data-customize="modal" className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 backdrop-blur-md">
                     <div className="relative max-h-[90vh] w-full max-w-6xl overflow-auto border border-white/20 bg-[#050505] p-8 shadow-2xl md:p-16">
                         <button onClick={() => setIsSizingModalOpen(false)} className="absolute right-6 top-6 font-sans text-xs uppercase tracking-widest text-white/50 transition-colors hover:text-white">
                             Close ✕
@@ -1660,7 +1684,7 @@ export default function CustomizeClient({ urls, hiddenProducts }: CustomizeClien
 
             {/* --- POLICY MODAL --- */}
             {isPolicyModalOpen && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4 backdrop-blur-sm">
+                <div data-customize="modal" className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4 backdrop-blur-sm">
                     <div className="relative flex h-full max-h-[90vh] w-full max-w-6xl flex-col border border-white/20 bg-[#050505] shadow-2xl">
                         <div className="flex items-center justify-between border-b border-white/10 px-8 py-6">
                             <h3 className="font-serif text-2xl text-white">Our Policy</h3>

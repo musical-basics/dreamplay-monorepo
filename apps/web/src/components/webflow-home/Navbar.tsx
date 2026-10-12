@@ -5,8 +5,13 @@ import React from "react";
 import { usePathname } from "next/navigation";
 import { AbCtaLink } from "@/components/ab/AbCtaLink";
 
+function NavCta({ href, cta, ...props }: React.ComponentProps<typeof AbCtaLink>) {
+    // A configurator CTA stays on the current build, including for A/B visitors.
+    return href ? <Link href={href} {...props} /> : <AbCtaLink cta={cta} {...props} />;
+}
+
 /** Webflow navbar as of dreamplay-website@1d47b9f; the two CTAs are AbCtaLinks. */
-export default function Navbar() {
+export default function Navbar({ customizeHref }: { customizeHref?: string } = {}) {
     const rawPathname = usePathname();
     // /main is a middleware rewrite to /webflow-home — both are "home" here.
     const pathname = rawPathname === "/main" || rawPathname === "/webflow-home" ? "/" : rawPathname;
@@ -89,7 +94,7 @@ export default function Navbar() {
                     </div>
                     <div className="navigation5_button-wrapper button-show-on-landscape">
                         <div>
-                            <AbCtaLink cta="webflow_home_nav_reserve"
+                            <NavCta href={customizeHref} cta="webflow_home_nav_reserve"
                                 data-wf--button-primary--variant="secondary"
                                 
                                 className="button w-variant-1ae2a9c7-3071-e35e-921a-e41dc6d6ad44 w-inline-block"
@@ -117,13 +122,13 @@ export default function Navbar() {
                                         ></path>
                                     </svg>
                                 </div>
-                            </AbCtaLink>
+                            </NavCta>
                         </div>
                     </div>
                 </nav>
                 <div className="navigation5_buttons-wrfrm">
                     <div className="navigation5_button-wrapper">
-                        <AbCtaLink cta="webflow_home_nav_preorder"
+                        <NavCta href={customizeHref} cta="webflow_home_nav_preorder"
                             data-wf--button-primary--variant="base"
                             
                             className="button w-inline-block"
@@ -151,7 +156,7 @@ export default function Navbar() {
                                     ></path>
                                 </svg>
                             </div>
-                        </AbCtaLink>
+                        </NavCta>
                     </div>
                     <div className="navigation5_menu-button w-nav-button">
                         <div className="navigation5_menu-icon">

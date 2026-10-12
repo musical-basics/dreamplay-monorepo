@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { usePathname } from "next/navigation";
 
 /**
  * Boots the Webflow runtime for the (webflow-home) route group, replicating
@@ -54,6 +55,10 @@ function loadScriptOnce(src: string): Promise<void> {
 }
 
 export function WebflowRuntime() {
+    const pathname = usePathname();
+
+    // The shared layout stays mounted between the homepage and /customize2;
+    // attach Webflow's navbar handlers to each page's new DOM.
     useEffect(() => {
         let cancelled = false;
         const html = document.documentElement;
@@ -88,7 +93,7 @@ export function WebflowRuntime() {
                 /* ignore */
             }
         };
-    }, []);
+    }, [pathname]);
 
     return null;
 }
