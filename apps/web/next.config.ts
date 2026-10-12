@@ -33,6 +33,13 @@ const nextConfig: NextConfig = {
         destination: "/shop",
         permanent: false,
       },
+      {
+        // D19: /customize2 was swapped in as /customize (2026-10-12).
+        // Temporary so the path stays free to reuse.
+        source: "/customize2",
+        destination: "/customize",
+        permanent: false,
+      },
     ];
   },
   async rewrites() {

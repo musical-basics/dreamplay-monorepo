@@ -57,7 +57,7 @@ function loadScriptOnce(src: string): Promise<void> {
 export function WebflowRuntime() {
     const pathname = usePathname();
 
-    // The shared layout stays mounted between the homepage and /customize2;
+    // The shared layout stays mounted between the homepage and /customize;
     // attach Webflow's navbar handlers to each page's new DOM.
     useEffect(() => {
         let cancelled = false;

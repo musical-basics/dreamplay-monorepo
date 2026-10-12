@@ -54,7 +54,7 @@ export default function NewsletterPopup() {
             console.log('[PopupDebug] initPopups() called');
 
             // Disable all popups on commerce surfaces.
-            if (['/customize', '/customize2', '/shop'].includes(pathname)) {
+            if (['/customize', '/shop'].includes(pathname)) {
                 console.log('[PopupDebug] SKIPPED: on commerce page');
                 return;
             }
@@ -131,7 +131,7 @@ export default function NewsletterPopup() {
     // --- EXIT-INTENT POPUP ---
     useEffect(() => {
         // Never interrupt commerce or account flows with exit intent.
-        const excludedPaths = ["/vip", "/login", "/register", "/activate", "/forgot-password", "/reset-password", "/customize", "/customize2", "/shop", "/checkout"];
+        const excludedPaths = ["/vip", "/login", "/register", "/activate", "/forgot-password", "/reset-password", "/customize", "/shop", "/checkout"];
         if (!CLASSICAL_GUIDE_POPUP_ENABLED) return;
         if (excludedPaths.includes(pathname)) return;
 

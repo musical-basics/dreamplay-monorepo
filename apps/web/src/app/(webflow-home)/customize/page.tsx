@@ -11,12 +11,20 @@ export const revalidate = 60;
 export const metadata: Metadata = {
     title: "Customize Your DreamPlay",
     description: "Find your perfect keyboard size, choose your finish, and build your DreamPlay One or DreamPlay One Pro.",
-    // Same configurator as /customize (the indexed one), restyled to match the
-    // Webflow homepage: keep the duplicate out of search results.
-    robots: { index: false, follow: true },
+    alternates: { canonical: "https://dreamplaypianos.com/customize" },
 };
 
-export default async function Customize2Page() {
+/**
+ * /customize: the configurator, styled to match the Webflow homepage
+ * (decision D19, 2026-10-12). Built as /customize2 (f555baf) and swapped in
+ * here; /customize2 now redirects to /customize (next.config.ts). The
+ * configurator itself is still `(website-pages)/customize/CustomizeClient.tsx`
+ * with appearance="homepage"; the previous all-Tailwind page was that same
+ * component with the default appearance (restore its page.tsx from git to
+ * roll back).
+ */
+
+export default async function CustomizePage() {
     const [urls, hiddenProducts] = await Promise.all([
         getCustomizePageUrls(),
         getHiddenProducts(),
