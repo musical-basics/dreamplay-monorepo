@@ -2,9 +2,12 @@
  * create-249-deposit-products.mjs — Shopify products for the $249-deposit
  * offer (variants 6b/7b of the Love-vs-Spec 2x2, docs/plan/AB-TEST-LOVE-VS-SPEC.md).
  *
- * Creates two products, each with Size x Finish variants priced $249.00:
- *   - "DreamPlay One ($249 Deposit)"            balance $750 at ship ($999 total)
- *   - "DreamPlay Premium Bundle ($249 Deposit)" balance $850 at ship ($1,099 total)
+ * Creates two products, each with Size x Finish variants:
+ *   - "DreamPlay One ($249 Deposit)"            $249, balance $750 at ship ($999 total)
+ *   - "DreamPlay Premium Bundle ($299 Deposit)" $299, balance $800 at ship ($1,099 total)
+ * (The bundle was created at $249 on 2026-08-14 and repriced to $299 on
+ * 2026-10-12 by set-bundle-deposit-299.mjs, decision D18. Its SKUs keep the
+ * original DPB-249 prefix.)
  *
  * Deposits are not themselves shipped: requiresShipping=false so checkout
  * charges no freight (shipping + taxes ride the balance invoice, exactly like
@@ -55,15 +58,17 @@ const PRODUCTS = [
     tier: "solo",
     title: "DreamPlay One ($249 Deposit)",
     skuPrefix: "DP1-249",
+    price: "249.00",
     descriptionHtml:
       "<p>Reserve your DreamPlay One with a $249 deposit. Total price $999 at the Founder's rate: the remaining $750 plus shipping and applicable taxes is charged only when your piano is boxed and ready to ship. Fully refundable before your piano ships. Choose your key size (DS5.5, DS6.0, DS6.5) and finish.</p>",
   },
   {
     tier: "full",
-    title: "DreamPlay Premium Bundle ($249 Deposit)",
+    title: "DreamPlay Premium Bundle ($299 Deposit)",
     skuPrefix: "DPB-249",
+    price: "299.00",
     descriptionHtml:
-      "<p>Reserve the DreamPlay Premium Bundle (keyboard, stand, sustain pedal, and padded bench) with a $249 deposit. Total price $1,099 at the Founder's rate: the remaining $850 plus shipping and applicable taxes is charged only when your piano is boxed and ready to ship. Fully refundable before your piano ships.</p>",
+      "<p>Reserve the DreamPlay Premium Bundle (keyboard, stand, sustain pedal, and padded bench) with a $299 deposit. Total price $1,099 at the Founder's rate: the remaining $800 plus shipping and applicable taxes is charged only when your piano is boxed and ready to ship. Fully refundable before your piano ships.</p>",
   },
 ];
 
@@ -130,7 +135,7 @@ for (const spec of PRODUCTS) {
   if (product) {
     console.log(`= exists: ${spec.title} (${bare(product.id)}), reusing`);
   } else if (!EXECUTE) {
-    console.log(`+ would create: ${spec.title} with ${SIZES.length * FINISHES.length} variants @ $249.00`);
+    console.log(`+ would create: ${spec.title} with ${SIZES.length * FINISHES.length} variants @ $${spec.price}`);
     continue;
   } else {
     const created = await gql(
@@ -161,7 +166,7 @@ for (const spec of PRODUCTS) {
     for (const size of SIZES) {
       for (const finish of FINISHES) {
         variantInputs.push({
-          price: "249.00",
+          price: spec.price,
           optionValues: [
             { optionName: "Size", name: size },
             { optionName: "Finish", name: finish },
@@ -185,7 +190,7 @@ for (const spec of PRODUCTS) {
     );
     const bulkErrs = bulk.productVariantsBulkCreate.userErrors;
     if (bulkErrs?.length) throw new Error(`variantsBulkCreate ${spec.title}: ${JSON.stringify(bulkErrs)}`);
-    console.log(`  + ${bulk.productVariantsBulkCreate.productVariants.length} variants @ $249.00`);
+    console.log(`  + ${bulk.productVariantsBulkCreate.productVariants.length} variants @ $${spec.price}`);
 
     const pubId = await onlineStorePublicationId();
     const pub = await gql(
@@ -209,8 +214,8 @@ for (const spec of PRODUCTS) {
         const id = map[size][finish];
         console.log(`  ${spec.tier} ${size} ${finish}: ${id || "(missing!)"}`);
         const price = product.variants.edges.find((e) => bare(e.node.id) === id)?.node.price;
-        if (id && Number(price) !== 249) {
-          throw new Error(`${spec.title} ${size}/${finish} priced ${price}, expected 249.00 — refusing to write map`);
+        if (id && Number(price) !== Number(spec.price)) {
+          throw new Error(`${spec.title} ${size}/${finish} priced ${price}, expected ${spec.price}, refusing to write map`);
         }
       }
     }
@@ -227,13 +232,14 @@ if (EXECUTE && resultMap.solo && resultMap.full) {
   writeFileSync(
     mapPath,
     `/**
- * Shopify variant IDs for the $249-deposit offer (variants 6b/7b of the
- * Love-vs-Spec 2x2 — docs/plan/AB-TEST-LOVE-VS-SPEC.md).
+ * Shopify variant IDs for the flat-fee deposit offer (deposit249 mode, see
+ * apps/web/src/lib/ab-offer.ts; first tested as variants 6b/7b of the
+ * Love-vs-Spec 2x2, docs/plan/AB-TEST-LOVE-VS-SPEC.md).
  *
  * These are SEPARATE Shopify products from the standard $499/$549 deposit
- * products: same configurations, priced $249, with the balance ($750 for the
- * One, $850 for the Premium Bundle) invoiced when the piano ships, exactly
- * like the 50% flow's second half.
+ * products: same configurations, priced $249 (One) and $299 (Premium Bundle,
+ * since 2026-10-12, D18), with the balance ($750 / $800) invoiced when the
+ * piano ships, exactly like the 50% flow's second half.
  *
  * AUTO-GENERATED by scripts/shopify/create-249-deposit-products.mjs — do not
  * edit by hand. An empty string means "not available": /customize refuses

@@ -2,9 +2,10 @@
  * Offer mode per visitor: which pricing /customize and /dreamplay-pro show.
  *
  * "deposit249" is the offer first tested as variant 7b (Love-vs-Spec 2x2,
- * docs/plan/AB-TEST-LOVE-VS-SPEC.md): $249 down on the DreamPlay One and the
- * Premium Bundle (totals unchanged: $999 / $1,099, balance plus shipping and
- * taxes at delivery) and the Pro shown as sold out with a waitlist.
+ * docs/plan/AB-TEST-LOVE-VS-SPEC.md): a flat reservation fee, $249 on the
+ * DreamPlay One and $299 on the Premium Bundle since 2026-10-12 (D18; it was
+ * $249 for both), totals unchanged ($999 / $1,099, balance plus shipping and
+ * taxes at delivery), and the Pro shown as sold out with a waitlist.
  *
  * Since 2026-10-07 (decision D17) it is the DEFAULT for everyone: the /main
  * homepage, visitors without a dp_ab cookie, and holders of any variant

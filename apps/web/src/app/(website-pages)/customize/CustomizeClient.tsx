@@ -97,9 +97,9 @@ export default function CustomizeClient({ urls, hiddenProducts, appearance = 'or
     const searchParams = useSearchParams();
     const analytics = useAnalytics();
 
-    // Love-vs-Spec 2x2 (docs/plan/AB-TEST-LOVE-VS-SPEC.md): visitors on
-    // variants 6b/7b see the $249-deposit offer and a sold-out Pro. The offer
-    // rides the dp_ab cookie, not the route, so this one page serves both.
+    // Deposit offer (lib/ab-offer.ts, D17/D18): everyone except test cells
+    // 6a/7a reserves with a flat fee ($249 One, $299 Premium Bundle) and sees
+    // a sold-out Pro. The offer rides the dp_ab cookie, not the route.
     const abVariation = useAbVariation();
     const isDeposit249 = offerModeForVariant(abVariation?.key) === 'deposit249';
 
@@ -256,10 +256,11 @@ export default function CustomizeClient({ urls, hiddenProducts, appearance = 'or
         },
     };
 
-    // --- DEPOSIT249 OFFER OVERRIDES (variants 6b/7b) ---
-    // $249 down replaces the 50% deposits (totals unchanged: $999 / $1,099);
-    // the Pro is sold out. The reserve50 card is dropped from the order below
-    // as redundant next to a $249 headline.
+    // --- DEPOSIT OFFER OVERRIDES (deposit249 mode, see lib/ab-offer.ts) ---
+    // A flat reservation fee replaces the 50% deposits: $249 for the One,
+    // $299 for the Premium Bundle (D18: two identical $249 cards read oddly).
+    // Totals unchanged ($999 / $1,099); the Pro is sold out. The reserve50
+    // card is dropped from the order below as redundant next to these.
     if (isDeposit249) {
         const solo = PRODUCT_CATALOG.solo;
         if (solo) PRODUCT_CATALOG.solo = {
@@ -271,9 +272,9 @@ export default function CustomizeClient({ urls, hiddenProducts, appearance = 'or
         const full = PRODUCT_CATALOG.full;
         if (full) PRODUCT_CATALOG.full = {
             ...full,
-            subtitle: "$249 Now · Balance At Delivery",
-            price: "$249",
-            description: "Pay $249 today to secure your spot. The remaining $850 plus shipping and taxes is charged only when your piano is boxed and ready to ship. Includes stand, bench, and pedal.",
+            subtitle: "$299 Now · Balance At Delivery",
+            price: "$299",
+            description: "Pay $299 today to secure your spot. The remaining $800 plus shipping and taxes is charged only when your piano is boxed and ready to ship. Includes stand, bench, and pedal.",
         };
         const proSolo = PRODUCT_CATALOG.pro_solo;
         if (proSolo) PRODUCT_CATALOG.pro_solo = { ...proSolo, soldOut: true, badge: "Sold Out" };
@@ -622,8 +623,9 @@ export default function CustomizeClient({ urls, hiddenProducts, appearance = 'or
             // Sold-out tiers (deposit249 mode marks the Pro sold out) never check out.
             if (PRODUCT_CATALOG[tierId]?.soldOut) return;
 
-            // Variant lookup: deposit249 visitors buy the $249-deposit Shopify
-            // products; everyone else the standard map.
+            // Variant lookup: deposit249 visitors buy the flat-fee deposit
+            // Shopify products ($249 One, $299 Bundle); everyone else the
+            // standard map.
             const useDeposit249Variant = isDeposit249 && (tierId === 'solo' || tierId === 'full');
             const exactVariantId = (useDeposit249Variant
                 ? DEPOSIT249_VARIANT_MAP[tierId]?.[size]?.[color]
@@ -651,7 +653,7 @@ export default function CustomizeClient({ urls, hiddenProducts, appearance = 'or
             } else if (useDeposit249Variant) {
                 // NEVER fall through to the admin-URL fallback here: it points at
                 // the full-price deposit products and would silently charge the
-                // standard $499/$549 instead of the advertised $249.
+                // standard $499/$549 instead of the advertised $249/$299.
                 alert('This reservation option is temporarily unavailable. Please try again shortly, or email support@dreamplaypianos.com.');
                 return;
             } else if (appState.product === 'pro') {
@@ -1335,7 +1337,7 @@ export default function CustomizeClient({ urls, hiddenProducts, appearance = 'or
                                         )}
 
                                         {/* Deposit info pill (50% and $249 offers alike) */}
-                                        {(tier.subtitle?.includes('50%') || tier.subtitle?.includes('$249')) && <TierPaymentInfo tier={tier} isSelected={isSelected} />}
+                                        {(tier.subtitle?.includes('50%') || tier.subtitle?.includes('Balance At Delivery')) && <TierPaymentInfo tier={tier} isSelected={isSelected} />}
                                     </div>
 
                                     <p className={`mt-6 min-h-[80px] w-full flex-grow font-sans text-sm leading-relaxed ${isSelected ? 'text-black/60' : 'text-white/70'}`}>

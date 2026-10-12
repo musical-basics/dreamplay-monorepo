@@ -13,6 +13,7 @@ listed in [`.env.example`](../../.env.example).
 | `shopify-token-scopes.mjs` | Print the Admin app token's current scopes and probe order visibility (confirms `read_all_orders` landed). |
 | `shopify-edit-order-variant.mjs` | Swap a size variant on a customer's order via the Order Editing API. **Dry-run by default; writes only with `--commit`; customer notification only with `--notify`.** Verifies against `currentQuantity` / `currentTotalPriceSet` (the raw `quantity`/total are immutable originals and look doubled after an edit). See [READ-ALL-ORDERS-SETUP.md](./READ-ALL-ORDERS-SETUP.md). |
 | `auto-capture-backup.mjs` | Backup payment capture (decision D15), run hourly by `.github/workflows/payment-capture-backup.yml`: captures on day 5 any clean authorization the primary Inngest sweep (D14) missed, hands flagged orders to a human, sends the 24h expiry warning, alerts on a stale primary heartbeat. **Dry-run by default; acts only with `--execute`.** Rules in `auto-capture-backup-rules.mjs`, parity-tested against the primary. |
+| `set-bundle-deposit-299.mjs` | Reprice the Premium Bundle deposit product from $249 to $299 (decision D18): title, description, all 6 variant prices; ids, handle and SKUs unchanged. **Dry-run by default; writes only with `--execute`;** `--revert --execute` puts it back to $249. Reads back and fails on any mismatch. |
 | `update-variant-map.mjs` | Regenerate `apps/web/src/config/variant-map.ts` (tier × size × color → Shopify variant id) from a JSON blob; merges with existing values. |
 
 ## Safety / human-approval gating
