@@ -288,3 +288,35 @@ describe("sendCampaign rendering", () => {
         expect(calls.find((c) => c.to === "two@example.com")!.html).not.toContain("VIP-CONTENT");
     });
 });
+
+describe("sendCampaign reply-to", () => {
+    it("passes an explicit replyTo through to every send", async () => {
+        const db = makeDb();
+        const { sender, calls } = makeSender();
+
+        await sendCampaign({ db: asAdminClient(db), sender }, baseOptions({ replyTo: "support@example.com" }));
+
+        expect(calls).toHaveLength(3);
+        expect(calls.every((c) => c.reply_to === "support@example.com")).toBe(true);
+    });
+
+    it("falls back to the campaign's variable_values.reply_to", async () => {
+        const db = makeDb();
+        const campaign = db.rows("campaigns")[0] as { variable_values: Record<string, unknown> };
+        campaign.variable_values = { ...campaign.variable_values, reply_to: "team@example.com" };
+        const { sender, calls } = makeSender();
+
+        await sendCampaign({ db: asAdminClient(db), sender }, baseOptions());
+
+        expect(calls[0]?.reply_to).toBe("team@example.com");
+    });
+
+    it("omits reply_to when none is configured", async () => {
+        const db = makeDb();
+        const { sender, calls } = makeSender();
+
+        await sendCampaign({ db: asAdminClient(db), sender }, baseOptions());
+
+        expect(calls[0] && "reply_to" in calls[0]).toBe(false);
+    });
+});

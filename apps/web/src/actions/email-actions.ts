@@ -1,6 +1,8 @@
 'use server';
 
 import { cookies, headers } from "next/headers";
+import { inngest } from "@/inngest/client";
+import { hasProWaitlistTag, PRO_WAITLIST_EVENT } from "@/lib/pro-waitlist-email";
 import { saveSubscriber } from "@/lib/subscriber-capture-db";
 
 /**
@@ -73,6 +75,17 @@ export async function subscribeToNewsletter(payload: SubscribePayload): Promise<
             tags: payload.tags,
             countryCode: country,
         });
+
+        // Pro waitlist → automatic confirmation email (D21). The Inngest
+        // function holds the kill switch and the once-per-person guarantee;
+        // a failed emit never fails the capture.
+        if (hasProWaitlistTag(payload.tags)) {
+            try {
+                await inngest.send({ name: PRO_WAITLIST_EVENT, data: { subscriberId: id } });
+            } catch (error) {
+                console.error("Pro waitlist event failed (non-blocking):", error);
+            }
+        }
 
         // Fresh capture → notify support with the variant (contact-form
         // submissions send their own notification; don't double up).

@@ -7,8 +7,8 @@
  * carry their own --test mode tied to their own send keys; this one is
  * generic so a new draft can be proofed on a phone the moment it is seeded.
  *
- * It reproduces the real pipeline for the rendered copy: {{first_name}}
- * merge, unsubscribe footer + RFC 8058 one-click headers (HMAC token),
+ * It reproduces the real pipeline for the rendered copy: preview_text
+ * preheader, {{first_name}} merge, unsubscribe footer + RFC 8058 one-click headers (HMAC token),
  * append-mode tracking (sid/cid URL params) and the open pixel. It never
  * reads an audience, never writes sent_history, and refuses to send to an
  * address that is not an active, unsuppressed subscriber row.
@@ -93,9 +93,18 @@ function injectPixel(html, sid, cid) {
   const pixel = `<img src="${TRACKING_BASE}/api/email/open?c=${encodeURIComponent(cid)}&s=${encodeURIComponent(sid)}" width="1" height="1" alt="" style="display:none !important;width:1px;height:1px;opacity:0;" />`;
   return /<\/body>/i.test(html) ? html.replace(/<\/body>/i, `${pixel}</body>`) : html + pixel;
 }
+// Same markup as packages/email injectPreheader (variable_values.preview_text).
+function injectPreheader(html, previewText) {
+  if (!previewText || !previewText.trim()) return html;
+  const pre = `<!--[preheader]--><div style="display:none;font-size:1px;color:#ffffff;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;">${previewText.trim()}</div><!--[/preheader]-->`;
+  const body = html.match(/<body[^>]*>/i);
+  if (!body) return pre + html;
+  const at = html.indexOf(body[0]) + body[0].length;
+  return html.slice(0, at) + pre + html.slice(at);
+}
 function render({ template, firstName, sid, cid }) {
   const qs = `s=${encodeURIComponent(sid)}&c=${encodeURIComponent(cid)}&t=${unsubToken(sid, cid)}`;
-  let html = template.html_content;
+  let html = injectPreheader(template.html_content, template.variable_values?.preview_text);
   if (!html.includes("{{unsubscribe_url}}")) {
     html = html.includes("</body>") ? html.replace("</body>", `${UNSUB_FOOTER}</body>`) : html + UNSUB_FOOTER;
   }
@@ -139,7 +148,7 @@ if (sub.status !== "active") { console.error(`${email} status=${sub.status}, ref
 const filter = KEYS.length
   ? `send_key=in.(${KEYS.map(encodeURIComponent).join(",")})`
   : `send_key=like.${encodeURIComponent(PREFIX)}*`;
-const drafts = await rest(`campaigns?${filter}&select=id,name,send_key,subject_line,html_content,status&order=send_key.asc&limit=50`);
+const drafts = await rest(`campaigns?${filter}&select=id,name,send_key,subject_line,html_content,variable_values,status&order=send_key.asc&limit=50`);
 if (!drafts.length) { console.error("No campaigns matched."); process.exit(1); }
 console.log(`sending ${drafts.length} [TEST] cop${drafts.length === 1 ? "y" : "ies"} to ${email} as "${FIRST_NAME}"`);
 

@@ -61,6 +61,8 @@ export interface SendCampaignOptions {
     overrideSubscriberIds?: string[];
     fromName?: string | null;
     fromEmail?: string | null;
+    /** Reply-To address; falls back to the campaign's variable_values.reply_to. */
+    replyTo?: string | null;
     clickTracking?: boolean;
     clickTrackingMode?: ClickTrackingMode;
     openTracking?: boolean;
@@ -261,6 +263,7 @@ export async function sendCampaign(
         const resolvedFromEmail =
             options.fromEmail || (campaignVars.from_email as string | undefined) || null;
         const resolvedFromName = options.fromName || (campaignVars.from_name as string | undefined) || null;
+        const resolvedReplyTo = options.replyTo || (campaignVars.reply_to as string | undefined) || null;
         const baseUrl = options.trackingBaseUrl ?? pickTrackingBaseUrl(resolvedFromEmail);
 
         const finalize = async (sent: number, failed: number): Promise<SendCampaignResult> => {
@@ -389,6 +392,7 @@ export async function sendCampaign(
                             to: sub.email,
                             subject: personalSubject,
                             html: personalHtml,
+                            ...(resolvedReplyTo ? { reply_to: resolvedReplyTo } : {}),
                             headers: unsubscribeHeaders(urls),
                         }),
                     {

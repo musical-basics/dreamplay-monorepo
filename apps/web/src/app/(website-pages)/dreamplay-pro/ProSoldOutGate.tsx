@@ -8,6 +8,7 @@ import { useAnalytics } from "@dreamplay/analytics/react";
 import { subscribeToNewsletter } from "@/actions/email-actions";
 import { trackEmailConversion } from "@/components/EmailTracker";
 import { offerModeForVariant, type OfferMode } from "@/lib/ab-offer";
+import { PRO_WAITLIST_TAG } from "@/lib/pro-waitlist-email";
 
 /**
  * Sold-out gating for /dreamplay-pro in the Love-vs-Spec 2x2 test
@@ -23,7 +24,8 @@ import { offerModeForVariant, type OfferMode } from "@/lib/ab-offer";
  * the central subscribeToNewsletter action (which notifies support@ and
  * records the tags) with the "Pro Waitlist" tag, then fires the email_signup
  * scoring event with source "pro_waitlist" so captures attribute to the
- * visitor's variant.
+ * visitor's variant. The tag also triggers the automatic confirmation email
+ * (lib/pro-waitlist-email.ts, D21).
  */
 
 function useProOfferMode(): OfferMode {
@@ -68,7 +70,7 @@ function ProWaitlistCard() {
             const res = await subscribeToNewsletter({
                 email,
                 first_name: "",
-                tags: ["Pro Waitlist"],
+                tags: [PRO_WAITLIST_TAG],
                 temp_session_id:
                     typeof localStorage !== "undefined"
                         ? localStorage.getItem("dp_temp_session") || undefined

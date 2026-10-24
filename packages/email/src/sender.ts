@@ -20,6 +20,8 @@ export interface SendEmailPayload {
     to: string;
     subject: string;
     html: string;
+    /** Resend's field name; the payload is posted as-is. */
+    reply_to?: string;
     headers?: Record<string, string>;
     attachments?: SendEmailAttachment[];
 }
