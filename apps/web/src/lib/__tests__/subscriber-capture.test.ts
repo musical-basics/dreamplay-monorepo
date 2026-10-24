@@ -50,6 +50,17 @@ describe("planSubscriberCapture", () => {
         });
     });
 
+    it("puts a new row in the caller's workspace when one is named", () => {
+        const plan = planSubscriberCapture(null, { email: "a@b.co", workspace: "musicalbasics" });
+        expect(plan.kind === "insert" && plan.row.workspace).toBe("musicalbasics");
+    });
+
+    it("never moves an existing row to the caller's workspace", () => {
+        const plan = planSubscriberCapture(existing(), { email: "x@y.z", workspace: "dreamplay_marketing" });
+        expect(plan.kind).toBe("update");
+        expect(plan.kind === "update" && "workspace" in plan.patch).toBe(false);
+    });
+
     it("drops the Unknown country placeholder", () => {
         const plan = planSubscriberCapture(null, { email: "a@b.co", countryCode: "Unknown" });
         expect(plan.kind === "insert" && "country_code" in plan.row).toBe(false);

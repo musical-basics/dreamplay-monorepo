@@ -9,7 +9,8 @@
  * workspaces here (citext), so an existing row is merged wherever it lives
  * instead of upserting on (email, workspace).
  *
- * Kept pure so the merge rules are testable; the server action does the I/O.
+ * Kept pure so the merge rules are testable; subscriber-capture-db.ts does
+ * the I/O for both the server action and the legacy webhook route.
  */
 
 /** Workspace for new website captures (the legacy webhook's default). */
@@ -35,6 +36,8 @@ export interface CaptureInput {
     tags?: string[];
     /** ISO country code from x-vercel-ip-country; "Unknown" is ignored. */
     countryCode?: string | null;
+    /** Workspace for a NEW row (legacy webhook callers may name one). */
+    workspace?: string;
 }
 
 export type CapturePlan =
@@ -77,7 +80,7 @@ export function planSubscriberCapture(existing: ExistingSubscriber | null, input
                 first_name: firstName,
                 tags,
                 status: "active",
-                workspace: CAPTURE_WORKSPACE,
+                workspace: input.workspace ?? CAPTURE_WORKSPACE,
                 ...(countryCode ? { country_code: countryCode } : {}),
             },
         };

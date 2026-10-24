@@ -1,13 +1,7 @@
 'use server';
 
 import { cookies, headers } from "next/headers";
-import { getAdminDb } from "@/lib/db";
-import {
-    CAPTURE_WORKSPACE,
-    captureTags,
-    normalizeCaptureEmail,
-    planSubscriberCapture,
-} from "@/lib/subscriber-capture";
+import { saveSubscriber } from "@/lib/subscriber-capture-db";
 
 /**
  * Notify support of every fresh email capture, including which A/B variant
@@ -62,60 +56,6 @@ interface SubscribeResponse {
     id?: string;
 }
 
-/**
- * Save a capture straight into `subscribers` (D20). This used to POST to the
- * legacy email app's webhook, which stopped existing at cutover. That app's
- * tag triggers are not ported: no `email_triggers` rows exist in this DB.
- * `temp_session_id` is accepted for older callers; identity stitching happens
- * through the analytics `email_signup` event instead.
- */
-async function saveSubscriber(payload: SubscribePayload, countryCode: string): Promise<string> {
-    const db = getAdminDb();
-    const email = normalizeCaptureEmail(payload.email);
-    const input = { email, firstName: payload.first_name, tags: payload.tags, countryCode };
-
-    const existing = await db
-        .from("subscribers")
-        .select("id, tags, status, first_name, workspace")
-        .eq("email", email)
-        .maybeSingle();
-    if (existing.error) throw new Error(existing.error.message);
-
-    const plan = planSubscriberCapture(existing.data, input);
-    await db
-        .from("tag_definitions")
-        .upsert(
-            captureTags(payload.tags).map((name) => ({
-                name,
-                color: "#6b7280",
-                workspace: existing.data?.workspace ?? CAPTURE_WORKSPACE,
-            })),
-            { onConflict: "workspace,name", ignoreDuplicates: true }
-        );
-
-    if (plan.kind === "update") {
-        const { error } = await db.from("subscribers").update(plan.patch).eq("id", plan.id);
-        if (error) throw new Error(error.message);
-        return plan.id;
-    }
-
-    const inserted = await db.from("subscribers").insert(plan.row).select("id").single();
-    if (!inserted.error) return inserted.data.id;
-    // Lost a race with a concurrent submit of the same email: merge instead.
-    if (inserted.error.code !== "23505") throw new Error(inserted.error.message);
-    const raced = await db
-        .from("subscribers")
-        .select("id, tags, status, first_name, workspace")
-        .eq("email", email)
-        .single();
-    if (raced.error) throw new Error(raced.error.message);
-    const retry = planSubscriberCapture(raced.data, input);
-    if (retry.kind !== "update") throw new Error("Subscriber vanished during capture");
-    const { error } = await db.from("subscribers").update(retry.patch).eq("id", retry.id);
-    if (error) throw new Error(error.message);
-    return retry.id;
-}
-
 export async function subscribeToNewsletter(payload: SubscribePayload): Promise<SubscribeResponse> {
     try {
         if (!payload.email?.trim()) return { success: false, error: "Email is required" };
@@ -124,7 +64,15 @@ export async function subscribeToNewsletter(payload: SubscribePayload): Promise<
         const city = headerStore.get("x-vercel-ip-city") || "Unknown";
         const country = headerStore.get("x-vercel-ip-country") || "Unknown";
 
-        const id = await saveSubscriber(payload, country);
+        // Saved directly since D20 (the legacy subscribe webhook died at
+        // cutover). temp_session_id is accepted for older callers; identity
+        // stitching happens through the analytics email_signup event.
+        const id = await saveSubscriber({
+            email: payload.email,
+            firstName: payload.first_name,
+            tags: payload.tags,
+            countryCode: country,
+        });
 
         // Fresh capture → notify support with the variant (contact-form
         // submissions send their own notification; don't double up).
