@@ -4,7 +4,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
     const baseUrl = 'https://dreamplaypianos.com';
     const now = new Date();
 
-    // Core pages that should be indexed
+    // Core pages that should be indexed. Only URLs that answer 200 belong
+    // here: /faq redirects to /information-and-policies/faq, and the blog
+    // lives on blog.dreamplaypianos.com (/blog redirects there).
     const corePages = [
         { path: '/', priority: 1.0, changeFrequency: 'weekly' as const },
         { path: '/how-it-works', priority: 0.9, changeFrequency: 'monthly' as const },
@@ -20,7 +22,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
         { path: '/dreamplay-pro', priority: 0.8, changeFrequency: 'weekly' as const },
         { path: '/production-timeline', priority: 0.5, changeFrequency: 'monthly' as const },
         { path: '/contact', priority: 0.5, changeFrequency: 'yearly' as const },
-        { path: '/faq', priority: 0.7, changeFrequency: 'monthly' as const },
         { path: '/privacy', priority: 0.2, changeFrequency: 'yearly' as const },
         { path: '/terms', priority: 0.2, changeFrequency: 'yearly' as const },
         { path: '/information-and-policies/faq', priority: 0.7, changeFrequency: 'monthly' as const },
@@ -28,7 +29,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
         { path: '/about-us/ds-standard', priority: 0.6, changeFrequency: 'monthly' as const },
         { path: '/hidden-barrier', priority: 0.6, changeFrequency: 'monthly' as const },
         { path: '/historical-facts', priority: 0.5, changeFrequency: 'monthly' as const },
-        { path: '/blog', priority: 0.7, changeFrequency: 'weekly' as const },
     ];
 
     const pages = corePages.map(({ path, priority, changeFrequency }) => ({

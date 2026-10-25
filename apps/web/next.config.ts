@@ -34,6 +34,13 @@ const nextConfig: NextConfig = {
         permanent: false,
       },
       {
+        // The blog is its own app on blog.dreamplaypianos.com; /blog was in
+        // the sitemap and 404'd here.
+        source: "/blog",
+        destination: "https://blog.dreamplaypianos.com/blog",
+        permanent: false,
+      },
+      {
         // D19: /customize2 was swapped in as /customize (2026-10-12).
         // Temporary so the path stays free to reuse.
         source: "/customize2",
